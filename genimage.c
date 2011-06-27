@@ -34,7 +34,6 @@
  * - implement missing image types (cpio, iso)
  * - free memory after usage
  * - make more failsafe (does flashtype exist where necessary)
- * - check for recursive image references
  * - implement command line switches (--verbose, --dry-run, --config=)
  *
  */
@@ -132,6 +131,13 @@ static int image_generate(struct image *image)
 
 	if (image->done)
 		return 0;
+
+	if (image->seen) {
+		image_error(image, "recursive dependency detected\n");
+		return -EINVAL;
+	}
+
+	image->seen = 1;
 
 	list_for_each_entry(part, &image->partitions, list) {
 		struct image *child;

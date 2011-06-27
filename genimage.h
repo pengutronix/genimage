@@ -51,6 +51,7 @@ struct image {
 	struct list_head partitions;
 	struct mountpoint *mp;
 	char *outfile;
+	int seen;
 };
 
 struct image_handler {
