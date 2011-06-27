@@ -152,7 +152,7 @@ const char *mountpath(struct image *image)
 
 static LIST_HEAD(flashlist);
 
-int parse_flashes(cfg_t *cfg)
+static int parse_flashes(cfg_t *cfg)
 {
 	int num_flashes;
 	int i;
