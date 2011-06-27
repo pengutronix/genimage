@@ -109,6 +109,21 @@ cfg_opt_t *get_confuse_opts(void)
 }
 
 /*
+ * Get an integer type option from confuse, but with an optional
+ * 'k', 'M', 'G' suffix
+ */
+unsigned long long cfg_getint_suffix(cfg_t *sec, const char *name)
+{
+	const char *str = cfg_getstr(sec, name);
+	unsigned long long val = 0;
+
+	if (str)
+		val = strtoul_suffix(str, NULL, 0);
+
+	return val;
+}
+
+/*
  * Initialize all options in the following order:
  *
  * 1) default value

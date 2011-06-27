@@ -112,4 +112,6 @@ enum pad_mode {
 int pad_file(const char *infile, const char *outfile, size_t size,
 		unsigned char fillpattern, enum pad_mode mode);
 
+unsigned long long cfg_getint_suffix(cfg_t *sec, const char *name);
+
 #endif /* __PTX_IMAGE_H */

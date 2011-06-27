@@ -60,31 +60,6 @@ static int image_get_type(struct image *image, cfg_t *cfg)
 	return 0;
 }
 
-#if 0
-static void dump_image(struct image *i)
-{
-	printf("file: %-25s "
-		"name: %-20s "
-		"size: %-10lld "
-		"offset: %-10lld "
-		"mountpoint: %-20s "
-		"partition_type: %-3d\n", i->file, i->name, i->size, i->offset, 
-			i->mountpoint, i->partition_type);
-	i->handler->handler(i);
-}
-#endif
-
-unsigned long long cfg_getint_suffix(cfg_t *sec, const char *name)
-{
-	const char *str = cfg_getstr(sec, name);
-	unsigned long long val = 0;
-
-	if (str)
-		val = strtoul_suffix(str, NULL, 0);
-
-	return val;
-}
-
 static cfg_opt_t partition_opts[] = {
 	CFG_STR("offset", NULL, CFGF_NONE),
 	CFG_STR("size", NULL, CFGF_NONE),
