@@ -212,19 +212,6 @@ struct flash_type *flash_type_get(const char *name)
 	return NULL;
 }
 
-int image_set_flash_type(struct image *image, struct flash_type *type)
-{
-	if (!image->flash_type) {
-		image->flash_type = type;
-		return 0;
-	}
-
-	if (image->flash_type != type)
-		return -EBUSY;
-
-	return 0;
-}
-
 static int parse_partitions(struct image *image, cfg_t *imagesec)
 {
 	struct partition *part;

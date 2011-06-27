@@ -71,7 +71,6 @@ struct flash_type {
 };
 
 struct flash_type *flash_type_get(const char *name);
-int image_set_flash_type(struct image *image, struct flash_type *type);
 
 extern struct image_handler jffs2_handler;
 extern struct image_handler flash_handler;
