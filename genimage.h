@@ -39,7 +39,6 @@ struct image {
 	const char *name;
 	const char *file;
 	unsigned long long size;
-	unsigned long long offset;
 	const char *mountpoint;
 	unsigned char partition_type;
 	void *handler_priv;

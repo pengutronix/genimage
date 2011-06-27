@@ -89,7 +89,6 @@ static cfg_opt_t image_common_opts[] = {
 	CFG_STR("name", NULL, CFGF_NONE),
 	CFG_STR("size", NULL, CFGF_NONE),
 	CFG_STR("mountpoint", NULL, CFGF_NONE),
-	CFG_STR("offset", NULL, CFGF_NONE),
 	CFG_STR("flashtype", NULL, CFGF_NONE),
 	CFG_SEC("partition", partition_opts, CFGF_MULTI | CFGF_TITLE),
 };
@@ -449,7 +448,6 @@ int main(int argc, char *argv[])
 		image->file = cfg_title(imagesec);
 		image->name = cfg_getstr(imagesec, "name");
 		image->size = cfg_getint_suffix(imagesec, "size");
-		image->offset = cfg_getint_suffix(imagesec, "offset");
 		image->mountpoint = cfg_getstr(imagesec, "mountpoint");
 		asprintf(&image->outfile, "%s/%s", imagepath(), image->file);
 		if (image->mountpoint && *image->mountpoint == '/')
