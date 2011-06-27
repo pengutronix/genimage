@@ -475,6 +475,10 @@ int main(int argc, char *argv[])
 	if (ret)
 		goto err_out;
 
+	ret = systemp(NULL, "mkdir -p %s", imagepath());
+	if (ret)
+		goto err_out;
+
 	ret = collect_mountpoints();
 	if (ret)
 		goto err_out;
