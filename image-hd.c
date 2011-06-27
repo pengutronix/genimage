@@ -24,7 +24,7 @@ static int hdimage_generate(struct image *image)
 		}
 
 		asprintf(&infile, "%s/%s", imagepath(), part->image);
-		asprintf(&outfile, "%s/%s", imagepath(), image->file);
+		asprintf(&outfile, "%s", imageoutfile(image));
 
 		if (part->offset) {
 			ret = pad_file(NULL, outfile, part->offset, 0x0, mode);

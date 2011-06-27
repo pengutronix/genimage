@@ -17,10 +17,10 @@ static int tar_generate(struct image *image)
 	if (strstr(image->file, ".tar.bz2"))
 		comp = "j";
 
-	ret = systemp(image, "%s c%s -f %s/%s -C %s/%s .",
+	ret = systemp(image, "%s c%s -f %s -C %s/%s .",
 			get_opt("tar"),
 			comp,
-			imagepath(), image->file, rootpath(), image->mountpoint);
+			imageoutfile(image), rootpath(), image->mountpoint);
 
 	return ret;
 }

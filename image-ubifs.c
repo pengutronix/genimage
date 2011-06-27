@@ -14,14 +14,13 @@ static int ubifs_generate(struct image *image)
 
 	lebcount = image->size / image->flash_type->lebsize;
 
-	ret = systemp(image, "%s -d  %s -e %d -m %d -c %d -o %s/%s %s",
+	ret = systemp(image, "%s -d  %s -e %d -m %d -c %d -o %s %s",
 			get_opt("mkfsubifs"),
 			mountpath(image),
 			image->flash_type->lebsize,
 			image->flash_type->minimum_io_unit_size,
 			lebcount,
-			imagepath(),
-			image->file,
+			imageoutfile(image),
 			extraargs);
 
 	return ret;

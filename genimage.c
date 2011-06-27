@@ -428,6 +428,7 @@ int main(int argc, char *argv[])
 		image->size = cfg_getint_suffix(imagesec, "size");
 		image->offset = cfg_getint_suffix(imagesec, "offset");
 		image->mountpoint = cfg_getstr(imagesec, "mountpoint");
+		asprintf(&image->outfile, "%s/%s", imagepath(), image->file);
 		if (image->mountpoint && *image->mountpoint == '/')
 			image->mountpoint++;
 		str = cfg_getstr(imagesec, "flashtype");

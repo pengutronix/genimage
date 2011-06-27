@@ -52,14 +52,13 @@ static int ubi_generate(struct image *image)
 
 	fclose(fini);
 
-	ret = systemp(image, "%s -s %d -O %d -p %d -m %d -o %s/%s %s %s",
+	ret = systemp(image, "%s -s %d -O %d -p %d -m %d -o %s %s %s",
 			get_opt("ubinize"),
 			image->flash_type->sub_page_size,
 			image->flash_type->vid_header_offset,
 			image->flash_type->pebsize,
 			image->flash_type->minimum_io_unit_size,
-			imagepath(),
-			image->file,
+			imageoutfile(image),
 			tempfile,
 			extraargs);
 

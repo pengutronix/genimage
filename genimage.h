@@ -50,6 +50,7 @@ struct image {
 	cfg_t *imagesec;
 	struct list_head partitions;
 	struct mountpoint *mp;
+	char *outfile;
 };
 
 struct image_handler {
@@ -114,4 +115,8 @@ int pad_file(const char *infile, const char *outfile, size_t size,
 
 unsigned long long cfg_getint_suffix(cfg_t *sec, const char *name);
 
+static inline const char *imageoutfile(struct image *image)
+{
+	return image->outfile;
+}
 #endif /* __PTX_IMAGE_H */

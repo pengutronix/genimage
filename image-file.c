@@ -15,7 +15,7 @@ static int file_generate(struct image *image)
 	struct file *f = image->handler_priv;
 	int ret;
 
-	ret = systemp(image, "cp %s/%s %s/%s",  inputpath(), f->name, imagepath(), image->file);
+	ret = systemp(image, "cp %s/%s %s",  inputpath(), f->name, imageoutfile(image));
 
 	return ret;
 }
