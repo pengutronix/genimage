@@ -48,7 +48,7 @@ static struct image_handler *handlers[] = {
 	&file_handler,
 };
 
-static int image_get_type(struct image *image, cfg_t *cfg)
+static int image_set_handler(struct image *image, cfg_t *cfg)
 {
 	int num = 0, i, x;
 
@@ -457,7 +457,7 @@ int main(int argc, char *argv[])
 		str = cfg_getstr(imagesec, "flashtype");
 		if (str)
 			image->flash_type = flash_type_get(str);
-		image_get_type(image, imagesec);
+		image_set_handler(image, imagesec);
 		parse_partitions(image, imagesec);
         }
 
