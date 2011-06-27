@@ -14,15 +14,11 @@
  * TODO:
  *
  * - add documentation
- * - implement extraargs for the different image handlers (i.e. jffs2-extraargs = "", genext2fs-extraargs = "")
- * - make more configurable (path to programs and the like)
  * - implement missing image types (cpio, iso)
  * - free memory after usage
  * - make more failsafe (does flashtype exist where necessary)
  * - check for recursive image references
  * - implement command line switches (--verbose, --dry-run, --config=)
- * - implement a log(struct image *, const char *format, ...) function
- * - implement different compression types for tar (depending on file suffix or explicit switches)
  *
  */
 static struct image_handler *handlers[] = {
@@ -119,6 +115,9 @@ static cfg_opt_t flashchip_opts[] = {
 
 static LIST_HEAD(images);
 
+/*
+ * find an image corresponding to a filename
+ */
 struct image *image_get(const char *filename)
 {
 	struct image *image;
@@ -130,6 +129,10 @@ struct image *image_get(const char *filename)
 	return NULL;
 }
 
+/*
+ * generate the images. Calls ->generate function for each
+ * image, recursively calls itself for resolving dependencies
+ */
 static int image_generate(struct image *image)
 {
 	int ret;
@@ -334,6 +337,8 @@ static int collect_mountpoints(void)
 	return 0;
 }
 
+static int tmppath_generated;
+
 static void check_tmp_path(void)
 {
 	const char *tmp = tmppath();
@@ -365,11 +370,13 @@ static void check_tmp_path(void)
 			exit(1);
 		}
 	}
+	tmppath_generated = 1;
 }
 
 static void cleanup(void)
 {
-	systemp(NULL, "rm -rf %s/*", tmppath());
+	if (tmppath_generated)
+		systemp(NULL, "rm -rf %s/*", tmppath());
 }
 
 static cfg_opt_t top_opts[] = {
@@ -417,12 +424,26 @@ int main(int argc, char *argv[])
 	top_opts[0].subopts = imageopts;
 
 	init_config();
-	top_opts[2].subopts = get_config_opts();
+
+	top_opts[2].subopts = get_confuse_opts();
+
+	/* call set_config_opts to make get_opt("config") work */
+	set_config_opts(argc, argv, NULL);
 
 	cfg = cfg_init(top_opts, CFGF_NONE);
-	if (cfg_parse(cfg, "test.config") == CFG_PARSE_ERROR)
-		goto err_out;
 
+	ret = cfg_parse(cfg, get_opt("config"));
+	switch (ret) {
+	case 0:
+			break;
+	case CFG_PARSE_ERROR:
+		goto err_out;
+	case CFG_FILE_ERROR:
+		error("could not open config file '%s'\n", get_opt("config"));
+		goto err_out;
+	}
+
+	/* again, with config file this time */
 	set_config_opts(argc, argv, cfg);
 
 	check_tmp_path();

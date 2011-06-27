@@ -101,7 +101,7 @@ void *xzalloc(size_t n);
 unsigned long long strtoul_suffix(const char *str, char **endp, int base);
 
 int init_config(void);
-cfg_opt_t *get_config_opts(void);
+cfg_opt_t *get_confuse_opts(void);
 const char *get_opt(const char *name);
 int set_config_opts(int argc, char *argv[], cfg_t *cfg);
 
