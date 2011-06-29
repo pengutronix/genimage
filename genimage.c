@@ -475,14 +475,6 @@ int main(int argc, char *argv[])
 	if (ret)
 		goto err_out;
 
-	ret = systemp(NULL, "mkdir -p %s", imagepath());
-	if (ret)
-		goto err_out;
-
-	ret = collect_mountpoints();
-	if (ret)
-		goto err_out;
-
 	list_for_each_entry(image, &images, list) {
 		if (image->handler->setup) {
 			ret = image->handler->setup(image, image->imagesec);
@@ -490,6 +482,14 @@ int main(int argc, char *argv[])
 				goto err_out;
 		}
 	}
+
+	ret = systemp(NULL, "mkdir -p %s", imagepath());
+	if (ret)
+		goto err_out;
+
+	ret = collect_mountpoints();
+	if (ret)
+		goto err_out;
 
 	list_for_each_entry(image, &images, list) {
 		ret = image_generate(image);
