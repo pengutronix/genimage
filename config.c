@@ -296,7 +296,8 @@ static struct config opts[] = {
  */
 int init_config(void)
 {
-	int i, ret;
+	unsigned int i;
+	int ret;
 
 	for (i = 0; i < ARRAY_SIZE(opts); i++) {
 		ret = add_opt(opts[i].name, opts[i].env, &opts[i].opt, opts[i].def);

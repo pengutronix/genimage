@@ -50,7 +50,8 @@ static struct image_handler *handlers[] = {
 
 static int image_set_handler(struct image *image, cfg_t *cfg)
 {
-	int num = 0, i, x;
+	unsigned int i;
+	int num = 0, x;
 
 	for (i = 0; i < ARRAY_SIZE(handlers); i++) {
 		struct image_handler *handler = handlers[i];
@@ -373,8 +374,8 @@ static cfg_opt_t top_opts[] = {
 
 int main(int argc, char *argv[])
 {
-	int i;
-	int num_images;
+	unsigned int i;
+	unsigned int num_images;
 	int ret;
 	cfg_opt_t *imageopts = xzalloc((ARRAY_SIZE(image_common_opts) +
 				ARRAY_SIZE(handlers) + 1) * sizeof(cfg_opt_t));;
