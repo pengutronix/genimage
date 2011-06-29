@@ -29,11 +29,6 @@ static int jffs2_generate(struct image *image)
 	int ret;
 	char *extraargs;
 
-	if (!image->flash_type) {
-		printf("no flash type given for %s\n", image->file);
-		return -EINVAL;
-	}
-
 	extraargs = cfg_getstr(image->imagesec, "extraargs");
 
 	ret = systemp(image, "%s --eraseblock=%d -d %s -o %s %s",
@@ -46,6 +41,11 @@ static int jffs2_generate(struct image *image)
 
 static int jffs2_setup(struct image *image, cfg_t *cfg)
 {
+	if (!image->flash_type) {
+		image_error(image, "no flash type given\n");
+		return -EINVAL;
+	}
+
 	return 0;
 }
 

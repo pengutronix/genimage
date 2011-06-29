@@ -88,6 +88,11 @@ static int ubi_setup(struct image *image, cfg_t *cfg)
 	int autoresize = 0;
 	struct partition *part;
 
+	if (!image->flash_type) {
+		image_error(image, "no flash type given\n");
+		return -EINVAL;
+	}
+
 	image->handler_priv = ubi;
 
 	list_for_each_entry(part, &image->partitions, list)

@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <errno.h>
 
 #include "genimage.h"
 
@@ -45,6 +46,11 @@ static int ubifs_generate(struct image *image)
 
 static int ubifs_setup(struct image *image, cfg_t *cfg)
 {
+	if (!image->flash_type) {
+		image_error(image, "no flash type given\n");
+		return -EINVAL;
+	}
+
 	return 0;
 }
 
