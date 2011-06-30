@@ -197,6 +197,7 @@ int set_config_opts(int argc, char *argv[], cfg_t *cfg)
 		i++;
 	}
 
+	optind = 1;
 	while (1) {
 		int option_index = 0;
 
