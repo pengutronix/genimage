@@ -320,6 +320,15 @@ static int collect_mountpoints(void)
 		ret = systemp(NULL, "mv %s/root/%s %s", tmppath(), mp->path, tmppath());
 		if (ret)
 			return ret;
+		ret = systemp(NULL, "mkdir %s/root/%s", tmppath(), mp->path);
+		if (ret)
+			return ret;
+		ret = systemp(NULL, "chmod --reference=%s %s/root/%s", mp->mountpath, tmppath(), mp->path);
+		if (ret)
+			return ret;
+		ret = systemp(NULL, "chown --reference=%s %s/root/%s", mp->mountpath, tmppath(), mp->path);
+		if (ret)
+			return ret;
 	}
 
 	return 0;
