@@ -42,6 +42,8 @@ struct image {
 	const char *file;
 	unsigned long long size;
 	const char *mountpoint;
+	const char *exec_pre;
+	const char *exec_post;
 	unsigned char partition_type;
 	void *handler_priv;
 	struct image_handler *handler;
