@@ -74,6 +74,7 @@ static int hdimage_setup_mbr(struct image *image, char *part_table)
 		entry = (struct partition_entry *)(part_table + i *
 				sizeof(struct partition_entry));
 
+		entry->boot = part->bootable ? 0x80 : 0x00;
 		entry->partition_type = part->partition_type;
 		entry->relative_sectors = part->offset/512;
 		entry->total_sectors = part->size/512;

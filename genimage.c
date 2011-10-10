@@ -81,6 +81,7 @@ static cfg_opt_t partition_opts[] = {
 	CFG_STR("offset", NULL, CFGF_NONE),
 	CFG_STR("size", NULL, CFGF_NONE),
 	CFG_INT("partition-type", 0, CFGF_NONE),
+	CFG_BOOL("bootable", cfg_false, CFGF_NONE),
 	CFG_STR("image", NULL, CFGF_NONE),
 	CFG_BOOL("autoresize", 0, CFGF_NONE),
 	CFG_BOOL("in-partition-table", cfg_true, CFGF_NONE),
@@ -229,6 +230,7 @@ static int parse_partitions(struct image *image, cfg_t *imagesec)
 		part->size = cfg_getint_suffix(partsec, "size");
 		part->offset = cfg_getint_suffix(partsec, "offset");
 		part->partition_type = cfg_getint(partsec, "partition-type");
+		part->bootable = cfg_getbool(partsec, "bootable");
 		part->image = cfg_getstr(partsec, "image");
 		part->autoresize = cfg_getbool(partsec, "autoresize");
 		part->in_partition_table = cfg_getbool(partsec, "in-partition-table");

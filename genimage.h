@@ -29,6 +29,7 @@ struct partition {
 	unsigned long long offset;
 	unsigned long long size;
 	unsigned char partition_type;
+	cfg_bool_t bootable;
 	const char *image;
 	struct list_head list;
 	int autoresize;
