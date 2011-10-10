@@ -55,7 +55,7 @@ const char *get_opt(const char *name)
 /*
  * set option 'name' to 'value'
  */
-int set_opt(const char *name, const char *value)
+static int set_opt(const char *name, const char *value)
 {
 	struct config *c;
 
@@ -78,7 +78,7 @@ int set_opt(const char *name, const char *value)
  * opt:		confuse option
  * def:		default value
  */
-int add_opt(const char *name, const char *env, cfg_opt_t *opt, char *def)
+static int add_opt(const char *name, const char *env, cfg_opt_t *opt, char *def)
 {
 	struct config *c = xzalloc(sizeof(*c));
 

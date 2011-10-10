@@ -130,7 +130,7 @@ unsigned long long strtoul_suffix(const char *str, char **endp, int base)
 	return val;
 }
 
-int min(int a, int b)
+static int min(int a, int b)
 {
 	return a < b ? a : b;
 }
