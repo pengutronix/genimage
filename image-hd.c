@@ -105,17 +105,14 @@ static int hdimage_generate(struct image *image)
 		}
 		infile = imageoutfile(child);
 
-		if (part->offset) {
-			ret = pad_file(NULL, outfile, part->offset, 0x0, mode);
-			if (ret) {
-				image_error(image, "failed to pad image to size %lld\n",
-						part->offset);
-				return ret;
-			}
-			mode = MODE_APPEND;
+		ret = pad_file(NULL, outfile, part->offset, 0x0, mode);
+		if (ret) {
+			image_error(image, "failed to pad image to size %lld\n",
+					part->offset);
+			return ret;
 		}
 
-		ret = pad_file(infile, outfile, part->size, 0x0, mode);
+		ret = pad_file(infile, outfile, part->size, 0x0, MODE_APPEND);
 
 		if (ret) {
 			image_error(image, "failed to write image partition '%s'\n",
