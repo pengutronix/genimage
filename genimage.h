@@ -32,6 +32,7 @@ struct partition {
 	const char *image;
 	struct list_head list;
 	int autoresize;
+	int in_partition_table;
 	const char *name;
 };
 

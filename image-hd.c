@@ -64,6 +64,9 @@ static int hdimage_setup_mbr(struct image *image, char *part_table)
 	list_for_each_entry(part, &image->partitions, list) {
 		struct partition_entry *entry;
 
+		if (!part->in_partition_table)
+			continue;
+
 		if (i > 3) {
 			image_error(image, "cannot handle more than 4 partitions");
 			return -EINVAL;
@@ -162,13 +165,13 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 					part->name, part->size);
 			return -EINVAL;
 		}
-		if (part->offset % align) {
+		if (part->in_partition_table && (part->offset % align)) {
 			image_error(image, "part %s offset (%lld) must be a"
 					"multiple of %lld bytes\n",
 					part->name, part->offset, align);
 			return -EINVAL;
 		}
-		if (part->offset) {
+		if (part->offset || !part->in_partition_table) {
 			if (now > part->offset) {
 				image_error(image, "part %s overlaps with previous partition\n",
 						part->name);
