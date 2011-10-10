@@ -140,7 +140,7 @@ int pad_file(const char *infile, const char *outfile, size_t size,
 {
 	FILE *f = NULL, *outf = NULL;
 	void *buf;
-	int now, r;
+	int now, r, w;
 	int ret = 0;
 
 	if (infile) {
@@ -178,14 +178,13 @@ int pad_file(const char *infile, const char *outfile, size_t size,
 		now = min(size, 4096);
 
 		r = fread(buf, 1, now, f);
-		if (r < now)
-			goto fill;
-
-		r = fwrite(buf, 1, now, outf);
-		if (r < now) {
+		w = fwrite(buf, 1, r, outf);
+		if (w < r) {
 			ret = -errno;
 			goto err_out;
 		}
+		if (r < now)
+			goto fill;
 
 		size -= now;
 	}
