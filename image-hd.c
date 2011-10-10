@@ -69,18 +69,36 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 {
 	struct partition *part;
 	unsigned long long now = 0;
+	unsigned long long align = cfg_getint_suffix(cfg, "align");
 
+	if ((align % 512) || (align == 0)) {
+		image_error(image, "partition alignment (%lld) must be a"
+				"multiple of 1 sector (512 bytes)\n", align);
+		return -EINVAL;
+	}
 	list_for_each_entry(part, &image->partitions, list) {
+		if (part->size % 512) {
+			image_error(image, "part %s size (%lld) must be a"
+					"multiple of 1 sector (512 bytes)\n",
+					part->name, part->size);
+			return -EINVAL;
+		}
+		if (part->offset % align) {
+			image_error(image, "part %s offset (%lld) must be a"
+					"multiple of %lld bytes\n",
+					part->name, part->offset, align);
+			return -EINVAL;
+		}
 		if (part->offset) {
 			if (now > part->offset) {
 				image_error(image, "part %s overlaps with previous partition\n",
 						part->name);
 				return -EINVAL;
 			}
-			now = part->offset + part->size;
 		} else {
-			now = now + part->size;
+			part->offset = ((now -1)/align + 1) * align;
 		}
+		now = part->offset + part->size;
 	}
 
 	if (now > image->size) {
@@ -91,6 +109,7 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 }
 
 cfg_opt_t hdimage_opts[] = {
+	CFG_STR("align", "512", CFGF_NONE),
 	CFG_END()
 };
 
