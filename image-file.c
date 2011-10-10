@@ -25,6 +25,7 @@
 
 struct file {
 	char *name;
+	char *infile;
 };
 
 static int file_generate(struct image *image)
@@ -32,7 +33,7 @@ static int file_generate(struct image *image)
 	struct file *f = image->handler_priv;
 	int ret;
 
-	ret = systemp(image, "cp %s/%s %s",  inputpath(), f->name, imageoutfile(image));
+	ret = systemp(image, "cp %s %s",  f->infile, imageoutfile(image));
 
 	return ret;
 }
@@ -44,6 +45,11 @@ static int file_setup(struct image *image, cfg_t *cfg)
 	f->name = cfg_getstr(cfg, "name");
 	if (!f->name)
 		f->name = strdup(image->file);
+
+	if (f->name[0] == '/')
+		f->infile = strdup(f->name);
+	else
+		asprintf(&f->infile, "%s/%s", inputpath(), f->name);
 
 	image->handler_priv = f;
 
