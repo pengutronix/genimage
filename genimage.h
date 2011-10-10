@@ -112,6 +112,8 @@ enum pad_mode {
 
 int pad_file(const char *infile, const char *outfile, size_t size,
 		unsigned char fillpattern, enum pad_mode mode);
+int insert_data(const void *data, const char *outfile, size_t size,
+		long offset);
 
 unsigned long long cfg_getint_suffix(cfg_t *sec, const char *name);
 

@@ -218,3 +218,41 @@ err_out:
 
 	return ret;
 }
+
+int insert_data(const void *data, const char *outfile, size_t size,
+		long offset)
+{
+	FILE *outf = NULL;
+	int now, r;
+	int ret = 0;
+
+	outf = fopen(outfile, "r+");
+	if (!outf) {
+		error("open %s: %s\n", outfile, strerror(errno));
+		ret = -errno;
+		goto err_out;
+	}
+	ret = fseek(outf, offset, SEEK_SET);
+	if (ret) {
+		error("seek %s: %s\n", outfile, strerror(errno));
+		ret = -errno;
+		goto err_out;
+	}
+	error("pos = %ld, count = %d\n", ftell(outf), size);
+	while (size) {
+		now = min(size, 4096);
+
+		r = fwrite(data, 1, now, outf);
+		if (r < now) {
+			ret = -errno;
+			goto err_out;
+		}
+		size -= now;
+		data += now;
+	}
+err_out:
+	if (outf)
+		fclose(outf);
+
+	return ret;
+}
