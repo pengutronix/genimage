@@ -102,10 +102,6 @@ static int hdimage_generate(struct image *image)
 		const char *infile;
 
 		child = image_get(part->image);
-		if (!child) {
-			image_error(image, "could not find %s\n", part->image);
-			return -EINVAL;
-		}
 		infile = imageoutfile(child);
 
 		ret = pad_file(NULL, outfile, part->offset, 0x0, mode);
@@ -144,6 +140,11 @@ static int hdimage_generate(struct image *image)
 	return 0;
 }
 
+static unsigned long long roundup(unsigned long long value, unsigned long long align)
+{
+	return ((value - 1)/align + 1) * align;
+}
+
 static int hdimage_setup(struct image *image, cfg_t *cfg)
 {
 	struct partition *part;
@@ -159,6 +160,18 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 		return -EINVAL;
 	}
 	list_for_each_entry(part, &image->partitions, list) {
+		struct image *child = image_get(part->image);
+		if (!child) {
+			image_error(image, "could not find %s\n", part->image);
+			return -EINVAL;
+		}
+		if (!part->size)
+			part->size = roundup(child->size, align);
+		if (!part->size) {
+			image_error(image, "part %s size must not be zero\n",
+					part->name);
+			return -EINVAL;
+		}
 		if (part->size % 512) {
 			image_error(image, "part %s size (%lld) must be a"
 					"multiple of 1 sector (512 bytes)\n",
@@ -180,7 +193,7 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 		} else {
 			if (!now && hd->partition_table)
 				now = 512;
-			part->offset = ((now -1)/align + 1) * align;
+			part->offset = roundup(now, align);
 		}
 		now = part->offset + part->size;
 	}
