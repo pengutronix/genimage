@@ -74,7 +74,7 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 						part->name);
 				return -EINVAL;
 			}
-			now = part->offset + part->size;		
+			now = part->offset + part->size;
 		} else {
 			now = now + part->size;
 		}
