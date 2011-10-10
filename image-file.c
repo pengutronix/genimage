@@ -28,12 +28,16 @@
 struct file {
 	char *name;
 	char *infile;
+	cfg_bool_t copy;
 };
 
 static int file_generate(struct image *image)
 {
 	struct file *f = image->handler_priv;
 	int ret;
+
+	if (!f->copy)
+		return 0;
 
 	ret = systemp(image, "cp %s %s",  f->infile, imageoutfile(image));
 
@@ -64,6 +68,12 @@ static int file_setup(struct image *image, cfg_t *cfg)
 	if (!image->size)
 		image->size = s.st_size;
 
+	f->copy = cfg_getbool(cfg, "copy");
+	if (!f->copy) {
+		free(image->outfile);
+		image->outfile = strdup(f->infile);
+	}
+
 	image->handler_priv = f;
 
 	return 0;
@@ -71,6 +81,7 @@ static int file_setup(struct image *image, cfg_t *cfg)
 
 static cfg_opt_t file_opts[] = {
 	CFG_STR("name", NULL, CFGF_NONE),
+	CFG_BOOL("copy", cfg_true, CFGF_NONE),
 	CFG_END()
 };
 
