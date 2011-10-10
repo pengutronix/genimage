@@ -20,6 +20,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <errno.h>
+#include <sys/stat.h>
 
 #include "genimage.h"
 
@@ -41,6 +43,8 @@ static int file_generate(struct image *image)
 static int file_setup(struct image *image, cfg_t *cfg)
 {
 	struct file *f = xzalloc(sizeof(*f));
+	struct stat s;
+	int ret;
 
 	f->name = cfg_getstr(cfg, "name");
 	if (!f->name)
@@ -50,6 +54,15 @@ static int file_setup(struct image *image, cfg_t *cfg)
 		f->infile = strdup(f->name);
 	else
 		asprintf(&f->infile, "%s/%s", inputpath(), f->name);
+
+	ret = stat(f->infile, &s);
+	if (ret) {
+		image_error(image, "stat(%s) failed: %s\n", f->infile,
+				strerror(errno));
+		return -errno;
+	}
+	if (!image->size)
+		image->size = s.st_size;
 
 	image->handler_priv = f;
 
