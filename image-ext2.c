@@ -12,9 +12,9 @@ static int ext2_generate(struct image *image)
 	int ret;
 	char *extraargs = cfg_getstr(image->imagesec, "extraargs");
 
-	ret = systemp(image, "%s -d %s --size-in-blocks=%lld %s/%s %s",
+	ret = systemp(image, "%s -d %s --size-in-blocks=%lld %s %s",
 			get_opt("genext2fs"),
-			mountpath(image), image->size / 1024, imagepath(), image->file,
+			mountpath(image), image->size / 1024, imageoutfile(image),
 			extraargs);
 
 	return ret;

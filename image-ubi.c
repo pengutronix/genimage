@@ -59,7 +59,7 @@ static int ubi_generate(struct image *image)
 
 		fprintf(fini, "[%s]\n", part->name);
 		fprintf(fini, "mode=ubi\n");
-		fprintf(fini, "image=%s/%s\n", imagepath(), child->file);
+		fprintf(fini, "image=%s\n", imageoutfile(child));
 		fprintf(fini, "vol_id=%d\n", i);
 		fprintf(fini, "vol_size=%lld\n", child->size);
 		fprintf(fini, "vol_type=dynamic\n");

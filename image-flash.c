@@ -19,7 +19,7 @@ static int flash_generate(struct image *image)
 	struct partition *part;
 	struct stat s;
 	int ret;
-	char *buf;
+	const char *buf;
 
 	list_for_each_entry(part, &image->partitions, list) {
 		struct image *child;
@@ -29,9 +29,8 @@ static int flash_generate(struct image *image)
 			image_error(image, "could not find %s\n", part->name);
 			return -EINVAL;
 		}
-		asprintf(&buf, "%s/%s", imagepath(), part->image);
+		buf = imageoutfile(child);
 		ret = stat(buf, &s);
-		free(buf);
 		if (ret)
 			return -errno;
 
