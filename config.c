@@ -280,6 +280,16 @@ static struct config opts[] = {
 		.env = "GENIMAGE_GENEXT2FS",
 		.def = "genext2fs",
 	}, {
+		.name = "tune2fs",
+		.opt = CFG_STR("tune2fs", NULL, CFGF_NONE),
+		.env = "GENIMAGE_TUNE2FS",
+		.def = "tune2fs",
+	}, {
+		.name = "e2fsck",
+		.opt = CFG_STR("e2fsck", NULL, CFGF_NONE),
+		.env = "GENIMAGE_E2FSCK",
+		.def = "e2fsck",
+	}, {
 		.name = "tar",
 		.opt = CFG_STR("tar", NULL, CFGF_NONE),
 		.env = "GENIMAGE_TAR",

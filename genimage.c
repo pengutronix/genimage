@@ -45,6 +45,8 @@ static struct image_handler *handlers[] = {
 	&ubifs_handler,
 	&hdimage_handler,
 	&ext2_handler,
+	&ext3_handler,
+	&ext4_handler,
 	&file_handler,
 };
 
