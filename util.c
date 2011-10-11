@@ -78,6 +78,9 @@ int systemp(struct image *image, const char *fmt, ...)
 
 	ret = system(buf);
 
+	if (ret > 0)
+		ret = WEXITSTATUS(ret);
+
 	free(buf);
 
 	return ret;
