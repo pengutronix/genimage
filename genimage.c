@@ -463,8 +463,16 @@ int main(int argc, char *argv[])
 	/* check if each partition has a corresponding image */
 	list_for_each_entry(image, &images, list) {
 		list_for_each_entry(part, &image->partitions, list) {
-			struct image *i = image_get(part->image);
+			struct image *i;
+
+			if (!part->image) {
+				image_error(image, "no input file given\n");
+				goto err_out;
+			}
+
+			i = image_get(part->image);
 			if (!i) {
+				if (!part->image)
 				image_error(image, "no rule to generate %s\n", part->image);
 				goto err_out;
 			}
