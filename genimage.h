@@ -29,9 +29,11 @@ struct partition {
 	unsigned long long offset;
 	unsigned long long size;
 	unsigned char partition_type;
+	cfg_bool_t bootable;
 	const char *image;
 	struct list_head list;
 	int autoresize;
+	int in_partition_table;
 	const char *name;
 };
 
@@ -40,6 +42,8 @@ struct image {
 	const char *file;
 	unsigned long long size;
 	const char *mountpoint;
+	const char *exec_pre;
+	const char *exec_post;
 	unsigned char partition_type;
 	void *handler_priv;
 	struct image_handler *handler;
@@ -112,6 +116,8 @@ enum pad_mode {
 
 int pad_file(const char *infile, const char *outfile, size_t size,
 		unsigned char fillpattern, enum pad_mode mode);
+int insert_data(const void *data, const char *outfile, size_t size,
+		long offset);
 
 unsigned long long cfg_getint_suffix(cfg_t *sec, const char *name);
 

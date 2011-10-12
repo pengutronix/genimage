@@ -81,8 +81,10 @@ static cfg_opt_t partition_opts[] = {
 	CFG_STR("offset", NULL, CFGF_NONE),
 	CFG_STR("size", NULL, CFGF_NONE),
 	CFG_INT("partition-type", 0, CFGF_NONE),
+	CFG_BOOL("bootable", cfg_false, CFGF_NONE),
 	CFG_STR("image", NULL, CFGF_NONE),
 	CFG_BOOL("autoresize", 0, CFGF_NONE),
+	CFG_BOOL("in-partition-table", cfg_true, CFGF_NONE),
 	CFG_END()
 };
 
@@ -90,8 +92,11 @@ static cfg_opt_t image_common_opts[] = {
 	CFG_STR("name", NULL, CFGF_NONE),
 	CFG_STR("size", NULL, CFGF_NONE),
 	CFG_STR("mountpoint", NULL, CFGF_NONE),
+	CFG_STR("exec-pre", NULL, CFGF_NONE),
+	CFG_STR("exec-post", NULL, CFGF_NONE),
 	CFG_STR("flashtype", NULL, CFGF_NONE),
 	CFG_SEC("partition", partition_opts, CFGF_MULTI | CFGF_TITLE),
+	CFG_FUNC("include", &cfg_include),
 };
 
 static cfg_opt_t flashchip_opts[] = {
@@ -153,6 +158,12 @@ static int image_generate(struct image *image)
 		}
 	}
 
+	if (image->exec_pre) {
+		ret = systemp(image, "%s", image->exec_pre);
+		if (ret)
+			return ret;
+	}
+
 	if (image->handler->generate) {
 		ret = image->handler->generate(image);
 	} else {
@@ -162,6 +173,12 @@ static int image_generate(struct image *image)
 
 	if (ret)
 		return ret;
+
+	if (image->exec_post) {
+		ret = systemp(image, "%s", image->exec_post);
+		if (ret)
+			return ret;
+	}
 
 	image->done = 1;
 
@@ -227,8 +244,10 @@ static int parse_partitions(struct image *image, cfg_t *imagesec)
 		part->size = cfg_getint_suffix(partsec, "size");
 		part->offset = cfg_getint_suffix(partsec, "offset");
 		part->partition_type = cfg_getint(partsec, "partition-type");
+		part->bootable = cfg_getbool(partsec, "bootable");
 		part->image = cfg_getstr(partsec, "image");
 		part->autoresize = cfg_getbool(partsec, "autoresize");
+		part->in_partition_table = cfg_getbool(partsec, "in-partition-table");
         }
 
 	return 0;
@@ -315,6 +334,15 @@ static int collect_mountpoints(void)
 		if (!strlen(mp->path))
 			continue;
 		ret = systemp(NULL, "mv %s/root/%s %s", tmppath(), mp->path, tmppath());
+		if (ret)
+			return ret;
+		ret = systemp(NULL, "mkdir %s/root/%s", tmppath(), mp->path);
+		if (ret)
+			return ret;
+		ret = systemp(NULL, "chmod --reference=%s %s/root/%s", mp->mountpath, tmppath(), mp->path);
+		if (ret)
+			return ret;
+		ret = systemp(NULL, "chown --reference=%s %s/root/%s", mp->mountpath, tmppath(), mp->path);
 		if (ret)
 			return ret;
 	}
@@ -450,6 +478,8 @@ int main(int argc, char *argv[])
 		image->name = cfg_getstr(imagesec, "name");
 		image->size = cfg_getint_suffix(imagesec, "size");
 		image->mountpoint = cfg_getstr(imagesec, "mountpoint");
+		image->exec_pre = cfg_getstr(imagesec, "exec-pre");
+		image->exec_post = cfg_getstr(imagesec, "exec-post");
 		asprintf(&image->outfile, "%s/%s", imagepath(), image->file);
 		if (image->mountpoint && *image->mountpoint == '/')
 			image->mountpoint++;
@@ -491,6 +521,10 @@ int main(int argc, char *argv[])
 				goto err_out;
 		}
 	}
+	setenv("OUTPUTPATH", imagepath(), 1);
+	setenv("INPUTPATH", inputpath(), 1);
+	setenv("ROOTPATH", rootpath(), 1);
+	setenv("TMPPATH", tmppath(), 1);
 
 	ret = systemp(NULL, "mkdir -p %s", imagepath());
 	if (ret)
@@ -501,6 +535,14 @@ int main(int argc, char *argv[])
 		goto err_out;
 
 	list_for_each_entry(image, &images, list) {
+		char *sizestr;
+		setenv("IMAGE", image->file, 1);
+		setenv("IMAGEOUTFILE", imageoutfile(image), 1);
+		setenv("IMAGENAME", image->name, 1);
+		asprintf(&sizestr, "%lld", image->size);
+		setenv("IMAGESIZE", sizestr, 1);
+		free(sizestr);
+		setenv("IMAGEMOUNTPOINT", image->mountpoint, 1);
 		ret = image_generate(image);
 		if (ret) {
 			printf("failed to generate %s\n", image->file);

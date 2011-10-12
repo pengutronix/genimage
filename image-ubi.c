@@ -43,8 +43,8 @@ static int ubi_generate(struct image *image)
 	fini = fopen(tempfile, "w");
 	if (!fini) {
 		image_error(image, "creating temp file failed: %s\n", strerror(errno));
-		return -errno;
-
+		ret = -errno;
+		goto err_free;
 	}
 
 	list_for_each_entry(part, &image->partitions, list) {
@@ -52,12 +52,14 @@ static int ubi_generate(struct image *image)
 		child = image_get(part->image);
 		if (!child) {
 			image_error(image, "could not find %s\n", part->image);
-			return -EINVAL;
+			fclose(fini);
+			ret = -EINVAL;
+			goto err_free;
 		}
 
 		fprintf(fini, "[%s]\n", part->name);
 		fprintf(fini, "mode=ubi\n");
-		fprintf(fini, "image=%s/%s\n", imagepath(), child->file);
+		fprintf(fini, "image=%s\n", imageoutfile(child));
 		fprintf(fini, "vol_id=%d\n", i);
 		fprintf(fini, "vol_size=%lld\n", child->size);
 		fprintf(fini, "vol_type=dynamic\n");
@@ -78,6 +80,9 @@ static int ubi_generate(struct image *image)
 			imageoutfile(image),
 			tempfile,
 			extraargs);
+
+err_free:
+	free(tempfile);
 
 	return ret;
 }

@@ -130,7 +130,7 @@ unsigned long long strtoul_suffix(const char *str, char **endp, int base)
 	return val;
 }
 
-int min(int a, int b)
+static int min(int a, int b)
 {
 	return a < b ? a : b;
 }
@@ -140,7 +140,7 @@ int pad_file(const char *infile, const char *outfile, size_t size,
 {
 	FILE *f = NULL, *outf = NULL;
 	void *buf;
-	int now, r;
+	int now, r, w;
 	int ret = 0;
 
 	if (infile) {
@@ -178,14 +178,13 @@ int pad_file(const char *infile, const char *outfile, size_t size,
 		now = min(size, 4096);
 
 		r = fread(buf, 1, now, f);
-		if (r < now)
-			goto fill;
-
-		r = fwrite(buf, 1, now, outf);
-		if (r < now) {
+		w = fwrite(buf, 1, r, outf);
+		if (w < r) {
 			ret = -errno;
 			goto err_out;
 		}
+		if (r < now)
+			goto fill;
 
 		size -= now;
 	}
@@ -213,6 +212,44 @@ fill:
 err_out:
 	if (f)
 		fclose(f);
+	if (outf)
+		fclose(outf);
+
+	return ret;
+}
+
+int insert_data(const void *data, const char *outfile, size_t size,
+		long offset)
+{
+	FILE *outf = NULL;
+	int now, r;
+	int ret = 0;
+
+	outf = fopen(outfile, "r+");
+	if (!outf) {
+		error("open %s: %s\n", outfile, strerror(errno));
+		ret = -errno;
+		goto err_out;
+	}
+	ret = fseek(outf, offset, SEEK_SET);
+	if (ret) {
+		error("seek %s: %s\n", outfile, strerror(errno));
+		ret = -errno;
+		goto err_out;
+	}
+	error("pos = %ld, count = %d\n", ftell(outf), size);
+	while (size) {
+		now = min(size, 4096);
+
+		r = fwrite(data, 1, now, outf);
+		if (r < now) {
+			ret = -errno;
+			goto err_out;
+		}
+		size -= now;
+		data += now;
+	}
+err_out:
 	if (outf)
 		fclose(outf);
 

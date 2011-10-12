@@ -20,11 +20,15 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <errno.h>
+#include <sys/stat.h>
 
 #include "genimage.h"
 
 struct file {
 	char *name;
+	char *infile;
+	cfg_bool_t copy;
 };
 
 static int file_generate(struct image *image)
@@ -32,7 +36,10 @@ static int file_generate(struct image *image)
 	struct file *f = image->handler_priv;
 	int ret;
 
-	ret = systemp(image, "cp %s/%s %s",  inputpath(), f->name, imageoutfile(image));
+	if (!f->copy)
+		return 0;
+
+	ret = systemp(image, "cp %s %s",  f->infile, imageoutfile(image));
 
 	return ret;
 }
@@ -40,10 +47,32 @@ static int file_generate(struct image *image)
 static int file_setup(struct image *image, cfg_t *cfg)
 {
 	struct file *f = xzalloc(sizeof(*f));
+	struct stat s;
+	int ret;
 
 	f->name = cfg_getstr(cfg, "name");
 	if (!f->name)
 		f->name = strdup(image->file);
+
+	if (f->name[0] == '/')
+		f->infile = strdup(f->name);
+	else
+		asprintf(&f->infile, "%s/%s", inputpath(), f->name);
+
+	ret = stat(f->infile, &s);
+	if (ret) {
+		image_error(image, "stat(%s) failed: %s\n", f->infile,
+				strerror(errno));
+		return -errno;
+	}
+	if (!image->size)
+		image->size = s.st_size;
+
+	f->copy = cfg_getbool(cfg, "copy");
+	if (!f->copy) {
+		free(image->outfile);
+		image->outfile = strdup(f->infile);
+	}
 
 	image->handler_priv = f;
 
@@ -52,6 +81,7 @@ static int file_setup(struct image *image, cfg_t *cfg)
 
 static cfg_opt_t file_opts[] = {
 	CFG_STR("name", NULL, CFGF_NONE),
+	CFG_BOOL("copy", cfg_true, CFGF_NONE),
 	CFG_END()
 };
 
