@@ -27,6 +27,8 @@
 
 struct hdimage {
 	cfg_bool_t partition_table;
+	unsigned long long align;
+	unsigned long long extended_lba;
 };
 
 struct partition_entry {
@@ -57,6 +59,7 @@ static void hdimage_setup_chs(unsigned int lba, unsigned char *chs)
 
 static int hdimage_setup_mbr(struct image *image, char *part_table)
 {
+	struct hdimage *hd = image->handler_priv;
 	struct partition *part;
 	int i = 0;
 
@@ -67,26 +70,73 @@ static int hdimage_setup_mbr(struct image *image, char *part_table)
 		if (!part->in_partition_table)
 			continue;
 
-		if (i > 3) {
-			image_error(image, "cannot handle more than 4 partitions");
-			return -EINVAL;
-		}
 		entry = (struct partition_entry *)(part_table + i *
 				sizeof(struct partition_entry));
 
 		entry->boot = part->bootable ? 0x80 : 0x00;
-		entry->partition_type = part->partition_type;
-		entry->relative_sectors = part->offset/512;
-		entry->total_sectors = part->size/512;
+		if (!part->extended) {
+			entry->partition_type = part->partition_type;
+			entry->relative_sectors = part->offset/512;
+			entry->total_sectors = part->size/512;
+		}
+		else {
+			unsigned long long size = 0;
+			struct partition *p = part;
+			list_for_each_entry_from(p, &image->partitions, list) {
+				if (!p->extended)
+					break;
+				size += hd->align + p->size;
+			}
+			entry->partition_type = 0x0F;
+			entry->relative_sectors = (part->offset - hd->align)/512;
+			entry->total_sectors = size/512;
+		}
 		hdimage_setup_chs(entry->relative_sectors, entry->first_chs);
 		hdimage_setup_chs(entry->relative_sectors +
 				entry->total_sectors - 1, entry->last_chs);
 
+		if (part->extended)
+			break;
 		i++;
 	}
 	part_table += 4 * sizeof(struct partition_entry);
 	part_table[0] = 0x55;
 	part_table[1] = 0xaa;
+	return 0;
+}
+
+static int hdimage_setup_ebr(struct image *image, struct partition *part, char *ebr)
+{
+	struct hdimage *hd = image->handler_priv;
+	struct partition_entry *entry;
+
+	image_log(image, 1, "writing EBR\n");
+
+	entry = (struct partition_entry *)ebr;
+
+	entry->boot = 0x00;
+	entry->partition_type = part->partition_type;
+	entry->relative_sectors = hd->align/512;
+	entry->total_sectors = part->size/512;
+	hdimage_setup_chs(entry->relative_sectors, entry->first_chs);
+	hdimage_setup_chs(entry->relative_sectors +
+			entry->total_sectors - 1, entry->last_chs);
+	struct partition *p = part;
+	list_for_each_entry_continue(p, &image->partitions, list) {
+		++entry;
+		entry->boot = 0x00;
+		entry->partition_type = 0x0F;
+		entry->relative_sectors = (p->offset - hd->align - hd->extended_lba)/512;
+		entry->total_sectors = (p->size + hd->align)/512;
+		hdimage_setup_chs(entry->relative_sectors, entry->first_chs);
+		hdimage_setup_chs(entry->relative_sectors +
+				entry->total_sectors - 1, entry->last_chs);
+		break;
+	}
+
+	ebr += 4 * sizeof(struct partition_entry);
+	ebr[0] = 0x55;
+	ebr[1] = 0xaa;
 	return 0;
 }
 
@@ -110,6 +160,18 @@ static int hdimage_generate(struct image *image)
 			image_error(image, "failed to pad image to size %lld\n",
 					part->offset);
 			return ret;
+		}
+
+		if (part->extended) {
+			char ebr[4*sizeof(struct partition_entry)+2];
+			memset(ebr, 0, sizeof(ebr));
+			ret = hdimage_setup_ebr(image, part, ebr);
+			ret = insert_data(ebr, outfile, sizeof(ebr),
+					part->offset - hd->align + 446);
+			if (ret) {
+				image_error(image, "failed to write EBR\n");
+				return ret;
+			}
 		}
 
 		ret = pad_file(infile, outfile, part->size, 0x0, MODE_APPEND);
@@ -149,17 +211,25 @@ static unsigned long long roundup(unsigned long long value, unsigned long long a
 static int hdimage_setup(struct image *image, cfg_t *cfg)
 {
 	struct partition *part;
+	int has_extended;
+	int partition_table_entries = 0;
 	unsigned long long now = 0;
-	unsigned long long align = cfg_getint_suffix(cfg, "align");
 	struct hdimage *hd = xzalloc(sizeof(*hd));
 
+	hd->align = cfg_getint_suffix(cfg, "align");
 	hd->partition_table = cfg_getbool(cfg, "partition-table");
 
-	if ((align % 512) || (align == 0)) {
+	if ((hd->align % 512) || (hd->align == 0)) {
 		image_error(image, "partition alignment (%lld) must be a"
-				"multiple of 1 sector (512 bytes)\n", align);
+				"multiple of 1 sector (512 bytes)\n", hd->align);
 		return -EINVAL;
 	}
+	list_for_each_entry(part, &image->partitions, list) {
+		if (part->in_partition_table)
+			++partition_table_entries;
+	}
+	has_extended = partition_table_entries > 4;
+	partition_table_entries = 0;
 	list_for_each_entry(part, &image->partitions, list) {
 		struct image *child = image_get(part->image);
 		if (!child) {
@@ -167,7 +237,7 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 			return -EINVAL;
 		}
 		if (!part->size)
-			part->size = roundup(child->size, align);
+			part->size = roundup(child->size, hd->align);
 		if (!part->size) {
 			image_error(image, "part %s size must not be zero\n",
 					part->name);
@@ -179,10 +249,21 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 					part->name, part->size);
 			return -EINVAL;
 		}
-		if (part->in_partition_table && (part->offset % align)) {
+		/* reserve space for extended boot record if necessary */
+		if (part->in_partition_table)
+			++partition_table_entries;
+		if (has_extended && (partition_table_entries > 3))
+			part->extended = cfg_true;
+		if (part->extended) {
+			if (!hd->extended_lba)
+				hd->extended_lba = now;
+			now = roundup(now, hd->align);
+			now += hd->align;
+		}
+		if (part->in_partition_table && (part->offset % hd->align)) {
 			image_error(image, "part %s offset (%lld) must be a"
 					"multiple of %lld bytes\n",
-					part->name, part->offset, align);
+					part->name, part->offset, hd->align);
 			return -EINVAL;
 		}
 		if (part->offset || !part->in_partition_table) {
@@ -194,7 +275,7 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 		} else {
 			if (!now && hd->partition_table)
 				now = 512;
-			part->offset = roundup(now, align);
+			part->offset = roundup(now, hd->align);
 		}
 		now = part->offset + part->size;
 	}
