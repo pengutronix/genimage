@@ -240,7 +240,6 @@ int insert_data(const void *data, const char *outfile, size_t size,
 		ret = -errno;
 		goto err_out;
 	}
-	error("pos = %ld, count = %d\n", ftell(outf), size);
 	while (size) {
 		now = min(size, 4096);
 
