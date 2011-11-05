@@ -152,15 +152,13 @@ static int hdimage_generate(struct image *image)
 		struct image *child;
 		const char *infile;
 
-		child = image_get(part->image);
-		infile = imageoutfile(child);
-
 		ret = pad_file(NULL, outfile, part->offset, 0x0, mode);
 		if (ret) {
 			image_error(image, "failed to pad image to size %lld\n",
 					part->offset);
 			return ret;
 		}
+		mode = MODE_APPEND;
 
 		if (part->extended) {
 			char ebr[4*sizeof(struct partition_entry)+2];
@@ -174,6 +172,12 @@ static int hdimage_generate(struct image *image)
 			}
 		}
 
+		if (!part->image)
+			continue;
+
+		child = image_get(part->image);
+		infile = imageoutfile(child);
+
 		ret = pad_file(infile, outfile, part->size, 0x0, MODE_APPEND);
 
 		if (ret) {
@@ -181,7 +185,6 @@ static int hdimage_generate(struct image *image)
 					part->name);
 			return ret;
 		}
-		mode = MODE_APPEND;
 	}
 
 	if (hd->partition_table) {
@@ -231,13 +234,16 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 	has_extended = partition_table_entries > 4;
 	partition_table_entries = 0;
 	list_for_each_entry(part, &image->partitions, list) {
-		struct image *child = image_get(part->image);
-		if (!child) {
-			image_error(image, "could not find %s\n", part->image);
-			return -EINVAL;
+		if (part->image) {
+			struct image *child = image_get(part->image);
+			if (!child) {
+				image_error(image, "could not find %s\n",
+						part->image);
+				return -EINVAL;
+			}
+			if (!part->size)
+				part->size = roundup(child->size, hd->align);
 		}
-		if (!part->size)
-			part->size = roundup(child->size, hd->align);
 		if (!part->size) {
 			image_error(image, "part %s size must not be zero\n",
 					part->name);

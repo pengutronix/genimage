@@ -148,6 +148,8 @@ static int image_generate(struct image *image)
 
 	list_for_each_entry(part, &image->partitions, list) {
 		struct image *child;
+		if (!part->image)
+			continue;
 		child = image_get(part->image);
 		if (!child) {
 			image_error(image, "could not find %s\n", part->image);
@@ -498,6 +500,8 @@ int main(int argc, char *argv[])
 			struct image *i;
 
 			if (!part->image) {
+				if (part->in_partition_table)
+					continue;
 				image_error(image, "no input file given\n");
 				goto err_out;
 			}
