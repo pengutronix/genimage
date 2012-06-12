@@ -551,7 +551,7 @@ int main(int argc, char *argv[])
 		ret = image_generate(image);
 		if (ret) {
 			printf("failed to generate %s\n", image->file);
-			break;
+			goto err_out;
 		}
 	}
 
