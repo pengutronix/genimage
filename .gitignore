@@ -1,2 +1,4 @@
 /*.o
 /genimage
+/Makefile.in
+/Makefile

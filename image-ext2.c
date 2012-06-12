@@ -1,4 +1,3 @@
-#define _GNU_SOURCE
 #include <confuse.h>
 #include <stdio.h>
 #include <string.h>
