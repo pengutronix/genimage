@@ -29,7 +29,7 @@ static int ext2_generate(struct image *image)
 	char *extraargs = cfg_getstr(image->imagesec, "extraargs");
 	char *features = cfg_getstr(image->imagesec, "features");
 
-	ret = systemp(image, "%s -d %s --size-in-blocks=%lld %s %s",
+	ret = systemp(image, "%s -d %s --size-in-blocks=%lld -i 16384 %s %s",
 			get_opt("genext2fs"),
 			mountpath(image), image->size / 1024, imageoutfile(image),
 			extraargs);
@@ -44,11 +44,11 @@ static int ext2_generate(struct image *image)
 			return ret;
 	}
 
-	ret = systemp(image, "%s -yf %s", get_opt("e2fsck"),
+	ret = systemp(image, "%s -pvfD %s", get_opt("e2fsck"),
 			imageoutfile(image));
 
 	/* e2fsck return 1 when the filesystem was successfully modified */
-	return ret != 1 ? ret : 0;
+	return ret > 2;
 }
 
 static int ext2_setup(struct image *image, cfg_t *cfg)
