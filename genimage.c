@@ -188,11 +188,6 @@ static int image_generate(struct image *image)
 	return 0;
 }
 
-const char *mountpath(struct image *image)
-{
-	return image->mp->mountpath; 
-}
-
 static LIST_HEAD(flashlist);
 
 static int parse_flashes(cfg_t *cfg)
@@ -285,7 +280,7 @@ static int set_flash_type(void)
 
 static LIST_HEAD(mountpoints);
 
-static struct mountpoint *add_mountpoint(const char *path)
+static struct mountpoint *get_mountpoint(const char *path)
 {
 	struct mountpoint *mp;
 
@@ -293,6 +288,16 @@ static struct mountpoint *add_mountpoint(const char *path)
 		if (!strcmp(mp->path, path))
 			return mp;
 	}
+	return NULL;
+}
+
+static struct mountpoint *add_mountpoint(const char *path)
+{
+	struct mountpoint *mp;
+
+	mp = get_mountpoint(path);
+	if (mp)
+		return mp;
 
 	mp = xzalloc(sizeof(*mp));
 	mp->path = strdup(path);
@@ -351,6 +356,17 @@ static int collect_mountpoints(void)
 	}
 
 	return 0;
+}
+
+const char *mountpath(struct image *image)
+{
+	struct mountpoint *mp;
+
+	mp = image->mp;
+	if (!mp)
+		mp = get_mountpoint("");
+
+	return mp->mountpath;
 }
 
 static int tmppath_generated;
