@@ -49,7 +49,8 @@ static int file_setup(struct image *image, cfg_t *cfg)
 	struct stat s;
 	int ret;
 
-	f->name = cfg_getstr(cfg, "name");
+	if (cfg)
+		f->name = cfg_getstr(cfg, "name");
 	if (!f->name)
 		f->name = strdup(image->file);
 
@@ -67,7 +68,11 @@ static int file_setup(struct image *image, cfg_t *cfg)
 	if (!image->size)
 		image->size = s.st_size;
 
-	f->copy = cfg_getbool(cfg, "copy");
+	if (cfg)
+		f->copy = cfg_getbool(cfg, "copy");
+	else
+		f->copy = cfg_false;
+
 	if (!f->copy) {
 		free(image->outfile);
 		image->outfile = strdup(f->infile);

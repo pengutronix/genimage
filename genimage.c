@@ -557,7 +557,7 @@ int main(int argc, char *argv[])
 	/* check if each partition has a corresponding image */
 	list_for_each_entry(image, &images, list) {
 		list_for_each_entry(part, &image->partitions, list) {
-			struct image *i;
+			struct image *child;
 
 			if (!part->image) {
 				if (part->in_partition_table)
@@ -566,12 +566,15 @@ int main(int argc, char *argv[])
 				goto err_out;
 			}
 
-			i = image_get(part->image);
-			if (!i) {
-				if (!part->image)
-				image_error(image, "no rule to generate %s\n", part->image);
-				goto err_out;
-			}
+			child = image_get(part->image);
+			if (child)
+				continue;
+			image_log(image, 1, "adding implicit file rule for '%s'\n", part->image);
+			child = xzalloc(sizeof *image);
+			INIT_LIST_HEAD(&child->partitions);
+			list_add_tail(&child->list, &images);
+			child->file = part->image;
+			child->handler = &file_handler;
 		}
 	}
 
