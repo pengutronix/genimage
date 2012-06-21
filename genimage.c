@@ -127,6 +127,51 @@ struct image *image_get(const char *filename)
 }
 
 /*
+ * setup the images. Calls ->setup function for each
+ * image, recursively calls itself for resolving dependencies
+ */
+static int image_setup(struct image *image)
+{
+	int ret;
+	struct partition *part;
+
+	if (image->done < 0)
+		return 0;
+
+	if (image->seen < 0) {
+		image_error(image, "recursive dependency detected\n");
+		return -EINVAL;
+	}
+
+	image->seen = -1;
+
+	list_for_each_entry(part, &image->partitions, list) {
+		struct image *child;
+		if (!part->image)
+			continue;
+		child = image_get(part->image);
+		if (!child) {
+			image_error(image, "could not find %s\n", part->image);
+			return -EINVAL;
+		}
+		ret = image_setup(child);
+		if (ret) {
+			image_error(image, "could not setup %s\n", child->file);
+			return ret;
+		}
+	}
+	if (image->handler->setup)
+		ret = image->handler->setup(image, image->imagesec);
+
+	if (ret)
+		return ret;
+
+	image->done = -1;
+
+	return 0;
+}
+
+/*
  * generate the images. Calls ->generate function for each
  * image, recursively calls itself for resolving dependencies
  */
@@ -135,10 +180,10 @@ static int image_generate(struct image *image)
 	int ret;
 	struct partition *part;
 
-	if (image->done)
+	if (image->done > 0)
 		return 0;
 
-	if (image->seen) {
+	if (image->seen > 0) {
 		image_error(image, "recursive dependency detected\n");
 		return -EINVAL;
 	}
@@ -536,11 +581,9 @@ int main(int argc, char *argv[])
 		goto err_out;
 
 	list_for_each_entry(image, &images, list) {
-		if (image->handler->setup) {
-			ret = image->handler->setup(image, image->imagesec);
-			if (ret)
-				goto err_out;
-		}
+		ret = image_setup(image);
+		if (ret)
+			goto err_out;
 	}
 	setenv("OUTPUTPATH", imagepath(), 1);
 	setenv("INPUTPATH", inputpath(), 1);
