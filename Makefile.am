@@ -32,7 +32,8 @@ genimage_SOURCES = \
 	image-jffs2.c \
 	image-tar.c \
 	image-ubi.c \
-	image-ubifs.c
+	image-ubifs.c \
+	image-vfat.c
 
 genimage_CFLAGS = \
 	$(AM_CFLAGS) \

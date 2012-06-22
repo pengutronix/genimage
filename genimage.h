@@ -89,6 +89,7 @@ extern struct image_handler ext2_handler;
 extern struct image_handler ext3_handler;
 extern struct image_handler ext4_handler;
 extern struct image_handler file_handler;
+extern struct image_handler vfat_handler;
 
 #define ARRAY_SIZE(arr)		(sizeof(arr) / sizeof((arr)[0]))
 

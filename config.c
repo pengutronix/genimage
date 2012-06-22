@@ -294,6 +294,21 @@ static struct config opts[] = {
 		.env = "GENIMAGE_TAR",
 		.def = "tar",
 	}, {
+		.name = "dd",
+		.opt = CFG_STR("dd", NULL, CFGF_NONE),
+		.env = "GENIMAGE_DD",
+		.def = "dd",
+	}, {
+		.name = "mkdosfs",
+		.opt = CFG_STR("mkdosfs", NULL, CFGF_NONE),
+		.env = "GENIMAGE_MKDOSFS",
+		.def = "mkdosfs",
+	}, {
+		.name = "mcopy",
+		.opt = CFG_STR("mcopy", NULL, CFGF_NONE),
+		.env = "GENIMAGE_MCOPY",
+		.def = "mcopy",
+	}, {
 		.name = "config",
 		.env = "GENIMAGE_CONFIG",
 		.def = "genimage.cfg",

@@ -47,6 +47,7 @@ static struct image_handler *handlers[] = {
 	&ext3_handler,
 	&ext4_handler,
 	&file_handler,
+	&vfat_handler,
 };
 
 static int image_set_handler(struct image *image, cfg_t *cfg)
