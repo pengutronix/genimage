@@ -238,7 +238,7 @@ err_out:
 	return ret;
 }
 
-int insert_data(const void *data, const char *outfile, size_t size,
+int insert_data(const char *data, const char *outfile, size_t size,
 		long offset)
 {
 	FILE *outf = NULL;
