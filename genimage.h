@@ -60,6 +60,7 @@ struct image {
 
 struct image_handler {
 	char *type;
+	int (*parse)(struct image *i, cfg_t *cfg);
 	int (*setup)(struct image *i, cfg_t *cfg);
 	int (*generate)(struct image *i);
 	cfg_opt_t *opts;

@@ -552,6 +552,11 @@ int main(int argc, char *argv[])
 			image->flash_type = flash_type_get(str);
 		image_set_handler(image, imagesec);
 		parse_partitions(image, imagesec);
+		if (image->handler->parse) {
+			ret = image->handler->parse(image, image->imagesec);
+			if (ret)
+				goto err_out;
+		}
         }
 
 	/* check if each partition has a corresponding image */
