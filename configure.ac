@@ -1,6 +1,6 @@
 AC_PREREQ(2.60)
 AC_INIT([genimage],
-        [1],
+        [2],
         [s.hauer@pengutronix.de],
         [genimage],
         [http://www.pengutronix.de/genimage/])
