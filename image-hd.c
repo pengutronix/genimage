@@ -223,7 +223,7 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 	hd->partition_table = cfg_getbool(cfg, "partition-table");
 
 	if ((hd->align % 512) || (hd->align == 0)) {
-		image_error(image, "partition alignment (%lld) must be a"
+		image_error(image, "partition alignment (%lld) must be a "
 				"multiple of 1 sector (512 bytes)\n", hd->align);
 		return -EINVAL;
 	}
@@ -250,7 +250,7 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 			return -EINVAL;
 		}
 		if (part->size % 512) {
-			image_error(image, "part %s size (%lld) must be a"
+			image_error(image, "part %s size (%lld) must be a "
 					"multiple of 1 sector (512 bytes)\n",
 					part->name, part->size);
 			return -EINVAL;
