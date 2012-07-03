@@ -203,10 +203,10 @@ int pad_file(const char *infile, const char *outfile, size_t size,
 			ret = -errno;
 			goto err_out;
 		}
+		size -= r;
+
 		if (r < now)
 			goto fill;
-
-		size -= now;
 	}
 
 	now = fread(buf, 1, 1, f);
