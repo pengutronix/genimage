@@ -221,8 +221,10 @@ static int image_generate(struct image *image)
 		return -EINVAL;
 	}
 
-	if (ret)
+	if (ret) {
+		systemp(image, "rm -f %s", imageoutfile(image));
 		return ret;
+	}
 
 	if (image->exec_post) {
 		ret = systemp(image, "%s", image->exec_post);
