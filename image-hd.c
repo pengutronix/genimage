@@ -286,7 +286,7 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 		now = part->offset + part->size;
 	}
 
-	if (now > image->size) {
+	if (image->size > 0 && now > image->size) {
 		image_error(image, "partitions exceed device size\n");
 		return -EINVAL;
 	}
