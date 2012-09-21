@@ -28,6 +28,7 @@ static int ext2_generate(struct image *image)
 	int ret;
 	char *extraargs = cfg_getstr(image->imagesec, "extraargs");
 	char *features = cfg_getstr(image->imagesec, "features");
+	char *label = cfg_getstr(image->imagesec, "label");
 
 	ret = systemp(image, "%s -d %s --size-in-blocks=%lld -i 16384 %s %s",
 			get_opt("genext2fs"),
@@ -40,6 +41,12 @@ static int ext2_generate(struct image *image)
 	if (features && features[0] != '\0') {
 		ret = systemp(image, "%s -O \"%s\" %s", get_opt("tune2fs"),
 				features, imageoutfile(image));
+		if (ret)
+			return ret;
+	}
+	if (label && label[0] != '\0') {
+		ret = systemp(image, "%s -L \"%s\" %s", get_opt("tune2fs"),
+				label, imageoutfile(image));
 		if (ret)
 			return ret;
 	}
@@ -59,6 +66,7 @@ static int ext2_setup(struct image *image, cfg_t *cfg)
 static cfg_opt_t ext2_opts[] = {
 	CFG_STR("extraargs", "", CFGF_NONE),
 	CFG_STR("features", 0, CFGF_NONE),
+	CFG_STR("label", 0, CFGF_NONE),
 	CFG_END()
 };
 
@@ -72,6 +80,7 @@ struct image_handler ext2_handler = {
 static cfg_opt_t ext3_opts[] = {
 	CFG_STR("extraargs", "", CFGF_NONE),
 	CFG_STR("features", "has_journal", CFGF_NONE),
+	CFG_STR("label", 0, CFGF_NONE),
 	CFG_END()
 };
 
@@ -85,6 +94,7 @@ struct image_handler ext3_handler = {
 static cfg_opt_t ext4_opts[] = {
 	CFG_STR("extraargs", "", CFGF_NONE),
 	CFG_STR("features", "extents,uninit_bg,dir_index,has_journal", CFGF_NONE),
+	CFG_STR("label", 0, CFGF_NONE),
 	CFG_END()
 };
 
