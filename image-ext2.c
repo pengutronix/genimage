@@ -37,8 +37,8 @@ static int ext2_generate(struct image *image)
 	if (ret)
 		return ret;
 
-	if (features) {
-		ret = systemp(image, "%s -O %s %s", get_opt("tune2fs"),
+	if (features && features[0] != '\0') {
+		ret = systemp(image, "%s -O \"%s\" %s", get_opt("tune2fs"),
 				features, imageoutfile(image));
 		if (ret)
 			return ret;
