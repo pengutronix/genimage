@@ -309,6 +309,11 @@ static struct config opts[] = {
 		.env = "GENIMAGE_MCOPY",
 		.def = "mcopy",
 	}, {
+		.name = "cpio",
+		.opt = CFG_STR("cpio", NULL, CFGF_NONE),
+		.env = "GENIMAGE_CPIO",
+		.def = "cpio",
+	}, {
 		.name = "config",
 		.env = "GENIMAGE_CONFIG",
 		.def = "genimage.cfg",
