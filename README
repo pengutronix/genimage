@@ -128,8 +128,15 @@ rootpath	default: root
 		Path to the root filesystem
 tmppath		temporary path. The must be enough space available here
 		to hold a copy of the root filesystem.
-mkfsubifs	path to the mkfs.ubifs program (default mkfs.ubifs)
-mkfsjffs2	path to the mkfs.jffs2 program (default mkfs.jffs2)
-ubinize		path to the ubinize program (default ubinize)
+
+cpio		path to the cpio program (default cpio)
+dd		path to the dd program (default dd)
+e2fsck		path to the e2fsck program (default e2fsck)
 genext2fs	path to the genext2fs program (default genext2fs)
+mcopy		path to the mcopy program (default mcopy)
+mkdosfs		path to the mkdosfs program (default mkdosfs)
+mkfsjffs2	path to the mkfs.jffs2 program (default mkfs.jffs2)
+mkfsubifs	path to the mkfs.ubifs program (default mkfs.ubifs)
 tar		path to the tar program (default tar)
+tune2fs		path to the tune2fs program (default tune2fs)
+ubinize		path to the ubinize program (default ubinize)
