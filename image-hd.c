@@ -241,8 +241,12 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 						part->image);
 				return -EINVAL;
 			}
-			if (!part->size)
-				part->size = roundup(child->size, hd->align);
+			if (!part->size) {
+				if (part->in_partition_table)
+					part->size = roundup(child->size, hd->align);
+				else
+					part->size = child->size;
+			}
 		}
 		if (!part->size) {
 			image_error(image, "part %s size must not be zero\n",
