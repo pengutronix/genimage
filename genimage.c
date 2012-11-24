@@ -37,18 +37,18 @@
  *
  */
 static struct image_handler *handlers[] = {
-	&jffs2_handler,
-	&flash_handler,
-	&tar_handler,
-	&ubi_handler,
-	&ubifs_handler,
-	&hdimage_handler,
+	&cpio_handler,
 	&ext2_handler,
 	&ext3_handler,
 	&ext4_handler,
 	&file_handler,
+	&flash_handler,
+	&hdimage_handler,
+	&jffs2_handler,
+	&tar_handler,
+	&ubi_handler,
+	&ubifs_handler,
 	&vfat_handler,
-	&cpio_handler,
 };
 
 static int image_set_handler(struct image *image, cfg_t *cfg)

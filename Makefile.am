@@ -25,6 +25,7 @@ genimage_SOURCES = \
 	genimage.c \
 	config.c \
 	util.c \
+	image-cpio.c \
 	image-ext2.c \
 	image-file.c \
 	image-flash.c \
@@ -33,8 +34,7 @@ genimage_SOURCES = \
 	image-tar.c \
 	image-ubi.c \
 	image-ubifs.c \
-	image-vfat.c \
-	image-cpio.c
+	image-vfat.c
 
 genimage_CFLAGS = \
 	$(AM_CFLAGS) \

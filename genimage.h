@@ -79,18 +79,19 @@ struct flash_type {
 
 struct flash_type *flash_type_get(const char *name);
 
-extern struct image_handler jffs2_handler;
-extern struct image_handler flash_handler;
-extern struct image_handler tar_handler;
-extern struct image_handler ubi_handler;
-extern struct image_handler ubifs_handler;
-extern struct image_handler hdimage_handler;
+extern struct image_handler cpio_handler;
 extern struct image_handler ext2_handler;
 extern struct image_handler ext3_handler;
 extern struct image_handler ext4_handler;
 extern struct image_handler file_handler;
+extern struct image_handler flash_handler;
+extern struct image_handler hdimage_handler;
+extern struct image_handler iso_handler;
+extern struct image_handler jffs2_handler;
+extern struct image_handler tar_handler;
+extern struct image_handler ubi_handler;
+extern struct image_handler ubifs_handler;
 extern struct image_handler vfat_handler;
-extern struct image_handler cpio_handler;
 
 #define ARRAY_SIZE(arr)		(sizeof(arr) / sizeof((arr)[0]))
 
