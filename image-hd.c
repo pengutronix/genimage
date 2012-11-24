@@ -249,7 +249,7 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 					part->name);
 			return -EINVAL;
 		}
-		if (part->size % 512) {
+		if (part->in_partition_table && (part->size % 512)) {
 			image_error(image, "part %s size (%lld) must be a "
 					"multiple of 1 sector (512 bytes)\n",
 					part->name, part->size);
