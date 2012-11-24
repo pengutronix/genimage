@@ -279,6 +279,11 @@ static struct config opts[] = {
 		.env = "GENIMAGE_GENEXT2FS",
 		.def = "genext2fs",
 	}, {
+		.name = "genisoimage",
+		.opt = CFG_STR("genisoimage", NULL, CFGF_NONE),
+		.env = "GENIMAGE_GENISOIMAGE",
+		.def = "genisoimage",
+	}, {
 		.name = "mcopy",
 		.opt = CFG_STR("mcopy", NULL, CFGF_NONE),
 		.env = "GENIMAGE_MCOPY",

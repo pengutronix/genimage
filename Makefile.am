@@ -30,6 +30,7 @@ genimage_SOURCES = \
 	image-file.c \
 	image-flash.c \
 	image-hd.c \
+	image-iso.c \
 	image-jffs2.c \
 	image-tar.c \
 	image-ubi.c \
