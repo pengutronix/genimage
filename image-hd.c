@@ -29,6 +29,7 @@ struct hdimage {
 	cfg_bool_t partition_table;
 	unsigned long long align;
 	unsigned long long extended_lba;
+	uint32_t disksig;
 };
 
 struct partition_entry {
@@ -64,6 +65,10 @@ static int hdimage_setup_mbr(struct image *image, char *part_table)
 	int i = 0;
 
 	image_log(image, 1, "writing MBR\n");
+
+	*((int*)part_table) = hd->disksig;
+	part_table += 6;
+
 	list_for_each_entry(part, &image->partitions, list) {
 		struct partition_entry *entry;
 
@@ -188,14 +193,14 @@ static int hdimage_generate(struct image *image)
 	}
 
 	if (hd->partition_table) {
-		char part_table[4*sizeof(struct partition_entry)+2];
+		char part_table[6+4*sizeof(struct partition_entry)+2];
 
 		memset(part_table, 0, sizeof(part_table));
 		ret = hdimage_setup_mbr(image, part_table);
 		if (ret)
 			return ret;
 
-		ret = insert_data(part_table, outfile, sizeof(part_table), 446);
+		ret = insert_data(part_table, outfile, sizeof(part_table), 440);
 		if (ret) {
 			image_error(image, "failed to write MBR\n");
 			return ret;
@@ -221,6 +226,7 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 
 	hd->align = cfg_getint_suffix(cfg, "align");
 	hd->partition_table = cfg_getbool(cfg, "partition-table");
+	hd->disksig = cfg_getint(cfg, "disk-signature");
 
 	if ((hd->align % 512) || (hd->align == 0)) {
 		image_error(image, "partition alignment (%lld) must be a "
@@ -302,6 +308,7 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 
 cfg_opt_t hdimage_opts[] = {
 	CFG_STR("align", "512", CFGF_NONE),
+	CFG_INT("disk-signature", 0, CFGF_NONE),
 	CFG_BOOL("partition-table", cfg_true, CFGF_NONE),
 	CFG_END()
 };
