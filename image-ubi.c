@@ -63,7 +63,8 @@ static int ubi_generate(struct image *image)
 		fprintf(fini, "vol_size=%lld\n", child->size);
 		fprintf(fini, "vol_type=dynamic\n");
 		fprintf(fini, "vol_name=%s\n", part->name);
-		fprintf(fini, "autoresize=%s\n", part->autoresize ? "true" : "false");
+		if (part->autoresize)
+			fprintf(fini, "vol_flags=autoresize\n");
 		fprintf(fini, "vol_alignment=1\n");
 		i++;
 	}
