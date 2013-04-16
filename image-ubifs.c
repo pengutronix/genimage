@@ -25,18 +25,22 @@
 
 static int ubifs_generate(struct image *image)
 {
-	int lebcount;
+	int max_leb_cnt;
 	int ret;
 	char *extraargs = cfg_getstr(image->imagesec, "extraargs");
+	unsigned long long max_size = cfg_getint_suffix(image->imagesec, "max-size");
 
-	lebcount = image->size / image->flash_type->lebsize;
+	if (max_size)
+		max_leb_cnt = max_size / image->flash_type->lebsize
+	else
+		max_leb_cnt = image->size / image->flash_type->lebsize;
 
 	ret = systemp(image, "%s -d  %s -e %d -m %d -c %d -o %s %s",
 			get_opt("mkfsubifs"),
 			mountpath(image),
 			image->flash_type->lebsize,
 			image->flash_type->minimum_io_unit_size,
-			lebcount,
+			max_leb_cnt,
 			imageoutfile(image),
 			extraargs);
 
@@ -55,7 +59,7 @@ static int ubifs_setup(struct image *image, cfg_t *cfg)
 
 static cfg_opt_t ubifs_opts[] = {
 	CFG_STR("extraargs", "", CFGF_NONE),
-	CFG_STR("autoresize", "", CFGF_NONE),
+	CFG_STR("max-size", NULL, CFGF_NONE),
 	CFG_END()
 };
 
