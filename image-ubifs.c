@@ -31,7 +31,7 @@ static int ubifs_generate(struct image *image)
 	unsigned long long max_size = cfg_getint_suffix(image->imagesec, "max-size");
 
 	if (max_size)
-		max_leb_cnt = max_size / image->flash_type->lebsize
+		max_leb_cnt = max_size / image->flash_type->lebsize;
 	else
 		max_leb_cnt = image->size / image->flash_type->lebsize;
 
