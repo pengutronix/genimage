@@ -33,20 +33,37 @@ struct flash_image {
 static int flash_generate(struct image *image)
 {
 	struct partition *part;
-	struct stat s;
-	int ret;
-	const char *buf;
+	enum pad_mode mode = MODE_OVERWRITE;
+	const char *outfile = imageoutfile(image);
 
 	list_for_each_entry(part, &image->partitions, list) {
 		struct image *child;
+		const char *infile;
+		struct stat s;
+		int ret;
+
+		image_log(image, 1, "writing image partition '%s' (0x%llx@0x%llx)\n",
+			part->name, part->size, part->offset);
+
+		ret = pad_file(NULL, outfile, part->offset, 0xFF, mode);
+		if (ret) {
+			image_error(image, "failed to pad image to size %lld\n",
+					part->offset);
+			return ret;
+		}
+		mode = MODE_APPEND;
+
+		if (!part->image)
+			continue;
 
 		child = image_get(part->image);
 		if (!child) {
 			image_error(image, "could not find %s\n", part->name);
 			return -EINVAL;
 		}
-		buf = imageoutfile(child);
-		ret = stat(buf, &s);
+		infile = imageoutfile(child);
+
+		ret = stat(infile, &s);
 		if (ret)
 			return -errno;
 
@@ -54,6 +71,13 @@ static int flash_generate(struct image *image)
 			image_error(image, "image file %s for partition %s is bigger than partition (%lld > %lld)\n",
 					child->file, part->name, (long long)s.st_size, part->size);
 			return -EINVAL;
+		}
+
+		ret = pad_file(infile, outfile, part->size, 0xFF, mode);
+		if (ret) {
+			image_error(image, "failed to write image partition '%s'\n",
+					part->name);
+			return ret;
 		}
 	}
 
@@ -88,8 +112,29 @@ static int flash_setup(struct image *image, cfg_t *cfg)
 				goto err_exceed;
 			part->size = flashsize - partsize;
 		}
+		if (part->size % image->flash_type->pebsize) {
+			image_error(image, "part %s size (%lld) must be a "
+					"multiple of erase block size (%i bytes)\n",
+					part->name, part->size, image->flash_type->pebsize);
+			return -EINVAL;
+		}
+		if (part->offset % image->flash_type->pebsize) {
+			image_error(image, "part %s offset (%lld) must be a"
+					"multiple of erase block size (%i bytes)\n",
+					part->name, part->offset, image->flash_type->pebsize);
+			return -EINVAL;
+		}
+		if (part->offset) {
+			if (partsize > part->offset) {
+				image_error(image, "part %s overlaps with previous partition\n",
+					part->name);
+				return -EINVAL;
+			}
+		} else {
+			part->offset = partsize;
+		}
 
-		partsize += part->size;
+		partsize = part->offset + part->size;
 	}
 
 	if (partsize > flashsize) {
