@@ -39,11 +39,6 @@ static int cpio_generate(struct image *image)
 	return ret;
 }
 
-static int cpio_setup(struct image *image, cfg_t *cfg)
-{
-	return 0;
-}
-
 static cfg_opt_t cpio_opts[] = {
 	CFG_STR("format", "newc", CFGF_NONE),
 	CFG_STR("extraargs", "", CFGF_NONE),
@@ -54,7 +49,6 @@ static cfg_opt_t cpio_opts[] = {
 struct image_handler cpio_handler = {
 	.type = "cpio",
 	.generate = cpio_generate,
-	.setup = cpio_setup,
 	.opts = cpio_opts,
 };
 

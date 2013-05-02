@@ -41,11 +41,6 @@ static int tar_generate(struct image *image)
 	return ret;
 }
 
-static int tar_setup(struct image *image, cfg_t *cfg)
-{
-	return 0;
-}
-
 static cfg_opt_t tar_opts[] = {
 	CFG_END()
 };
@@ -53,7 +48,6 @@ static cfg_opt_t tar_opts[] = {
 struct image_handler tar_handler = {
 	.type = "tar",
 	.generate = tar_generate,
-	.setup = tar_setup,
 	.opts = tar_opts,
 };
 
