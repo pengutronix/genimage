@@ -186,7 +186,7 @@ int pad_file(const char *infile, const char *outfile, size_t size,
 		ret = stat(outfile, &s);
 		if (ret)
 			goto err_out;
-		if (s.st_size > size) {
+		if ((unsigned long long)s.st_size > size) {
 			ret = -EINVAL;
 			goto err_out;
 		}

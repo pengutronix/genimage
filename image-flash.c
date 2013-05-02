@@ -67,7 +67,7 @@ static int flash_generate(struct image *image)
 		if (ret)
 			return -errno;
 
-		if (s.st_size > part->size) {
+		if ((unsigned long long)s.st_size > part->size) {
 			image_error(image, "image file %s for partition %s is bigger than partition (%lld > %lld)\n",
 					child->file, part->name, (long long)s.st_size, part->size);
 			return -EINVAL;
