@@ -39,7 +39,6 @@ static int flash_generate(struct image *image)
 	list_for_each_entry(part, &image->partitions, list) {
 		struct image *child;
 		const char *infile;
-		struct stat s;
 		int ret;
 
 		image_log(image, 1, "writing image partition '%s' (0x%llx@0x%llx)\n",
@@ -62,16 +61,6 @@ static int flash_generate(struct image *image)
 			return -EINVAL;
 		}
 		infile = imageoutfile(child);
-
-		ret = stat(infile, &s);
-		if (ret)
-			return -errno;
-
-		if ((unsigned long long)s.st_size > part->size) {
-			image_error(image, "image file %s for partition %s is bigger than partition (%lld > %lld)\n",
-					child->file, part->name, (long long)s.st_size, part->size);
-			return -EINVAL;
-		}
 
 		ret = pad_file(image, infile, outfile, part->size, 0xFF, mode);
 		if (ret) {
