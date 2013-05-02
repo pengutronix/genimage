@@ -121,10 +121,10 @@ enum pad_mode {
 	MODE_OVERWRITE,
 };
 
-int pad_file(const char *infile, const char *outfile, size_t size,
-		unsigned char fillpattern, enum pad_mode mode);
-int insert_data(const char *data, const char *outfile, size_t size,
-		long offset);
+int pad_file(struct image *image, const char *infile, const char *outfile,
+		size_t size, unsigned char fillpattern, enum pad_mode mode);
+int insert_data(struct image *image, const char *data, const char *outfile,
+		size_t size, long offset);
 
 unsigned long long cfg_getint_suffix(cfg_t *sec, const char *name);
 

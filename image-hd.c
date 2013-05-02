@@ -157,7 +157,7 @@ static int hdimage_generate(struct image *image)
 		struct image *child;
 		const char *infile;
 
-		ret = pad_file(NULL, outfile, part->offset, 0x0, mode);
+		ret = pad_file(image, NULL, outfile, part->offset, 0x0, mode);
 		if (ret) {
 			image_error(image, "failed to pad image to size %lld\n",
 					part->offset);
@@ -169,7 +169,7 @@ static int hdimage_generate(struct image *image)
 			char ebr[4*sizeof(struct partition_entry)+2];
 			memset(ebr, 0, sizeof(ebr));
 			ret = hdimage_setup_ebr(image, part, ebr);
-			ret = insert_data(ebr, outfile, sizeof(ebr),
+			ret = insert_data(image, ebr, outfile, sizeof(ebr),
 					part->offset - hd->align + 446);
 			if (ret) {
 				image_error(image, "failed to write EBR\n");
@@ -183,7 +183,7 @@ static int hdimage_generate(struct image *image)
 		child = image_get(part->image);
 		infile = imageoutfile(child);
 
-		ret = pad_file(infile, outfile, part->size, 0x0, MODE_APPEND);
+		ret = pad_file(image, infile, outfile, part->size, 0x0, MODE_APPEND);
 
 		if (ret) {
 			image_error(image, "failed to write image partition '%s'\n",
@@ -200,7 +200,7 @@ static int hdimage_generate(struct image *image)
 		if (ret)
 			return ret;
 
-		ret = insert_data(part_table, outfile, sizeof(part_table), 440);
+		ret = insert_data(image, part_table, outfile, sizeof(part_table), 440);
 		if (ret) {
 			image_error(image, "failed to write MBR\n");
 			return ret;

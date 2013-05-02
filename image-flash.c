@@ -45,7 +45,7 @@ static int flash_generate(struct image *image)
 		image_log(image, 1, "writing image partition '%s' (0x%llx@0x%llx)\n",
 			part->name, part->size, part->offset);
 
-		ret = pad_file(NULL, outfile, part->offset, 0xFF, mode);
+		ret = pad_file(image, NULL, outfile, part->offset, 0xFF, mode);
 		if (ret) {
 			image_error(image, "failed to pad image to size %lld\n",
 					part->offset);
@@ -73,7 +73,7 @@ static int flash_generate(struct image *image)
 			return -EINVAL;
 		}
 
-		ret = pad_file(infile, outfile, part->size, 0xFF, mode);
+		ret = pad_file(image, infile, outfile, part->size, 0xFF, mode);
 		if (ret) {
 			image_error(image, "failed to write image partition '%s'\n",
 					part->name);

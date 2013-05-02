@@ -91,7 +91,7 @@ int systemp(struct image *image, const char *fmt, ...)
 	if (image)
 		image_log(image, 1, "cmd: %s\n", buf);
 	else
-		fprintf(stderr, "cmd: %s\n", buf);
+		error("cmd: %s\n", buf);
 
 	ret = system(buf);
 
@@ -111,7 +111,7 @@ void *xzalloc(size_t n)
 	void *m = malloc(n);
 
 	if (!m) {
-		fprintf(stderr, "out of memory\n");
+		error("out of memory\n");
 		exit(1);
 	}
 
@@ -155,8 +155,8 @@ static int min(int a, int b)
 	return a < b ? a : b;
 }
 
-int pad_file(const char *infile, const char *outfile, size_t size,
-		unsigned char fillpattern, enum pad_mode mode)
+int pad_file(struct image *image, const char *infile, const char *outfile,
+		size_t size, unsigned char fillpattern, enum pad_mode mode)
 {
 	FILE *f = NULL, *outf = NULL;
 	void *buf;
@@ -166,7 +166,7 @@ int pad_file(const char *infile, const char *outfile, size_t size,
 	if (infile) {
 		f = fopen(infile, "r");
 		if (!f) {
-			error("open %s: %s\n", infile, strerror(errno));
+			image_error(image, "open %s: %s\n", infile, strerror(errno));
 			ret = -errno;
 			goto err_out;
 		}
@@ -174,7 +174,7 @@ int pad_file(const char *infile, const char *outfile, size_t size,
 
 	outf = fopen(outfile, mode == MODE_OVERWRITE ? "w" : "a");
 	if (!outf) {
-		error("open %s: %s\n", outfile, strerror(errno));
+		image_error(image, "open %s: %s\n", outfile, strerror(errno));
 		ret = -errno;
 		goto err_out;
 	}
@@ -211,7 +211,7 @@ int pad_file(const char *infile, const char *outfile, size_t size,
 
 	now = fread(buf, 1, 1, f);
 	if (now == 1) {
-		fprintf(stderr, "pad size smaller than input size\n");
+		image_error(image, "input file '%s' too large\n", infile);
 		ret = -EINVAL;
 		goto err_out;
 	}
@@ -238,8 +238,8 @@ err_out:
 	return ret;
 }
 
-int insert_data(const char *data, const char *outfile, size_t size,
-		long offset)
+int insert_data(struct image *image, const char *data, const char *outfile,
+		size_t size, long offset)
 {
 	FILE *outf = NULL;
 	int now, r;
@@ -247,13 +247,13 @@ int insert_data(const char *data, const char *outfile, size_t size,
 
 	outf = fopen(outfile, "r+");
 	if (!outf) {
-		error("open %s: %s\n", outfile, strerror(errno));
+		image_error(image, "open %s: %s\n", outfile, strerror(errno));
 		ret = -errno;
 		goto err_out;
 	}
 	ret = fseek(outf, offset, SEEK_SET);
 	if (ret) {
-		error("seek %s: %s\n", outfile, strerror(errno));
+		image_error(image, "seek %s: %s\n", outfile, strerror(errno));
 		ret = -errno;
 		goto err_out;
 	}

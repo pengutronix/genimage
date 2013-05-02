@@ -67,12 +67,12 @@ static int image_set_handler(struct image *image, cfg_t *cfg)
 	}
 
 	if (num > 1) {
-		fprintf(stderr, "multiple image types given\n");
+		error("multiple image types given\n");
 		exit (1);
 	}
 
 	if (num < 1) {
-		fprintf(stderr, "no image type given\n");
+		error("no image type given\n");
 		exit (1);
 	}
 
@@ -429,7 +429,7 @@ static void check_tmp_path(void)
 	int i = 0;
 
 	if (!tmp) {
-		fprintf(stderr, "tmppath not set. aborting\n");
+		error("tmppath not set. aborting\n");
 		exit(1);
 	}
 
@@ -447,8 +447,7 @@ static void check_tmp_path(void)
 			break;
 		i++;
 		if (i > 2) {
-			fprintf(stderr, "tmppath '%s' exists and is not empty\n",
-					tmp);
+			error("tmppath '%s' exists and is not empty\n", tmp);
 			exit(1);
 		}
 	}
