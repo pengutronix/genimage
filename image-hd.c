@@ -183,7 +183,7 @@ static int hdimage_generate(struct image *image)
 		child = image_get(part->image);
 		infile = imageoutfile(child);
 
-		ret = pad_file(image, infile, outfile, part->size, 0x0, MODE_APPEND);
+		ret = pad_file(image, infile, outfile, child->size, 0x0, MODE_APPEND);
 
 		if (ret) {
 			image_error(image, "failed to write image partition '%s'\n",
