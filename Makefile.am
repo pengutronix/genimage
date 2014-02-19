@@ -14,10 +14,6 @@ AM_CPPFLAGS = \
 AM_CFLAGS = \
 	-fvisibility=hidden
 
-AM_LDFLAGS = \
-	-Wl,--gc-sections \
-	-Wl,--as-needed
-
 bin_PROGRAMS = genimage
 genimage_SOURCES = \
 	genimage.c \

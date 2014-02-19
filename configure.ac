@@ -47,6 +47,10 @@ CC_CHECK_CFLAGS_SILENT([-Wtype-limits],[AM_CFLAGS="${AM_CFLAGS} -Wtype-limits"])
 CC_CHECK_CFLAGS_SILENT([-ffunction-sections],[AM_CFLAGS="${AM_CFLAGS} -ffunction-sections"])
 CC_CHECK_CFLAGS_SILENT([-fdata-sections],[AM_CFLAGS="${AM_CFLAGS} -fdata-sections"])
 
+# Add only those libraries which are really used
+CC_CHECK_LDFLAGS([-Wl,--as-needed], [AM_LDFLAGS="${AM_LDFLAGS} -Wl,--as-needed"],[])
+CC_CHECK_LDFLAGS([-Wl,--gc-sections], [AM_LDFLAGS="${AM_LDFLAGS} -Wl,--gc-sections"],[])
+
 PKG_CHECK_MODULES(CONFUSE, libconfuse)
 
 # ------- use all the settings ----------------------
