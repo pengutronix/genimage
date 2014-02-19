@@ -29,7 +29,6 @@ AC_FUNC_ERROR_AT_LINE
 AC_FUNC_MALLOC
 AC_TYPE_SIZE_T
 AC_TYPE_UINT32_T
-AC_PROG_MKDIR_P
 
 # ----------- query user's settings ----------------------
 AC_MSG_CHECKING([whether to enable debugging])
