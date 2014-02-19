@@ -19,7 +19,6 @@ AC_CONFIG_MACRO_DIR([m4])
 # default is less output while building the package
 AM_SILENT_RULES([yes])
 
-LT_INIT([disable-static pic-only])
 AC_PREFIX_DEFAULT([/usr])
 
 AC_PROG_MKDIR_P
