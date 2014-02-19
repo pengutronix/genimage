@@ -19,7 +19,8 @@ AC_CONFIG_MACRO_DIR([m4])
 # default is less output while building the package
 AM_SILENT_RULES([yes])
 
-AC_PREFIX_DEFAULT([/usr])
+# change if 'usr/local' as the default install path isn't a good choice
+#AC_PREFIX_DEFAULT([/usr/local])
 
 AC_PROG_MKDIR_P
 
