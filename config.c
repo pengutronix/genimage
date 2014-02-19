@@ -304,6 +304,11 @@ static struct config opts[] = {
 		.env = "GENIMAGE_MKFSUBIFS",
 		.def = "mkfs.ubifs",
 	}, {
+		.name = "mksquashfs",
+		.opt = CFG_STR("mksquashfs", NULL, CFGF_NONE),
+		.env = "GENIMAGE_MKSQUASHFS",
+		.def = "mksquashfs",
+	}, {
 		.name = "tar",
 		.opt = CFG_STR("tar", NULL, CFGF_NONE),
 		.env = "GENIMAGE_TAR",

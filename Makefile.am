@@ -23,6 +23,7 @@ genimage_SOURCES = \
 	image-hd.c \
 	image-iso.c \
 	image-jffs2.c \
+	image-squashfs.c \
 	image-tar.c \
 	image-ubi.c \
 	image-ubifs.c \

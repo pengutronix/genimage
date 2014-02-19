@@ -22,7 +22,7 @@ AM_SILENT_RULES([yes])
 # change if 'usr/local' as the default install path isn't a good choice
 #AC_PREFIX_DEFAULT([/usr/local])
 
-AC_CHECK_FUNCS([memset setenv strdup strerror strstr strtoull])
+AC_CHECK_FUNCS([memset setenv strdup strcasecmp strerror strstr strtoull])
 
 AC_C_INLINE
 AC_FUNC_ERROR_AT_LINE
