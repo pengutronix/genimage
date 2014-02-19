@@ -6,7 +6,6 @@ EXTRA_DIST = \
 	test.config \
 	flash.conf
 
-CLEANFILES =
 ACLOCAL_AMFLAGS = -I m4 ${ACLOCAL_FLAGS}
 
 AM_CPPFLAGS = \
@@ -42,3 +41,24 @@ noinst_HEADERS = \
 	genimage.h \
 	list.h
 
+# when "make clean" runs
+CLEANFILES =
+
+# when "make distclean" runs
+DISTCLEAN = \
+	Makefile
+
+# when "make maintainer-clean" runs
+MAINTAINERCLEANFILES = \
+	configure \
+	autoscan.log \
+	config.h.in~ \
+	config.h.in \
+	configure.scan \
+	configure.ac~ \
+	aclocal.m4 \
+	Makefile.in \
+	build-aux/depcomp \
+	build-aux/install-sh \
+	build-aux/missing \
+	$(DIST_ARCHIVES)
