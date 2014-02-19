@@ -11,7 +11,10 @@ AC_PROG_CC_STDC
 AC_USE_SYSTEM_EXTENSIONS
 AC_SYS_LARGEFILE
 AC_CONFIG_MACRO_DIR([m4])
+
+# default is less output while building the package
 AM_SILENT_RULES([yes])
+
 LT_INIT([disable-static pic-only])
 AC_PREFIX_DEFAULT([/usr])
 
@@ -83,6 +86,9 @@ AS_IF([test "${enable_hide}" = "yes"],
 	fi
 
 	AC_MSG_RESULT([${enable_hide}])])
+
+# be very silent on request
+AM_CONDITIONAL(BUILD_SILENTLY, test "x$AM_DEFAULT_VERBOSITY" = x0)
 
 AC_CONFIG_HEADERS(config.h)
 AC_CONFIG_FILES([

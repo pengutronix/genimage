@@ -1,10 +1,13 @@
+if BUILD_SILENTLY
+AM_MAKEFLAGS = --no-print-directory
+endif
+
 EXTRA_DIST = \
 	test.config \
 	flash.conf
 
 CLEANFILES =
 ACLOCAL_AMFLAGS = -I m4 ${ACLOCAL_FLAGS}
-AM_MAKEFLAGS = --no-print-directory
 
 AM_CPPFLAGS = \
 	-include $(top_builddir)/config.h \
