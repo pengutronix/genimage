@@ -17,12 +17,14 @@ AC_PREFIX_DEFAULT([/usr])
 
 AC_PROG_MKDIR_P
 
+# ----------- query user's settings ----------------------
+AC_MSG_CHECKING([whether to enable debugging])
 AC_ARG_ENABLE([debug],
-        AS_HELP_STRING([--enable-debug], [enable debug messages @<:@default=disabled@:>@]),
-        [], [enable_debug=no])
-AS_IF([test "x$enable_debug" = "xyes"], [
-        AC_DEFINE(ENABLE_DEBUG, [1], [Debug messages.])
-])
+	AS_HELP_STRING([--enable-debug],
+		[enable debug messages @<:@default=disabled@:>@]),
+	[],
+	[enable_debug=no])
+AC_MSG_RESULT([${enable_debug}])
 
 my_CFLAGS="-Wall \
 -Wmissing-declarations -Wmissing-prototypes \
@@ -33,6 +35,12 @@ my_CFLAGS="-Wall \
 AC_SUBST([my_CFLAGS])
 
 PKG_CHECK_MODULES(CONFUSE, libconfuse)
+
+# ------- use all the settings ----------------------
+
+AS_IF([test "x$enable_debug" = "xyes"], [
+        AC_DEFINE(ENABLE_DEBUG, [1], [Debug messages.])
+])
 
 AC_CONFIG_HEADERS(config.h)
 AC_CONFIG_FILES([
