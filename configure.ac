@@ -26,6 +26,19 @@ AC_ARG_ENABLE([debug],
 	[enable_debug=no])
 AC_MSG_RESULT([${enable_debug}])
 
+# should the executable export all symbols?
+AC_MSG_CHECKING([whether to hide internal symbols])
+AC_ARG_ENABLE([hide],
+	[AS_HELP_STRING([--disable-hide],
+		[do not hide all internal symbols @<:@default=enabled@:>@])],
+	[],
+	[enable_hide=yes])
+# for debugging purposes we must disable the hiding feature
+AS_IF([test "x${enable_debug}" = "xyes"],
+	[AC_MSG_RESULT([no (due to debug enabled)])
+	enable_hide=no],
+	[AC_MSG_RESULT([${enable_hide}])])
+
 # ----------- autodetect some settings -------------------
 
 # add as much warnings and features as possible, but check what the compiler
@@ -59,6 +72,18 @@ AS_IF([test "x$enable_debug" = "xyes"], [
         AC_DEFINE(ENABLE_DEBUG, [1], [Debug messages.])
 ])
 
+# Enable "-fvisibility=hidden" only if the used gcc supports it
+AS_IF([test "${enable_hide}" = "yes"],
+	[AC_MSG_CHECKING([whether the compiler supports -fvisibility=hidden])
+	CC_CHECK_CFLAGS_SILENT([-fvisibility=hidden], [], [enable_hide=no])
+	# still enabled?
+	if test "x${enable_hide}" = "xyes"; then
+		AC_DEFINE(DSO_HIDDEN, 1, [hide internal library symbols])
+		AM_CFLAGS="${AM_CFLAGS} -fvisibility=hidden"
+	fi
+
+	AC_MSG_RESULT([${enable_hide}])])
+
 AC_CONFIG_HEADERS(config.h)
 AC_CONFIG_FILES([
         Makefile
@@ -76,4 +101,5 @@ AC_MSG_RESULT([
         ldflags:                ${LDFLAGS} ${AM_LDFLAGS}
 
         debug:                  ${enable_debug}
+        hide symbols:           ${enable_hide}
 ])

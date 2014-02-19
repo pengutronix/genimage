@@ -11,9 +11,6 @@ AM_CPPFLAGS = \
 	-DSYSCONFDIR=\""$(sysconfdir)"\" \
 	-DLIBEXECDIR=\""$(libexecdir)"\"
 
-AM_CFLAGS = \
-	-fvisibility=hidden
-
 bin_PROGRAMS = genimage
 genimage_SOURCES = \
 	genimage.c \
