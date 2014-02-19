@@ -26,13 +26,24 @@ AC_ARG_ENABLE([debug],
 	[enable_debug=no])
 AC_MSG_RESULT([${enable_debug}])
 
-my_CFLAGS="-Wall \
--Wmissing-declarations -Wmissing-prototypes \
--Wnested-externs -Wpointer-arith \
--Wpointer-arith -Wsign-compare -Wchar-subscripts \
--Wstrict-prototypes -Wshadow \
--Wformat-security -Wtype-limits"
-AC_SUBST([my_CFLAGS])
+# ----------- autodetect some settings -------------------
+
+# add as much warnings and features as possible, but check what the compiler
+# is able to understand and use it only if possible
+
+CC_CHECK_CFLAGS_SILENT([-pipe],[AM_CFLAGS="${AM_CFLAGS} -pipe"])
+CC_CHECK_CFLAGS_SILENT([-Wall],[AM_CFLAGS="${AM_CFLAGS} -Wall"])
+CC_CHECK_CFLAGS_SILENT([-Wextra],[AM_CFLAGS="${AM_CFLAGS} -Wextra"])
+CC_CHECK_CFLAGS_SILENT([-Wmissing-declarations],[AM_CFLAGS="${AM_CFLAGS} -Wmissing-declarations"])
+CC_CHECK_CFLAGS_SILENT([-Wmissing-prototypes],[AM_CFLAGS="${AM_CFLAGS} -Wmissing-prototypes"])
+CC_CHECK_CFLAGS_SILENT([-Wnested-externs],[AM_CFLAGS="${AM_CFLAGS} -Wnested-externs"])
+CC_CHECK_CFLAGS_SILENT([-Wpointer-arith],[AM_CFLAGS="${AM_CFLAGS} -Wpointer-arith"])
+CC_CHECK_CFLAGS_SILENT([-Wsign-compare],[AM_CFLAGS="${AM_CFLAGS} -Wsign-compare"])
+CC_CHECK_CFLAGS_SILENT([-Wchar-subscripts],[AM_CFLAGS="${AM_CFLAGS} -Wchar-subscripts"])
+CC_CHECK_CFLAGS_SILENT([-Wstrict-prototypes],[AM_CFLAGS="${AM_CFLAGS} -Wstrict-prototypes"])
+CC_CHECK_CFLAGS_SILENT([-Wshadow],[AM_CFLAGS="${AM_CFLAGS} -Wshadow"])
+CC_CHECK_CFLAGS_SILENT([-Wformat-security],[AM_CFLAGS="${AM_CFLAGS} -Wformat-security"])
+CC_CHECK_CFLAGS_SILENT([-Wtype-limits],[AM_CFLAGS="${AM_CFLAGS} -Wtype-limits"])
 
 PKG_CHECK_MODULES(CONFUSE, libconfuse)
 
@@ -55,8 +66,8 @@ AC_MSG_RESULT([
         prefix:                 ${prefix}
 
         compiler:               ${CC}
-        cflags:                 ${CFLAGS}
-        ldflags:                ${LDFLAGS}
+        cflags:                 ${CFLAGS} ${AM_CFLAGS}
+        ldflags:                ${LDFLAGS} ${AM_LDFLAGS}
 
         debug:                  ${enable_debug}
 ])
