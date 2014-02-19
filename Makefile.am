@@ -9,9 +9,7 @@ EXTRA_DIST = \
 ACLOCAL_AMFLAGS = -I m4 ${ACLOCAL_FLAGS}
 
 AM_CPPFLAGS = \
-	-include $(top_builddir)/config.h \
-	-DSYSCONFDIR=\""$(sysconfdir)"\" \
-	-DLIBEXECDIR=\""$(libexecdir)"\"
+	-include $(top_builddir)/config.h
 
 bin_PROGRAMS = genimage
 genimage_SOURCES = \
