@@ -12,9 +12,7 @@ AM_CPPFLAGS = \
 	-DLIBEXECDIR=\""$(libexecdir)"\"
 
 AM_CFLAGS = \
-	-fvisibility=hidden \
-	-ffunction-sections \
-	-fdata-sections
+	-fvisibility=hidden
 
 AM_LDFLAGS = \
 	-Wl,--gc-sections \
