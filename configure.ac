@@ -112,4 +112,5 @@ AC_MSG_RESULT([
 
         debug:                  ${enable_debug}
         hide symbols:           ${enable_hide}
+        libconfuse:             ${CONFUSE_LIBS}
 ])
