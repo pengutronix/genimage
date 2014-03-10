@@ -8,8 +8,12 @@ AC_CONFIG_SRCDIR([genimage.c])
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([foreign 1.11 -Wall -Wno-portability silent-rules tar-pax no-dist-gzip dist-xz subdir-objects])
 AC_PROG_CC_STDC
+
+# If possible, enable extensions to Posix
 AC_USE_SYSTEM_EXTENSIONS
 AC_SYS_LARGEFILE
+
+# where to put extension macros
 AC_CONFIG_MACRO_DIR([m4])
 
 # default is less output while building the package
