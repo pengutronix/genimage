@@ -27,6 +27,21 @@
 
 #include "genimage.h"
 
+static int skip_log(int level)
+{
+	static int loglevel = -1;
+
+	if (loglevel < 0) {
+		const char *l = get_opt("loglevel");
+		if (l)
+			loglevel = atoi(l);
+		else
+			loglevel = 1;
+	}
+
+	return (level > loglevel);
+}
+
 void image_error(struct image *image, const char *fmt, ...)
 {
 	va_list args;
@@ -48,6 +63,9 @@ void image_log(struct image *image, int level,  const char *fmt, ...)
 	va_list args;
 	char *buf;
 
+	if (skip_log(level))
+		return;
+
 	va_start (args, fmt);
 
 	vasprintf(&buf, fmt, args);
@@ -62,6 +80,20 @@ void image_log(struct image *image, int level,  const char *fmt, ...)
 void error(const char *fmt, ...)
 {
 	va_list args;
+
+	va_start (args, fmt);
+
+	vfprintf(stderr, fmt, args);
+
+	va_end (args);
+}
+
+void logmsg(int level, const char *fmt, ...)
+{
+	va_list args;
+
+	if (skip_log(level))
+		return;
 
 	va_start (args, fmt);
 
@@ -89,9 +121,9 @@ int systemp(struct image *image, const char *fmt, ...)
 		return -ENOMEM;
 
 	if (image)
-		image_log(image, 1, "cmd: %s\n", buf);
+		image_log(image, 2, "cmd: %s\n", buf);
 	else
-		error("cmd: %s\n", buf);
+		logmsg(2, "cmd: %s\n", buf);
 
 	ret = system(buf);
 

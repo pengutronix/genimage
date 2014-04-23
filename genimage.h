@@ -9,6 +9,7 @@ struct image *image_get(const char *filename);
 
 int systemp(struct image *image, const char *fmt, ...) __attribute__ ((format(printf, 2, 3)));
 void error(const char *fmt, ...) __attribute__ ((format(printf, 1, 2)));
+void logmsg(int level, const char *fmt, ...) __attribute__ ((format(printf, 2, 3)));
 void image_error(struct image *image, const char *fmt, ...) __attribute__ ((format(printf, 2, 3)));
 void image_log(struct image *image, int level,  const char *fmt, ...) __attribute__ ((format(printf, 3, 4)));
 

@@ -68,12 +68,12 @@ static int image_set_handler(struct image *image, cfg_t *cfg)
 	}
 
 	if (num > 1) {
-		error("multiple image types given\n");
+		image_error(image, "multiple image types given\n");
 		exit (1);
 	}
 
 	if (num < 1) {
-		error("no image type given\n");
+		image_error(image, "no image type given\n");
 		exit (1);
 	}
 
@@ -219,7 +219,7 @@ static int image_generate(struct image *image)
 	if (image->handler->generate) {
 		ret = image->handler->generate(image);
 	} else {
-		error("no generate function for %s\n", image->file);
+		image_error(image, "no generate function for %s\n", image->file);
 		return -EINVAL;
 	}
 
@@ -317,7 +317,7 @@ static int set_flash_type(void)
 				return -EINVAL;
 			if (i->flash_type) {
 				if (i->flash_type != image->flash_type) {
-					printf("conflicting flash types: %s has flashtype %s whereas %s has flashtype %s\n",
+					image_error(i, "conflicting flash types: %s has flashtype %s whereas %s has flashtype %s\n",
 							i->file, i->flash_type->name, image->file, image->flash_type->name);
 					return -EINVAL;
 				}
@@ -579,7 +579,7 @@ int main(int argc, char *argv[])
 			child = image_get(part->image);
 			if (child)
 				continue;
-			image_log(image, 1, "adding implicit file rule for '%s'\n", part->image);
+			image_log(image, 2, "adding implicit file rule for '%s'\n", part->image);
 			child = xzalloc(sizeof *image);
 			INIT_LIST_HEAD(&child->partitions);
 			list_add_tail(&child->list, &images);
@@ -622,7 +622,7 @@ int main(int argc, char *argv[])
 		setenv("IMAGEMOUNTPOINT", image->mountpoint, 1);
 		ret = image_generate(image);
 		if (ret) {
-			printf("failed to generate %s\n", image->file);
+			image_error(image, "failed to generate %s\n", image->file);
 			goto err_out;
 		}
 	}

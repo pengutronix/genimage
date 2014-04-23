@@ -243,6 +243,10 @@ const char *tmppath(void)
 
 static struct config opts[] = {
 	{
+		.name = "loglevel",
+		.opt = CFG_STR("loglevel", "1", CFGF_NONE),
+		.env = "GENIMAGE_LOGLEVEL",
+	}, {
 		.name = "rootpath",
 		.opt = CFG_STR("rootpath", NULL, CFGF_NONE),
 		.env = "GENIMAGE_ROOTPATH",
