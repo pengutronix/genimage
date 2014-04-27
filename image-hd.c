@@ -157,6 +157,12 @@ static int hdimage_generate(struct image *image)
 		struct image *child;
 		const char *infile;
 
+		image_log(image, 1, "adding partition '%s'%s%s%s%s ...\n", part->name,
+			part->in_partition_table ? " (in MBR)" : "",
+			part->image ? " from '": "",
+			part->image ? part->image : "",
+			part->image ? "'" : "");
+
 		ret = pad_file(image, NULL, outfile, part->offset, 0x0, mode);
 		if (ret) {
 			image_error(image, "failed to pad image to size %lld\n",
