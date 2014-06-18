@@ -110,6 +110,7 @@ partition-type	Used by dos partition tables to specify the partition type (not
 		yet implemented)
 image		The image file this partition shall be filled with
 autoresize	used by ubi (FIXME: do we need this? isn't size = 0 enough)	
+bootable	Boolean specifying whether to set the bootable flag.
 
 
 The config section
