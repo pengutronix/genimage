@@ -43,6 +43,17 @@ static int vfat_generate(struct image *image)
 		struct image *child = image_get(part->image);
 		const char *file = imageoutfile(child);
 		const char *target = part->name;
+		char *path = strdupa(target);
+		char *next = path;
+
+		while ((next = strchr(next, '/')) != NULL) {
+			*next = '\0';
+			/* ignore the error: mdd fails if the target exists. */
+			systemp(image, "%s -DsS -i %s ::%s",
+				get_opt("mmd"), imageoutfile(image), path);
+			*next = '/';
+			++next;
+		}
 
 		ret = systemp(image, "%s -bsp -i %s %s ::%s",
 				get_opt("mcopy"), imageoutfile(image),
