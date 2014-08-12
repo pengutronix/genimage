@@ -293,6 +293,11 @@ static struct config opts[] = {
 		.env = "GENIMAGE_MCOPY",
 		.def = "mcopy",
 	}, {
+		.name = "mmd",
+		.opt = CFG_STR("mmd", NULL, CFGF_NONE),
+		.env = "GENIMAGE_MMD",
+		.def = "mmd",
+	}, {
 		.name = "mkdosfs",
 		.opt = CFG_STR("mkdosfs", NULL, CFGF_NONE),
 		.env = "GENIMAGE_MKDOSFS",
