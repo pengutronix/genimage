@@ -29,12 +29,12 @@ static int vfat_generate(struct image *image)
 	struct partition *part;
 	char *extraargs = cfg_getstr(image->imagesec, "extraargs");
 
-	ret = systemp(image, "%s if=/dev/zero of=\"%s\" seek=%lld count=0 bs=1",
+	ret = systemp(image, "%s if=/dev/zero of=\"%s\" seek=%lld count=0 bs=1 2>/dev/null",
 			get_opt("dd"), imageoutfile(image), image->size);
 	if (ret)
 		return ret;
 
-	ret = systemp(image, "%s %s %s", get_opt("mkdosfs"),
+	ret = systemp(image, "%s %s %s >/dev/null", get_opt("mkdosfs"),
 			extraargs, imageoutfile(image));
 	if (ret)
 		return ret;
@@ -55,6 +55,8 @@ static int vfat_generate(struct image *image)
 			++next;
 		}
 
+		image_log(image, 1, "adding file '%s' as '%s' ...\n",
+				child->file, target);
 		ret = systemp(image, "%s -bsp -i %s %s ::%s",
 				get_opt("mcopy"), imageoutfile(image),
 				file, target);
