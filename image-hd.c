@@ -232,7 +232,7 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 
 	hd->align = cfg_getint_suffix(cfg, "align");
 	hd->partition_table = cfg_getbool(cfg, "partition-table");
-	hd->disksig = cfg_getint(cfg, "disk-signature");
+	hd->disksig = strtoul(cfg_getstr(cfg, "disk-signature"), NULL, 0);
 
 	if ((hd->align % 512) || (hd->align == 0)) {
 		image_error(image, "partition alignment (%lld) must be a "
@@ -314,7 +314,7 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 
 cfg_opt_t hdimage_opts[] = {
 	CFG_STR("align", "512", CFGF_NONE),
-	CFG_INT("disk-signature", 0, CFGF_NONE),
+	CFG_STR("disk-signature", "", CFGF_NONE),
 	CFG_BOOL("partition-table", cfg_true, CFGF_NONE),
 	CFG_END()
 };
