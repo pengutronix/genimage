@@ -53,7 +53,8 @@ void image_error(struct image *image, const char *fmt, ...)
 
 	va_end (args);
 
-	fprintf(stderr, "%s(%s): %s", image->handler->type, image->file, buf);
+	fprintf(stderr, "%s(%s): %s", image->handler ?
+		image->handler->type : "unknown", image->file, buf);
 
 	free(buf);
 }
