@@ -163,13 +163,15 @@ static int hdimage_generate(struct image *image)
 			part->image ? part->image : "",
 			part->image ? "'" : "");
 
-		ret = pad_file(image, NULL, outfile, part->offset, 0x0, mode);
-		if (ret) {
-			image_error(image, "failed to pad image to size %lld\n",
-					part->offset);
-			return ret;
+		if (part->image || part->extended) {
+			ret = pad_file(image, NULL, outfile, part->offset, 0x0, mode);
+			if (ret) {
+				image_error(image, "failed to pad image to size %lld\n",
+						part->offset);
+				return ret;
+			}
+			mode = MODE_APPEND;
 		}
-		mode = MODE_APPEND;
 
 		if (part->extended) {
 			char ebr[4*sizeof(struct partition_entry)+2];
