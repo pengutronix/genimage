@@ -56,7 +56,7 @@ static int vfat_generate(struct image *image)
 		}
 
 		image_log(image, 1, "adding file '%s' as '%s' ...\n",
-				child->file, target);
+				child->file, *target ? target : child->file);
 		ret = systemp(image, "%s -bsp -i %s %s ::%s",
 				get_opt("mcopy"), imageoutfile(image),
 				file, target);
