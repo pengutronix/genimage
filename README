@@ -10,7 +10,14 @@ file or commandline switches.
 The configuration file
 ======================
 
-The config file is seperated into the 'flash' 'image' and 'config' sections.
+The config file is separated into the 'flash', 'image' and 'config' sections,
+and the 'include' primitive.
+
+To include a "foo.cfg" config file, use the following statement:
+
+    include("foo.cfg")
+
+The top-level sections are described below.
 
 The flash section
 -----------------
@@ -69,9 +76,9 @@ image nand-pcm038.img {
 }
 
 This would generate a nand-pcm038.img which is a flash of type "nand-64M-512"
-The image contains two partitions, "barebox-pcm038.bin" and "root-nand.ubi"
+The image contains two partitions, "barebox-pcm038.bin" and "root-nand.jffs2"
 which must refer to images described elsewhere in the config file. For example
-"root-nand.ubi" partition could be described like this:
+"root-nand.jffs2" partition could be described like this:
 
 image root-nand.jffs2 {
 	name = "root"
@@ -88,7 +95,8 @@ name		The name of this image. This is used for some image types
 		to set the name of the image.
 size		Size of this image in bytes
 mountpoint	mountpoint if image refers to a filesystem image.
-offset		The offset 
+exec-pre	Custom command to run before generating the image.
+exec-post	Custom command to run after generating the image.
 flashtype	refers to a flash section. Optional for non flash like images
 		like hd images
 partition	can be given multiple times and refers to a partition described
@@ -97,7 +105,8 @@ partition	can be given multiple times and refers to a partition described
 additionally each image can have one of the following sections describing the
 type of the image:
 
-hd, ext2, tar, file, ubi, ubifs, jffs2, squashfs
+cpio, ext2, ext3, ext4, file, flash, hdimage, iso, jffs2, squashfs, tar, ubi,
+ubifs, vfat.
 
 partition options:
 
@@ -106,29 +115,37 @@ offset		The offset of this partition as a total offset to the beginning
 size		The size of this partition in bytes. The last partition may have
 		size 0 to make this partition use the rest of the available space
 		on the device.
-partition-type	Used by dos partition tables to specify the partition type (not
-		yet implemented)
+partition-type	Used by dos partition tables to specify the partition type.
 image		The image file this partition shall be filled with
 autoresize	used by ubi (FIXME: do we need this? isn't size = 0 enough)	
 bootable	Boolean specifying whether to set the bootable flag.
-
+in-partition-table	Boolean specifying whether to include this partition in
+			the partition table.
 
 The config section
 ------------------
 
 In this section the global behaviour of the program is described. All options
 here can be given from either environment variables, the config file or
-command line switches.
+command line switches. For instance, a config option "foo" can be passed as a
+"--foo" command line switch or as a GENIMAGE_FOO environment variable.
+
+config		default: genimage.cfg
+		Path to the genimage config file.
+
+loglevel	default: 1
+		genimage log level.
 
 outputpath	default: images
-		The path where all images are written to
+		Mandatory path where all images are written to (must exist).
 inputpath	default: input
-		This path is searched for input images (for example
-		bootloader binaries, kernel images)
+		This mandatory path is searched for input images, for example
+		bootloader binaries, kernel images (must exist).
 rootpath	default: root
-		Path to the root filesystem
-tmppath		temporary path. The must be enough space available here
-		to hold a copy of the root filesystem.
+		Mandatory path to the root filesystem (must exist).
+tmppath		default: tmp
+		Optional path to a temporary directory. There must be enough space
+		available here to hold a copy of the root filesystem.
 
 cpio		path to the cpio program (default cpio)
 dd		path to the dd program (default dd)
