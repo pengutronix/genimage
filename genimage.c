@@ -101,6 +101,7 @@ static cfg_opt_t image_common_opts[] = {
 	CFG_STR("exec-post", NULL, CFGF_NONE),
 	CFG_STR("flashtype", NULL, CFGF_NONE),
 	CFG_SEC("partition", partition_opts, CFGF_MULTI | CFGF_TITLE),
+	CFG_FUNC("include", &cfg_include),
 };
 
 static cfg_opt_t flashchip_opts[] = {
