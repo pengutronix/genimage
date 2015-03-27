@@ -312,6 +312,8 @@ static int set_flash_type(void)
 			continue;
 		list_for_each_entry(part, &image->partitions, list) {
 			struct image *i;
+			if (!part->image)
+				continue;
 			i = image_get(part->image);
 			if (!i)
 				return -EINVAL;
