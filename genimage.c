@@ -615,13 +615,12 @@ int main(int argc, char *argv[])
 		goto cleanup;
 
 	list_for_each_entry(image, &images, list) {
-		char *sizestr;
+		char sizestr[20];
+		snprintf(sizestr, sizeof(sizestr), "%llu", image->size);
 		setenv("IMAGE", image->file, 1);
 		setenv("IMAGEOUTFILE", imageoutfile(image), 1);
 		setenv("IMAGENAME", image->name, 1);
-		asprintf(&sizestr, "%lld", image->size);
 		setenv("IMAGESIZE", sizestr, 1);
-		free(sizestr);
 		setenv("IMAGEMOUNTPOINT", image->mountpoint, 1);
 		ret = image_generate(image);
 		if (ret) {
