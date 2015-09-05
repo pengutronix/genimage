@@ -130,7 +130,7 @@ int insert_data(struct image *image, const char *data, const char *outfile,
 
 unsigned long long cfg_getint_suffix(cfg_t *sec, const char *name);
 
-static inline const char *imageoutfile(struct image *image)
+static inline const char *imageoutfile(const struct image *image)
 {
 	return image->outfile;
 }
