@@ -521,10 +521,10 @@ int main(int argc, char *argv[])
 	case 0:
 			break;
 	case CFG_PARSE_ERROR:
-		goto err_out;
+		goto cleanup;
 	case CFG_FILE_ERROR:
 		error("could not open config file '%s'\n", get_opt("config"));
-		goto err_out;
+		goto cleanup;
 	}
 
 	/* again, with config file this time */
@@ -534,7 +534,7 @@ int main(int argc, char *argv[])
 
 	ret = systemp(NULL, "rm -rf %s/*", tmppath());
 	if (ret)
-		goto err_out;
+		goto cleanup;
 
 	parse_flashes(cfg);
 
@@ -562,7 +562,7 @@ int main(int argc, char *argv[])
 		if (image->handler->parse) {
 			ret = image->handler->parse(image, image->imagesec);
 			if (ret)
-				goto err_out;
+				goto cleanup;
 		}
         }
 
@@ -575,7 +575,8 @@ int main(int argc, char *argv[])
 				if (part->in_partition_table)
 					continue;
 				image_error(image, "no input file given\n");
-				goto err_out;
+				ret = -EINVAL;
+				goto cleanup;
 			}
 
 			child = image_get(part->image);
@@ -593,12 +594,12 @@ int main(int argc, char *argv[])
 	/* propagate flash types to partitions */
 	ret = set_flash_type();
 	if (ret)
-		goto err_out;
+		goto cleanup;
 
 	list_for_each_entry(image, &images, list) {
 		ret = image_setup(image);
 		if (ret)
-			goto err_out;
+			goto cleanup;
 	}
 	setenv("OUTPUTPATH", imagepath(), 1);
 	setenv("INPUTPATH", inputpath(), 1);
@@ -607,11 +608,11 @@ int main(int argc, char *argv[])
 
 	ret = systemp(NULL, "mkdir -p %s", imagepath());
 	if (ret)
-		goto err_out;
+		goto cleanup;
 
 	ret = collect_mountpoints();
 	if (ret)
-		goto err_out;
+		goto cleanup;
 
 	list_for_each_entry(image, &images, list) {
 		char *sizestr;
@@ -625,15 +626,11 @@ int main(int argc, char *argv[])
 		ret = image_generate(image);
 		if (ret) {
 			image_error(image, "failed to generate %s\n", image->file);
-			goto err_out;
+			goto cleanup;
 		}
 	}
 
+cleanup:
 	cleanup();
-	exit(0);
-
-err_out:
-	cleanup();
-	exit(1);
+	return ret ? 1 : 0;
 }
-
