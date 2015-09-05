@@ -471,6 +471,70 @@ static cfg_opt_t top_opts[] = {
 	CFG_END()
 };
 
+static int overwriteenv(const char *name, const char *value)
+{
+	int ret;
+
+	ret = setenv(name, value ? : "", 1);
+	if (ret)
+		return -errno;
+
+	return 0;
+}
+
+static int setenv_paths(void)
+{
+	int ret;
+
+	ret = overwriteenv("OUTPUTPATH", imagepath());
+	if (ret)
+		return ret;
+
+	ret = overwriteenv("INPUTPATH", inputpath());
+	if (ret)
+		return ret;
+
+	ret = overwriteenv("ROOTPATH", rootpath());
+	if (ret)
+		return ret;
+
+	ret = overwriteenv("TMPPATH", tmppath());
+	if (ret)
+		return ret;
+
+	return 0;
+}
+
+static int setenv_image(const struct image *image)
+{
+	int ret;
+	char sizestr[20];
+
+	snprintf(sizestr, sizeof(sizestr), "%llu", image->size);
+
+	ret = overwriteenv("IMAGE", image->file);
+	if (ret)
+		return ret;
+
+	ret = overwriteenv("IMAGEOUTFILE", imageoutfile(image));
+	if (ret)
+		return ret;
+
+	ret = overwriteenv("IMAGENAME", image->name);
+	if (ret)
+		return ret;
+
+	ret = overwriteenv("IMAGESIZE", sizestr);
+	if (ret)
+		return ret;
+
+	ret = overwriteenv("IMAGEMOUNTPOINT", image->mountpoint);
+	if (ret)
+		return ret;
+
+	return 0;
+}
+
 int main(int argc, char *argv[])
 {
 	unsigned int i;
@@ -601,10 +665,10 @@ int main(int argc, char *argv[])
 		if (ret)
 			goto cleanup;
 	}
-	setenv("OUTPUTPATH", imagepath(), 1);
-	setenv("INPUTPATH", inputpath(), 1);
-	setenv("ROOTPATH", rootpath(), 1);
-	setenv("TMPPATH", tmppath(), 1);
+
+	ret = setenv_paths();
+	if (ret)
+		goto cleanup;
 
 	ret = systemp(NULL, "mkdir -p %s", imagepath());
 	if (ret)
@@ -615,13 +679,10 @@ int main(int argc, char *argv[])
 		goto cleanup;
 
 	list_for_each_entry(image, &images, list) {
-		char sizestr[20];
-		snprintf(sizestr, sizeof(sizestr), "%llu", image->size);
-		setenv("IMAGE", image->file, 1);
-		setenv("IMAGEOUTFILE", imageoutfile(image), 1);
-		setenv("IMAGENAME", image->name, 1);
-		setenv("IMAGESIZE", sizestr, 1);
-		setenv("IMAGEMOUNTPOINT", image->mountpoint, 1);
+		ret = setenv_image(image);
+		if (ret)
+			goto cleanup;
+
 		ret = image_generate(image);
 		if (ret) {
 			image_error(image, "failed to generate %s\n", image->file);
