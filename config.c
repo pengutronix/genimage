@@ -80,7 +80,7 @@ static int add_opt(const char *name, const char *env, cfg_opt_t *opt, char *def)
 {
 	struct config *c = xzalloc(sizeof(*c));
 
-	c->name = strdup(name);
+	c->name = name;
 	c->env = env;
 	c->def = def;
 	memcpy(&c->opt, opt, sizeof(cfg_opt_t));
