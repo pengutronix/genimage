@@ -191,7 +191,7 @@ int pad_file(struct image *image, const char *infile, const char *outfile,
 		size_t size, unsigned char fillpattern, enum pad_mode mode)
 {
 	FILE *f = NULL, *outf = NULL;
-	void *buf;
+	void *buf = NULL;
 	int now, r, w;
 	int ret = 0;
 
@@ -262,6 +262,7 @@ fill:
 		size -= now;
 	}
 err_out:
+	free(buf);
 	if (f)
 		fclose(f);
 	if (outf)
