@@ -42,7 +42,7 @@ struct partition_entry {
 
 	uint32_t relative_sectors;
 	uint32_t total_sectors;
-};
+} __attribute__((packed));
 
 static void hdimage_setup_chs(unsigned int lba, unsigned char *chs)
 {
