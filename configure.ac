@@ -98,6 +98,8 @@ AS_IF([test "${enable_hide}" = "yes"],
 
 	AC_MSG_RESULT([${enable_hide}])])
 
+AC_SUBST(AM_CFLAGS)
+
 # be very silent on request
 AM_CONDITIONAL(BUILD_SILENTLY, test "x$AM_DEFAULT_VERBOSITY" = x0)
 
