@@ -456,6 +456,7 @@ static void check_tmp_path(void)
 		}
 	}
 	tmppath_generated = 1;
+	closedir(dir);
 }
 
 static void cleanup(void)
