@@ -47,21 +47,27 @@ static int ubi_generate(struct image *image)
 	}
 
 	list_for_each_entry(part, &image->partitions, list) {
-		struct image *child;
-		child = image_get(part->image);
-		if (!child) {
-			image_error(image, "could not find %s\n", part->image);
-			fclose(fini);
-			ret = -EINVAL;
-			goto err_free;
+		struct image *child = NULL;
+		unsigned long long size = part->size;
+		if (part->image)
+			child = image_get(part->image);
+		if (!size) {
+			if (!child) {
+				image_error(image, "could not find %s\n", part->image);
+				fclose(fini);
+				ret = -EINVAL;
+				goto err_free;
+			}
+			size = child->size;
 		}
 
 		fprintf(fini, "[%s]\n", part->name);
 		fprintf(fini, "mode=ubi\n");
-		fprintf(fini, "image=%s\n", imageoutfile(child));
+		if (child)
+			fprintf(fini, "image=%s\n", imageoutfile(child));
 		fprintf(fini, "vol_id=%d\n", i);
-		fprintf(fini, "vol_size=%lld\n", child->size);
-		fprintf(fini, "vol_type=dynamic\n");
+		fprintf(fini, "vol_size=%lld\n", size);
+		fprintf(fini, "vol_type=%s\n", part->read_only ? "static" : "dynamic");
 		fprintf(fini, "vol_name=%s\n", part->name);
 		if (part->autoresize)
 			fprintf(fini, "vol_flags=autoresize\n");
