@@ -70,6 +70,7 @@ CC_CHECK_CFLAGS_SILENT([-Wstrict-prototypes],[AM_CFLAGS="${AM_CFLAGS} -Wstrict-p
 CC_CHECK_CFLAGS_SILENT([-Wshadow],[AM_CFLAGS="${AM_CFLAGS} -Wshadow"])
 CC_CHECK_CFLAGS_SILENT([-Wformat-security],[AM_CFLAGS="${AM_CFLAGS} -Wformat-security"])
 CC_CHECK_CFLAGS_SILENT([-Wtype-limits],[AM_CFLAGS="${AM_CFLAGS} -Wtype-limits"])
+CC_CHECK_CFLAGS_SILENT([-Wunused-parameter],[AM_CFLAGS="${AM_CFLAGS} -Wno-unused-parameter"])
 CC_CHECK_CFLAGS_SILENT([-ffunction-sections],[AM_CFLAGS="${AM_CFLAGS} -ffunction-sections"])
 CC_CHECK_CFLAGS_SILENT([-fdata-sections],[AM_CFLAGS="${AM_CFLAGS} -fdata-sections"])
 
