@@ -317,6 +317,11 @@ static struct config opts[] = {
 		.env = "GENIMAGE_MKSQUASHFS",
 		.def = "mksquashfs",
 	}, {
+		.name = "rauc",
+		.opt = CFG_STR("rauc", NULL, CFGF_NONE),
+		.env = "GENIMAGE_RAUC",
+		.def = "rauc",
+	}, {
 		.name = "tar",
 		.opt = CFG_STR("tar", NULL, CFGF_NONE),
 		.env = "GENIMAGE_TAR",
