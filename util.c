@@ -279,6 +279,8 @@ int insert_data(struct image *image, const char *data, const char *outfile,
 	int ret = 0;
 
 	outf = fopen(outfile, "r+");
+	if (!outf && errno == ENOENT)
+		outf = fopen(outfile, "w");
 	if (!outf) {
 		image_error(image, "open %s: %s\n", outfile, strerror(errno));
 		ret = -errno;
