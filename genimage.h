@@ -82,6 +82,7 @@ struct flash_type {
 struct flash_type *flash_type_get(const char *name);
 
 extern struct image_handler cpio_handler;
+extern struct image_handler cramfs_handler;
 extern struct image_handler ext2_handler;
 extern struct image_handler ext3_handler;
 extern struct image_handler ext4_handler;

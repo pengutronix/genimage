@@ -17,6 +17,7 @@ genimage_SOURCES = \
 	config.c \
 	util.c \
 	image-cpio.c \
+	image-cramfs.c \
 	image-ext2.c \
 	image-file.c \
 	image-flash.c \

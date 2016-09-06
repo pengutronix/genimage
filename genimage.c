@@ -37,6 +37,7 @@
  */
 static struct image_handler *handlers[] = {
 	&cpio_handler,
+	&cramfs_handler,
 	&ext2_handler,
 	&ext3_handler,
 	&ext4_handler,
