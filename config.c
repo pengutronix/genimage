@@ -97,7 +97,7 @@ static int add_opt(const char *name, const char *env, cfg_opt_t *opt, char *def)
 cfg_opt_t *get_confuse_opts(void)
 {
 	struct config *c;
-	int num_opts = 0;;
+	int num_opts = 0;
 	cfg_opt_t *opts;
 	int i = 0;
 	cfg_opt_t cfg_end[] = {

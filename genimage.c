@@ -544,7 +544,7 @@ int main(int argc, char *argv[])
 	unsigned int num_images;
 	int ret;
 	cfg_opt_t *imageopts = xzalloc((ARRAY_SIZE(image_common_opts) +
-				ARRAY_SIZE(handlers) + 1) * sizeof(cfg_opt_t));;
+				ARRAY_SIZE(handlers) + 1) * sizeof(cfg_opt_t));
 	int start;
 	struct image *image;
 	char *str;
