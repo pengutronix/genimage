@@ -300,7 +300,7 @@ static int parse_partitions(struct image *image, cfg_t *imagesec)
 		part->image = cfg_getstr(partsec, "image");
 		part->autoresize = cfg_getbool(partsec, "autoresize");
 		part->in_partition_table = cfg_getbool(partsec, "in-partition-table");
-        }
+	}
 
 	return 0;
 }
@@ -566,7 +566,7 @@ int main(int argc, char *argv[])
 
 		image_tmp[0].name = handler->type;
 		image_tmp[0].subopts = handler->opts;
-		
+
 		memcpy(&imageopts[start + i], image_tmp, sizeof(cfg_opt_t));
 	}
 
@@ -631,7 +631,7 @@ int main(int argc, char *argv[])
 			if (ret)
 				goto cleanup;
 		}
-        }
+	}
 
 	/* check if each partition has a corresponding image */
 	list_for_each_entry(image, &images, list) {
