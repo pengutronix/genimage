@@ -70,6 +70,16 @@ static int vfat_generate(struct image *image)
 	return ret;
 }
 
+static int vfat_setup(struct image *image, cfg_t *cfg)
+{
+	if (!image->size) {
+		image_error(image, "no size given or must not be zero\n");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 static int vfat_parse(struct image *image, cfg_t *cfg)
 {
 	unsigned int i;
@@ -110,6 +120,7 @@ static cfg_opt_t vfat_opts[] = {
 struct image_handler vfat_handler = {
 	.type = "vfat",
 	.generate = vfat_generate,
+	.setup = vfat_setup,
 	.parse = vfat_parse,
 	.opts = vfat_opts,
 };
