@@ -289,13 +289,13 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 					part->name, part->offset, hd->align);
 			return -EINVAL;
 		}
-		if (part->offset || !part->in_partition_table) {
+		if (part->offset && part->in_partition_table) {
 			if (now > part->offset) {
 				image_error(image, "part %s overlaps with previous partition\n",
 						part->name);
 				return -EINVAL;
 			}
-		} else {
+		} else if (!part->offset) {
 			if (!now && hd->partition_table)
 				now = 512;
 			part->offset = roundup(now, hd->align);
