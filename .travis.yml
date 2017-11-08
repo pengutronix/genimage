@@ -1,0 +1,11 @@
+language: c
+compiler: gcc
+dist: trusty
+addons:
+  apt:
+    packages:
+      - libconfuse-dev
+script:
+  - ./autogen.sh
+  - ./configure
+  - make distcheck
