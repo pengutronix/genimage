@@ -444,7 +444,6 @@ static void check_tmp_path(void)
 		ret = systemp(NULL, "mkdir -p %s", tmppath());
 		if (ret)
 			exit(1);
-		closedir(dir);
 		return;
 	}
 
