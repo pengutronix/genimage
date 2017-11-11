@@ -38,7 +38,7 @@ static int rauc_generate(struct image *image)
 
 	image_log(image, 2, "manifest = '%s'\n", manifest);
 
-	asprintf(&manifest_file, "%s/manifest.raucm", mountpath(image));
+	xasprintf(&manifest_file, "%s/manifest.raucm", mountpath(image));
 	ret = insert_data(image, manifest, manifest_file, strlen(manifest), 0);
 	if (ret)
 		return ret;

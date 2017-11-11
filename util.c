@@ -41,6 +41,25 @@ static int skip_log(int level)
 	return (level > loglevel);
 }
 
+static void xvasprintf(char **strp, const char *fmt, va_list ap)
+{
+	if (vasprintf(strp, fmt, ap) < 0) {
+		error("out of memory\n");
+		exit(1);
+	}
+}
+
+void xasprintf(char **strp, const char *fmt, ...)
+{
+	va_list args;
+
+	va_start (args, fmt);
+
+	xvasprintf(strp, fmt, args);
+
+	va_end (args);
+}
+
 void image_error(struct image *image, const char *fmt, ...)
 {
 	va_list args;
@@ -48,7 +67,7 @@ void image_error(struct image *image, const char *fmt, ...)
 
 	va_start (args, fmt);
 
-	vasprintf(&buf, fmt, args);
+	xvasprintf(&buf, fmt, args);
 
 	va_end (args);
 
@@ -68,7 +87,7 @@ void image_log(struct image *image, int level,  const char *fmt, ...)
 
 	va_start (args, fmt);
 
-	vasprintf(&buf, fmt, args);
+	xvasprintf(&buf, fmt, args);
 
 	va_end (args);
 
@@ -113,7 +132,7 @@ int systemp(struct image *image, const char *fmt, ...)
 
 	va_start (args, fmt);
 
-	vasprintf(&buf, fmt, args);
+	xvasprintf(&buf, fmt, args);
 
 	va_end (args);
 
