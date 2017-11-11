@@ -1,0 +1,137 @@
+#!/bin/bash
+
+test_description="Basic Image Tests"
+
+testdir="$(readlink -f $(dirname "${0}"))"
+genimage="$(pwd)/genimage"
+
+PATH="$PATH:/sbin:/usr/sbin"
+
+if [ "x$V" = "x1" ]; then
+	set -- -v "$@"
+fi
+
+. "${testdir}/sharness.sh"
+
+setup_data() {
+	mkdir -p root/{foo,bar,baz,"with spaces"}/{1,2,3}
+	touch root/{foo,bar,baz,"with spaces"}/{1,2,3}/{one,two}
+
+	cp "${testdir}"/*.config .
+}
+
+run_genimage() {
+	if [ "$verbose" = "t" ]; then
+		vargs="--loglevel=2"
+	fi
+	rm -rf tmp images
+	"${genimage}" \
+		${vargs} \
+		--outputpath=images \
+		--inputpath=input \
+		--rootpath=root \
+		--tmppath=tmp \
+		--config "${1}"
+}
+
+exec_test_set_prereq() {
+	command -v "${1}" > /dev/null && test_set_prereq "${1/./_}"
+}
+
+setup_data
+
+
+exec_test_set_prereq cpio
+test_expect_success "cpio" "
+	run_genimage cpio.config
+"
+
+exec_test_set_prereq mkcramfs
+test_expect_success mkcramfs "cramfs" "
+	run_genimage cramfs.config
+"
+
+exec_test_set_prereq genext2fs
+exec_test_set_prereq e2fsck
+test_expect_success genext2fs,e2fsck "ext2" "
+	run_genimage ext2.config &&
+	e2fsck -nf images/test.ext2
+"
+
+test_expect_success genext2fs,e2fsck "ext3" "
+	run_genimage ext3.config &&
+	e2fsck -nf images/test.ext3
+"
+
+test_expect_success genext2fs,e2fsck "ext4" "
+	run_genimage ext4.config &&
+	e2fsck -nf images/test.ext4
+"
+
+setup_test_images() {
+	rm -rf input &&
+	mkdir input &&
+	dd if=/dev/null of=input/part1.img bs=512 count=7 &&
+	dd if=/dev/null of=input/part2.img bs=512 count=11
+}
+
+exec_test_set_prereq dd
+test_expect_success "flash" "
+	setup_test_images &&
+	run_genimage flash.config
+"
+
+exec_test_set_prereq sfdisk
+test_expect_success "hdimage" "
+	setup_test_images &&
+	run_genimage hdimage.config &&
+	sfdisk -d images/test.hdimage
+"
+
+exec_test_set_prereq genisoimage
+test_expect_success genisoimage "iso" "
+	run_genimage iso.config
+"
+
+exec_test_set_prereq mkfs.jffs2
+test_expect_success mkfs_jffs2 "jffs2" "
+	run_genimage jffs2.config
+"
+
+exec_test_set_prereq mksquashfs
+test_expect_success mksquashfs "squashfs" "
+	run_genimage squashfs.config
+"
+
+exec_test_set_prereq tar
+test_expect_success tar "tar" "
+	run_genimage tar.config
+"
+
+exec_test_set_prereq mkfs.ubifs
+test_expect_success mkfs_ubifs "ubifs" "
+	run_genimage ubifs.config
+"
+
+setup_ubi_images() {
+	rm -rf input &&
+	mkdir input &&
+	cp images/test.ubifs input/
+}
+
+exec_test_set_prereq ubinize
+test_expect_success ubinize "ubi" "
+	setup_ubi_images &&
+	run_genimage ubi.config
+"
+
+exec_test_set_prereq dd
+exec_test_set_prereq mkdosfs
+exec_test_set_prereq mcopy
+test_expect_success dd,mkdosfs,mcopy "vfat" "
+	run_genimage vfat.config
+"
+
+test_done
+
+# vim: syntax=sh

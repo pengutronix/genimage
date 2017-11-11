@@ -5,7 +5,15 @@ addons:
   apt:
     packages:
       - libconfuse-dev
+      - cramfsprogs
+      - dosfstools
+      - genext2fs
+      - genisoimage
+      - mtools
+      - squashfs-tools
 script:
   - ./autogen.sh
   - ./configure
   - make distcheck
+after_failure:
+  - cat genimage-*/_build/test-suite.log
