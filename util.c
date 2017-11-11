@@ -166,14 +166,19 @@ unsigned long long strtoul_suffix(const char *str, char **endp, int base)
 	switch (*end) {
 	case 'G':
 		val *= 1024;
+		/* fall-through */
 	case 'M':
 		val *= 1024;
+		/* fall-through */
 	case 'k':
 	case 'K':
 		val *= 1024;
 		end++;
-	default:
+	case '\0':
 		break;
+	default:
+		error("Invalid size suffix in: '%s'\n", str);
+		exit(1);
 	}
 
 	if (endp)
