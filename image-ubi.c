@@ -34,7 +34,7 @@ static int ubi_generate(struct image *image)
 	struct partition *part;
 	char *extraargs = cfg_getstr(image->imagesec, "extraargs");
 
-	asprintf(&tempfile, "%s/ubifs.ini", tmppath());
+	xasprintf(&tempfile, "%s/ubifs.ini", tmppath());
 	if (!tempfile)
 		return -ENOMEM;
 

@@ -42,8 +42,33 @@ noinst_HEADERS = \
 	genimage.h \
 	list.h
 
+EXTRA_DIST += \
+	test/basic-images.test \
+	test/cpio.config \
+	test/cramfs.config \
+	test/ext2.config \
+	test/ext3.config \
+	test/ext4.config \
+	test/flash-types.config \
+	test/flash.config \
+	test/hdimage.config \
+	test/iso.config \
+	test/jffs2.config \
+	test/sharness.sh \
+	test/squashfs.config \
+	test/tar.config \
+	test/ubi.config \
+	test/ubifs.config \
+	test/vfat.config
+
+TEST_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
+                  $(top_srcdir)/build-aux/tap-driver.sh
+TESTS = \
+	test/basic-images.test
+
 # when "make clean" runs
-CLEANFILES =
+CLEANFILES = \
+	test-results/basic-images.test*.counts
 
 # when "make distclean" runs
 DISTCLEAN = \

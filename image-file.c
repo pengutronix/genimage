@@ -59,7 +59,7 @@ static int file_setup(struct image *image, cfg_t *cfg)
 	if (f->name[0] == '/')
 		f->infile = strdup(f->name);
 	else
-		asprintf(&f->infile, "%s/%s", inputpath(), f->name);
+		xasprintf(&f->infile, "%s/%s", inputpath(), f->name);
 
 	ret = stat(f->infile, &s);
 	if (ret) {

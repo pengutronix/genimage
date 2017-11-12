@@ -12,6 +12,7 @@ void error(const char *fmt, ...) __attribute__ ((format(printf, 1, 2)));
 void logmsg(int level, const char *fmt, ...) __attribute__ ((format(printf, 2, 3)));
 void image_error(struct image *image, const char *fmt, ...) __attribute__ ((format(printf, 2, 3)));
 void image_log(struct image *image, int level,  const char *fmt, ...) __attribute__ ((format(printf, 3, 4)));
+void xasprintf(char **strp, const char *fmt, ...) __attribute__ ((format(printf, 2, 3)));
 
 const char *imagepath(void);
 const char *inputpath(void);

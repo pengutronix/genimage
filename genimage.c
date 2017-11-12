@@ -357,7 +357,7 @@ static struct mountpoint *add_mountpoint(const char *path)
 
 	mp = xzalloc(sizeof(*mp));
 	mp->path = strdup(path);
-	asprintf(&mp->mountpath, "%s/%s", tmppath(), mp->path);
+	xasprintf(&mp->mountpath, "%s/%s", tmppath(), mp->path);
 	list_add_tail(&mp->list, &mountpoints);
 
 	return mp;
@@ -369,7 +369,7 @@ static void add_root_mountpoint(void)
 
 	mp = xzalloc(sizeof(*mp));
 	mp->path = strdup("");
-	asprintf(&mp->mountpath, "%s/root", tmppath());
+	xasprintf(&mp->mountpath, "%s/root", tmppath());
 	list_add_tail(&mp->list, &mountpoints);
 }
 
@@ -444,7 +444,6 @@ static void check_tmp_path(void)
 		ret = systemp(NULL, "mkdir -p %s", tmppath());
 		if (ret)
 			exit(1);
-		closedir(dir);
 		return;
 	}
 
@@ -619,7 +618,7 @@ int main(int argc, char *argv[])
 		image->mountpoint = cfg_getstr(imagesec, "mountpoint");
 		image->exec_pre = cfg_getstr(imagesec, "exec-pre");
 		image->exec_post = cfg_getstr(imagesec, "exec-post");
-		asprintf(&image->outfile, "%s/%s", imagepath(), image->file);
+		xasprintf(&image->outfile, "%s/%s", imagepath(), image->file);
 		if (image->mountpoint && *image->mountpoint == '/')
 			image->mountpoint++;
 		str = cfg_getstr(imagesec, "flashtype");
