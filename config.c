@@ -35,6 +35,24 @@ struct config {
 	char *def;
 };
 
+static void show_help(const char *cmd)
+{
+	struct config *c;
+
+	printf("Usage %s [options]\n"
+	       "Generate filesystem, disk and flash images defined in the\n"
+	       "configuration file.\n\n"
+	       "Valid options:           [ default value ]    (environment variable)\n"
+	       "  -h, --help\n", cmd);
+	list_for_each_entry(c, &optlist, list) {
+		char opt[20], def[20];
+		snprintf(opt, 20, "%s <arg>", c->name);
+		snprintf(def, 20, "[ %s ]", c->def);
+		printf("  --%-20s %-20s (%s)\n", opt, c->def ? def : "", c->env);
+	}
+	printf("\n");
+}
+
 /*
  * get the value of an option
  */
@@ -184,7 +202,7 @@ int set_config_opts(int argc, char *argv[], cfg_t *cfg)
 
 	/* and last but not least from command line switches */
 
-	long_options = xzalloc(sizeof(struct option) * (num_opts + 1));
+	long_options = xzalloc(sizeof(struct option) * (num_opts + 2));
 
 	i = 0;
 
@@ -194,12 +212,14 @@ int set_config_opts(int argc, char *argv[], cfg_t *cfg)
 		o->has_arg = 1;
 		i++;
 	}
+	long_options[i].name = "help";
+	long_options[i].val = 'h';
 
 	optind = 1;
 	while (1) {
 		int option_index = 0;
 
-		n = getopt_long(argc, argv, "",
+		n = getopt_long(argc, argv, "h",
 			long_options, &option_index);
 		if (n == -1)
 			break;
@@ -208,6 +228,10 @@ int set_config_opts(int argc, char *argv[], cfg_t *cfg)
 			ret = set_opt(long_options[option_index].name, optarg);
 			if (ret)
 				goto err_out;
+			break;
+		case 'h':
+			show_help(argv[0]);
+			exit(0);
 			break;
 		default:
 			ret = -EINVAL;
@@ -243,8 +267,9 @@ const char *tmppath(void)
 static struct config opts[] = {
 	{
 		.name = "loglevel",
-		.opt = CFG_STR("loglevel", "1", CFGF_NONE),
+		.opt = CFG_STR("loglevel", NULL, CFGF_NONE),
 		.env = "GENIMAGE_LOGLEVEL",
+		.def = "1",
 	}, {
 		.name = "rootpath",
 		.opt = CFG_STR("rootpath", NULL, CFGF_NONE),
