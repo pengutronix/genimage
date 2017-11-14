@@ -47,13 +47,19 @@ EXTRA_DIST += \
 	test/cpio.config \
 	test/cramfs.config \
 	test/ext2.config \
+	test/ext2test.dump \
 	test/ext3.config \
+	test/ext3test.dump \
 	test/ext4.config \
+	test/ext4test.dump \
 	test/flash-types.config \
 	test/flash.config \
+	test/flash.md5 \
 	test/hdimage.config \
+	test/hdimage.sfdisk.json \
 	test/iso.config \
 	test/jffs2.config \
+	test/jffs2.md5 \
 	test/sharness.sh \
 	test/squashfs.config \
 	test/tar.config \
@@ -61,8 +67,11 @@ EXTRA_DIST += \
 	test/ubifs.config \
 	test/vfat.config
 
+
 TEST_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
                   $(top_srcdir)/build-aux/tap-driver.sh
+TEST_LOG_COMPILER = fakeroot
+
 TESTS = \
 	test/basic-images.test
 
