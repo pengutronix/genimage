@@ -196,7 +196,7 @@ unsigned long long strtoul_suffix(const char *str, char **endp, int base)
 	case '\0':
 		break;
 	default:
-		error("Invalid size suffix in: '%s'\n", str);
+		error("Invalid size suffix '%s' in '%s'\n", end, str);
 		exit(1);
 	}
 
