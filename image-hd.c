@@ -26,6 +26,7 @@
 
 struct hdimage {
 	cfg_bool_t partition_table;
+	unsigned int extended_partition;
 	unsigned long long align;
 	unsigned long long extended_lba;
 	uint32_t disksig;
@@ -227,13 +228,21 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 {
 	struct partition *part;
 	int has_extended;
-	int partition_table_entries = 0;
+	unsigned int partition_table_entries = 0;
 	unsigned long long now = 0;
 	struct hdimage *hd = xzalloc(sizeof(*hd));
 
 	hd->align = cfg_getint_suffix(cfg, "align");
 	hd->partition_table = cfg_getbool(cfg, "partition-table");
+	hd->extended_partition = cfg_getint(cfg, "extended-partition");
 	hd->disksig = strtoul(cfg_getstr(cfg, "disk-signature"), NULL, 0);
+
+	if (hd->extended_partition > 4) {
+		image_error(image, "invalid extended partition index (%i). must be "
+				"inferior or equal to 4 (0 for automatic)\n",
+				hd->extended_partition);
+		return -EINVAL;
+	}
 
 	if ((hd->align % 512) || (hd->align == 0)) {
 		image_error(image, "partition alignment (%lld) must be a "
@@ -244,7 +253,10 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 		if (part->in_partition_table)
 			++partition_table_entries;
 	}
-	has_extended = partition_table_entries > 4;
+	if (!hd->extended_partition && partition_table_entries > 4)
+	        hd->extended_partition = 4;
+	has_extended = partition_table_entries >= hd->extended_partition;
+
 	partition_table_entries = 0;
 	list_for_each_entry(part, &image->partitions, list) {
 		if (part->image) {
@@ -275,8 +287,8 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 		/* reserve space for extended boot record if necessary */
 		if (part->in_partition_table)
 			++partition_table_entries;
-		if (has_extended && (partition_table_entries > 3))
-			part->extended = cfg_true;
+		part->extended = has_extended &&
+			(partition_table_entries >= hd->extended_partition);
 		if (part->extended) {
 			if (!hd->extended_lba)
 				hd->extended_lba = now;
@@ -317,6 +329,7 @@ cfg_opt_t hdimage_opts[] = {
 	CFG_STR("align", "512", CFGF_NONE),
 	CFG_STR("disk-signature", "", CFGF_NONE),
 	CFG_BOOL("partition-table", cfg_true, CFGF_NONE),
+	CFG_INT("extended-partition", 0, CFGF_NONE),
 	CFG_END()
 };
 
