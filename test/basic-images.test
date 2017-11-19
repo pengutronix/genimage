@@ -7,9 +7,8 @@ genimage="$(pwd)/genimage"
 
 PATH="$PATH:/sbin:/usr/sbin"
 
-if [ "x$V" = "x1" ]; then
-	set -- -v "$@"
-fi
+set -- -v "$@"
+
 
 . "${testdir}/sharness.sh"
 
