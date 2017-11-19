@@ -25,7 +25,7 @@
 static int tar_generate(struct image *image)
 {
 	int ret;
-	char *comp = "";
+	char *comp = "a";
 
 	if (strstr(image->file, ".tar.gz") || strstr(image->file, "tgz"))
 		comp = "z";

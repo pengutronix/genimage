@@ -7,15 +7,21 @@ genimage="$(pwd)/genimage"
 
 PATH="$PATH:/sbin:/usr/sbin"
 
-if [ "x$V" = "x1" ]; then
-	set -- -v "$@"
-fi
+set -- -v "$@"
+
 
 . "${testdir}/sharness.sh"
 
+filelist_orig="$(pwd)/file-list.orig"
+filelist_test="$(pwd)/file-list.test"
+root_orig="$(pwd)/root"
+root_test="$(pwd)/root.test"
+
 setup_data() {
-	mkdir -p root/{foo,bar,baz,"with spaces"}/{1,2,3}
-	touch root/{foo,bar,baz,"with spaces"}/{1,2,3}/{one,two}
+	mkdir -p "${root_orig}"/{foo,bar,baz,"with spaces"}/{1,2,3}
+	touch "${root_orig}"/{foo,bar,baz,"with spaces"}/{1,2,3}/{one,two}
+	find "${root_orig}" -print0 | xargs -0 touch -c -d "2011-11-11 UTC"
+	find "${root_orig}"/ -mindepth 1 -printf "%P\n" | sort  > "${filelist_orig}"
 
 	cp "${testdir}"/*.config .
 }
@@ -24,7 +30,8 @@ run_genimage() {
 	if [ "$verbose" = "t" ]; then
 		vargs="--loglevel=2"
 	fi
-	rm -rf tmp images
+	rm -rf tmp images "${root_test}"
+	mkdir "${root_test}"
 	"${genimage}" \
 		${vargs} \
 		--outputpath=images \
@@ -34,16 +41,36 @@ run_genimage() {
 		--config "${1}"
 }
 
+func_check() {
+	local ret="$?"
+	set +x
+	if [ "${ret}" != 0 ]; then
+		echo "Failed to execute '${FUNCNAME[1]}'!" >&2
+		return "${ret}"
+	fi
+}
+
+check_filelist() {
+	test_cmp "${filelist_orig}" "${filelist_test}"
+}
+
+check_root() {
+	diff -ru "${root_orig}" "${root_test}"
+}
+
 exec_test_set_prereq() {
 	command -v "${1}" > /dev/null && test_set_prereq "${1/./_}"
 }
 
 setup_data
 
+set -o pipefail
 
 exec_test_set_prereq cpio
 test_expect_success "cpio" "
-	run_genimage cpio.config
+	run_genimage cpio.config &&
+	zcat images/test.cpio | cpio --extract -t | grep -v '^\.$'  | sort > '${filelist_test}' &&
+	check_filelist
 "
 
 exec_test_set_prereq mkcramfs
@@ -51,21 +78,60 @@ test_expect_success mkcramfs "cramfs" "
 	run_genimage cramfs.config
 "
 
+compare_label() {
+	if [ "${1}" != "${2}" ]; then
+		echo "Filesystem Label does not match: exprected: '${2}' found '${1}'"
+		return 1
+	fi
+}
+
+check_ext() {
+	[ "$verbose" = "t" ] && set -x
+	# UUID is randomly generated
+	uuid="Filesystem UUID"
+	# Hash Seed is randomly generated
+	seed="Directory Hash Seed:"
+	# checksum depends on random data
+	csum1="Group 0: (Blocks 1-4095) csum"
+	# format change
+	csum2="Group 0: (Blocks 1-4095) \\[ITABLE_ZEROED\\]\|  Checksum .*, unused inodes 205"
+	dumpe2fs "${1}" | grep -v "^\($uuid\|$seed\|$csum1\|$csum2\)" > "dump" &&
+	# fixup for ext3 journal size with old tune2fs
+	sed -i 's/^\(Journal size:             \)1029k$/\11024k/' "dump" &&
+	compare_label "$(e2label "${1}")" "${2}" &&
+	# output format changed with some version
+	sed -i 's/^\(  Block bitmap at .*\),\( Inode bitmap.*\)$/\1\n \2/' "dump"
+	test_cmp "${testdir}/${2}.dump" "dump" &&
+	e2fsck -nf "${1}" &&
+	# old versions of debugfs cannot dump '/'
+	debugfs -R "ls -p" "${1}" | (
+		IFS=/
+		while read a b c d e x f; do
+			case "${x}" in
+			.|..|lost+found|"") continue ;;
+			esac
+			debugfs -R "rdump \"${x}\" \"${root_test}\"" "${1}" || break
+		done
+	) &&
+	check_root
+	func_check
+}
+
 exec_test_set_prereq genext2fs
 exec_test_set_prereq e2fsck
 test_expect_success genext2fs,e2fsck "ext2" "
 	run_genimage ext2.config &&
-	e2fsck -nf images/test.ext2
+	check_ext images/test.ext2 ext2test
 "
 
 test_expect_success genext2fs,e2fsck "ext3" "
 	run_genimage ext3.config &&
-	e2fsck -nf images/test.ext3
+	check_ext images/test.ext3 ext3test
 "
 
 test_expect_success genext2fs,e2fsck "ext4" "
 	run_genimage ext4.config &&
-	e2fsck -nf images/test.ext4
+	check_ext images/test.ext4 ext4test
 "
 
 setup_test_images() {
@@ -79,13 +145,20 @@ exec_test_set_prereq dd
 test_expect_success "flash" "
 	setup_test_images &&
 	run_genimage flash.config
+	md5sum -c '${testdir}/flash.md5'
 "
 
+exec_test_set_prereq fdisk
 exec_test_set_prereq sfdisk
 test_expect_success "hdimage" "
 	setup_test_images &&
 	run_genimage hdimage.config &&
-	sfdisk -d images/test.hdimage
+	# check the this identifier
+	fdisk -l images/test.hdimage | grep identifier: > hdimage.fdisk
+	# check partitions; filter output to handle different sfdisk versions
+	sfdisk -d images/test.hdimage 2>/dev/null | grep '^images/' | \
+		sed -e 's/  *//g' -e 's;Id=;type=;' >> hdimage.fdisk
+	test_cmp '${testdir}/hdimage.fdisk' hdimage.fdisk
 "
 
 exec_test_set_prereq genisoimage
@@ -95,17 +168,22 @@ test_expect_success genisoimage "iso" "
 
 exec_test_set_prereq mkfs.jffs2
 test_expect_success mkfs_jffs2 "jffs2" "
-	run_genimage jffs2.config
+	run_genimage jffs2.config &&
+	md5sum -c '${testdir}/jffs2.md5'
 "
 
 exec_test_set_prereq mksquashfs
 test_expect_success mksquashfs "squashfs" "
-	run_genimage squashfs.config
+	run_genimage squashfs.config &&
+	unsquashfs -ls images/test.squashfs  | sed -n '/squashfs-root/s;squashfs-root/;;p' | sort > '${filelist_test}' &&
+	check_filelist
 "
 
 exec_test_set_prereq tar
 test_expect_success tar "tar" "
-	run_genimage tar.config
+	run_genimage tar.config &&
+	zcat images/test.tar.gz | tar -t | sed -n -e 's;/$;;' -e 's;^\./\(..*\)$;\1;p' | sort > '${filelist_test}' &&
+	check_filelist
 "
 
 exec_test_set_prereq mkfs.ubifs
@@ -129,7 +207,9 @@ exec_test_set_prereq dd
 exec_test_set_prereq mkdosfs
 exec_test_set_prereq mcopy
 test_expect_success dd,mkdosfs,mcopy "vfat" "
-	run_genimage vfat.config
+	run_genimage vfat.config &&
+	mdir -/ -f -b -i images/test.vfat / | sed -e 's;^::/;;' -e 's;/$;;' | sort > '${filelist_test}' &&
+	check_filelist
 "
 
 test_done

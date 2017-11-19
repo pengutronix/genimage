@@ -25,9 +25,10 @@
 static int ext2_generate(struct image *image)
 {
 	int ret;
-	char *extraargs = cfg_getstr(image->imagesec, "extraargs");
-	char *features = cfg_getstr(image->imagesec, "features");
-	char *label = cfg_getstr(image->imagesec, "label");
+	const char *extraargs = cfg_getstr(image->imagesec, "extraargs");
+	const char *features = cfg_getstr(image->imagesec, "features");
+	const char *label = cfg_getstr(image->imagesec, "label");
+	const char *fs_timestamp = cfg_getstr(image->imagesec, "fs-timestamp");
 
 	ret = systemp(image, "%s -d %s --size-in-blocks=%lld -i 16384 %s %s",
 			get_opt("genext2fs"),
@@ -54,7 +55,21 @@ static int ext2_generate(struct image *image)
 			imageoutfile(image));
 
 	/* e2fsck return 1 when the filesystem was successfully modified */
-	return ret > 2;
+	if  (ret > 2)
+		return ret;
+
+	if (fs_timestamp) {
+		ret = systemp(image, "echo '"
+			"set_current_time %s\n"
+			"set_super_value mkfs_time %s\n"
+			"set_super_value lastcheck %s\n"
+			"set_super_value mtime 00000000' | %s -w '%s' > /dev/null",
+			fs_timestamp, fs_timestamp, fs_timestamp,
+			get_opt("debugfs"), imageoutfile(image));
+		if (ret)
+			return ret;
+	}
+	return 0;
 }
 
 static int ext2_setup(struct image *image, cfg_t *cfg)
@@ -71,6 +86,7 @@ static cfg_opt_t ext2_opts[] = {
 	CFG_STR("extraargs", "", CFGF_NONE),
 	CFG_STR("features", 0, CFGF_NONE),
 	CFG_STR("label", 0, CFGF_NONE),
+	CFG_STR("fs-timestamp", NULL, CFGF_NONE),
 	CFG_END()
 };
 
@@ -85,6 +101,7 @@ static cfg_opt_t ext3_opts[] = {
 	CFG_STR("extraargs", "", CFGF_NONE),
 	CFG_STR("features", "has_journal", CFGF_NONE),
 	CFG_STR("label", 0, CFGF_NONE),
+	CFG_STR("fs-timestamp", NULL, CFGF_NONE),
 	CFG_END()
 };
 
@@ -99,6 +116,7 @@ static cfg_opt_t ext4_opts[] = {
 	CFG_STR("extraargs", "", CFGF_NONE),
 	CFG_STR("features", "extents,uninit_bg,dir_index,has_journal", CFGF_NONE),
 	CFG_STR("label", 0, CFGF_NONE),
+	CFG_STR("fs-timestamp", NULL, CFGF_NONE),
 	CFG_END()
 };
 
