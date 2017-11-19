@@ -1,6 +1,5 @@
 Filesystem volume name:   ext4test
 Last mounted on:          <not available>
-Filesystem UUID:          12345678-1234-1234-1234-1234567890ab
 Filesystem magic number:  0xEF53
 Filesystem revision #:    1 (dynamic)
 Filesystem features:      has_journal dir_index extent uninit_bg
@@ -21,9 +20,12 @@ Blocks per group:         4096
 Fragments per group:      4096
 Inodes per group:         256
 Inode blocks per group:   32
+Filesystem created:       Sat Jan  1 00:00:00 2000
 Last mount time:          n/a
+Last write time:          Sat Jan  1 00:00:00 2000
 Mount count:              0
 Maximum mount count:      20
+Last checked:             Sat Jan  1 00:00:00 2000
 Check interval:           0 (<none>)
 Reserved blocks uid:      0 (user root)
 Reserved blocks gid:      0 (group root)
@@ -39,7 +41,6 @@ Journal sequence:         0x00000001
 Journal start:            0
 
 
-Group 0: (Blocks 1-4095) csum 0xef42 [ITABLE_ZEROED]
   Primary superblock at 1, Group descriptors at 2-2
   Block bitmap at 3 (+2)
   Inode bitmap at 4 (+3)
