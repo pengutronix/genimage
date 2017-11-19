@@ -87,12 +87,32 @@ compare_label() {
 
 check_ext() {
 	[ "$verbose" = "t" ] && set -x
+	# UUID is randomly generated
+	uuid="Filesystem UUID"
+	# Hash Seed is randomly generated
+	seed="Directory Hash Seed:"
+	# checksum depends on random data
+	csum1="Group 0: (Blocks 1-4095) csum"
+	# format change
+	csum2="Group 0: (Blocks 1-4095) \\[ITABLE_ZEROED\\]\|  Checksum .*, unused inodes 205"
+	dumpe2fs "${1}" | grep -v "^\($uuid\|$seed\|$csum1\|$csum2\)" > "dump" &&
+	# fixup for ext3 journal size with old tune2fs
+	sed -i 's/^\(Journal size:             \)1029k$/\11024k/' "dump" &&
 	compare_label "$(e2label "${1}")" "${2}" &&
-	dumpe2fs "${1}" | grep -v '^\(Filesystem UUID\|Directory Hash Seed:\|Group 0: (Blocks 1-4095) csum\)' > "dump" &&
+	# output format changed with some version
+	sed -i 's/^\(  Block bitmap at .*\),\( Inode bitmap.*\)$/\1\n \2/' "dump"
 	test_cmp "${testdir}/${2}.dump" "dump" &&
 	e2fsck -nf "${1}" &&
-	debugfs -R "rdump / \"${root_test}\"" "${1}" &&
-	rmdir "${root_test}/lost+found" &&
+	# old versions of debugfs cannot dump '/'
+	debugfs -R "ls -p" "${1}" | (
+		IFS=/
+		while read a b c d e x f; do
+			case "${x}" in
+			.|..|lost+found|"") continue ;;
+			esac
+			debugfs -R "rdump \"${x}\" \"${root_test}\"" "${1}" || break
+		done
+	) &&
 	check_root
 	func_check
 }
@@ -128,12 +148,17 @@ test_expect_success "flash" "
 	md5sum -c '${testdir}/flash.md5'
 "
 
+exec_test_set_prereq fdisk
 exec_test_set_prereq sfdisk
 test_expect_success "hdimage" "
 	setup_test_images &&
 	run_genimage hdimage.config &&
-	sfdisk -J images/test.hdimage > hdimage.sfdisk.json
-	test_cmp '${testdir}/hdimage.sfdisk.json' hdimage.sfdisk.json
+	# check the this identifier
+	fdisk -l images/test.hdimage | grep identifier: > hdimage.fdisk
+	# check partitions; filter output to handle different sfdisk versions
+	sfdisk -d images/test.hdimage 2>/dev/null | grep '^images/' | \
+		sed -e 's/  *//g' -e 's;Id=;type=;' >> hdimage.fdisk
+	test_cmp '${testdir}/hdimage.fdisk' hdimage.fdisk
 "
 
 exec_test_set_prereq genisoimage
