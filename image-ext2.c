@@ -25,10 +25,10 @@
 static int ext2_generate(struct image *image)
 {
 	int ret;
-	char *extraargs = cfg_getstr(image->imagesec, "extraargs");
-	char *features = cfg_getstr(image->imagesec, "features");
-	char *label = cfg_getstr(image->imagesec, "label");
-	char *fs_timestamp = cfg_getstr(image->imagesec, "fs-timestamp");
+	const char *extraargs = cfg_getstr(image->imagesec, "extraargs");
+	const char *features = cfg_getstr(image->imagesec, "features");
+	const char *label = cfg_getstr(image->imagesec, "label");
+	const char *fs_timestamp = cfg_getstr(image->imagesec, "fs-timestamp");
 
 	ret = systemp(image, "%s -d %s --size-in-blocks=%lld -i 16384 %s %s",
 			get_opt("genext2fs"),
