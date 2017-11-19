@@ -297,6 +297,11 @@ static struct config opts[] = {
 		.env = "GENIMAGE_DD",
 		.def = "dd",
 	}, {
+		.name = "debugfs",
+		.opt = CFG_STR("debugfs", NULL, CFGF_NONE),
+		.env = "GENIMAGE_DEBUGFS",
+		.def = "debugfs",
+	}, {
 		.name = "e2fsck",
 		.opt = CFG_STR("e2fsck", NULL, CFGF_NONE),
 		.env = "GENIMAGE_E2FSCK",
