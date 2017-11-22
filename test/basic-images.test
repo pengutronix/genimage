@@ -98,9 +98,8 @@ check_ext() {
 	dumpe2fs "${1}" | grep -v "^\($uuid\|$seed\|$csum1\|$csum2\)" > "dump" &&
 	# fixup for ext3 journal size with old tune2fs
 	sed -i 's/^\(Journal size:             \)1029k$/\11024k/' "dump" &&
-	compare_label "$(e2label "${1}")" "${2}" &&
 	# output format changed with some version
-	sed -i 's/^\(  Block bitmap at .*\),\( Inode bitmap.*\)$/\1\n \2/' "dump"
+	sed -i 's/^\(  Block bitmap at .*\),\( Inode bitmap.*\)$/\1\n \2/' "dump" &&
 	test_cmp "${testdir}/${2}.dump" "dump" &&
 	e2fsck -nf "${1}" &&
 	# old versions of debugfs cannot dump '/'
@@ -154,10 +153,10 @@ test_expect_success "hdimage" "
 	setup_test_images &&
 	run_genimage hdimage.config &&
 	# check the this identifier
-	fdisk -l images/test.hdimage | grep identifier: > hdimage.fdisk
+	fdisk -l images/test.hdimage | grep identifier: > hdimage.fdisk &&
 	# check partitions; filter output to handle different sfdisk versions
 	sfdisk -d images/test.hdimage 2>/dev/null | grep '^images/' | \
-		sed -e 's/  *//g' -e 's;Id=;type=;' >> hdimage.fdisk
+		sed -e 's/  *//g' -e 's;Id=;type=;' >> hdimage.fdisk &&
 	test_cmp '${testdir}/hdimage.fdisk' hdimage.fdisk
 "
 
