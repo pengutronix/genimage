@@ -31,7 +31,9 @@ run_genimage() {
 		vargs="--loglevel=2"
 	fi
 	rm -rf tmp images "${root_test}"
-	mkdir "${root_test}"
+	mkdir "${root_test}" images
+	# create a larger output image to make sure it is recreated properly
+	dd if=/dev/zero of="images/${2}" bs=1M seek=30 count=1
 	"${genimage}" \
 		${vargs} \
 		--outputpath=images \
@@ -58,6 +60,34 @@ check_root() {
 	diff -ru "${root_orig}" "${root_test}"
 }
 
+get_size() {
+	local file="${1}"
+	if [ ! -f "${file}" ]; then
+		echo "Failed to check file size: '${file}' does not exist!"
+		return 1
+	fi
+	set -- $(du -b "${file}")
+	size="${1}"
+}
+
+check_size_range() {
+	local size
+	get_size "${1}" || return
+	if [ "${size}" -lt "${2}" -o "${size}" -gt "${3}" ]; then
+		echo "Incorrect file size for '${1}': expected min: ${2} max: ${3} found: ${size}"
+		return 1
+	fi
+}
+
+check_size() {
+	local size
+	get_size "${1}" || return
+	if [ "${size}" -ne "${2}" ]; then
+		echo "Incorrect file size for '${1}': expected: ${2} found: ${size}"
+		return 1
+	fi
+}
+
 exec_test_set_prereq() {
 	command -v "${1}" > /dev/null && test_set_prereq "${1/./_}"
 }
@@ -68,14 +98,16 @@ set -o pipefail
 
 exec_test_set_prereq cpio
 test_expect_success "cpio" "
-	run_genimage cpio.config &&
+	run_genimage cpio.config test.cpio &&
 	zcat images/test.cpio | cpio --extract -t | grep -v '^\.$'  | sort > '${filelist_test}' &&
+	check_size_range images/test.cpio 400 550 &&
 	check_filelist
 "
 
 exec_test_set_prereq mkcramfs
 test_expect_success mkcramfs "cramfs" "
-	run_genimage cramfs.config
+	run_genimage cramfs.config test.cramfs &&
+	check_size images/test.cramfs 4096
 "
 
 compare_label() {
@@ -98,9 +130,8 @@ check_ext() {
 	dumpe2fs "${1}" | grep -v "^\($uuid\|$seed\|$csum1\|$csum2\)" > "dump" &&
 	# fixup for ext3 journal size with old tune2fs
 	sed -i 's/^\(Journal size:             \)1029k$/\11024k/' "dump" &&
-	compare_label "$(e2label "${1}")" "${2}" &&
 	# output format changed with some version
-	sed -i 's/^\(  Block bitmap at .*\),\( Inode bitmap.*\)$/\1\n \2/' "dump"
+	sed -i 's/^\(  Block bitmap at .*\),\( Inode bitmap.*\)$/\1\n \2/' "dump" &&
 	test_cmp "${testdir}/${2}.dump" "dump" &&
 	e2fsck -nf "${1}" &&
 	# old versions of debugfs cannot dump '/'
@@ -113,6 +144,7 @@ check_ext() {
 			debugfs -R "rdump \"${x}\" \"${root_test}\"" "${1}" || break
 		done
 	) &&
+	check_size "${1}" 4194304 &&
 	check_root
 	func_check
 }
@@ -120,17 +152,17 @@ check_ext() {
 exec_test_set_prereq genext2fs
 exec_test_set_prereq e2fsck
 test_expect_success genext2fs,e2fsck "ext2" "
-	run_genimage ext2.config &&
+	run_genimage ext2.config test.ext2 &&
 	check_ext images/test.ext2 ext2test
 "
 
 test_expect_success genext2fs,e2fsck "ext3" "
-	run_genimage ext3.config &&
+	run_genimage ext3.config test.ext3 &&
 	check_ext images/test.ext3 ext3test
 "
 
 test_expect_success genext2fs,e2fsck "ext4" "
-	run_genimage ext4.config &&
+	run_genimage ext4.config test.ext4 &&
 	check_ext images/test.ext4 ext4test
 "
 
@@ -144,7 +176,7 @@ setup_test_images() {
 exec_test_set_prereq dd
 test_expect_success "flash" "
 	setup_test_images &&
-	run_genimage flash.config
+	run_genimage flash.config test.flash &&
 	md5sum -c '${testdir}/flash.md5'
 "
 
@@ -152,43 +184,48 @@ exec_test_set_prereq fdisk
 exec_test_set_prereq sfdisk
 test_expect_success "hdimage" "
 	setup_test_images &&
-	run_genimage hdimage.config &&
+	run_genimage hdimage.config test.hdimage &&
+	check_size images/test.hdimage 9437184 &&
 	# check the this identifier
-	fdisk -l images/test.hdimage | grep identifier: > hdimage.fdisk
+	fdisk -l images/test.hdimage | grep identifier: > hdimage.fdisk &&
 	# check partitions; filter output to handle different sfdisk versions
 	sfdisk -d images/test.hdimage 2>/dev/null | grep '^images/' | \
-		sed -e 's/  *//g' -e 's;Id=;type=;' >> hdimage.fdisk
+		sed -e 's/  *//g' -e 's;Id=;type=;' >> hdimage.fdisk &&
 	test_cmp '${testdir}/hdimage.fdisk' hdimage.fdisk
 "
 
 exec_test_set_prereq genisoimage
 test_expect_success genisoimage "iso" "
-	run_genimage iso.config
+	run_genimage iso.config test.iso &&
+	check_size_range images/test.iso 300000 400000
 "
 
 exec_test_set_prereq mkfs.jffs2
 test_expect_success mkfs_jffs2 "jffs2" "
-	run_genimage jffs2.config &&
+	run_genimage jffs2.config test.jffs2 &&
 	md5sum -c '${testdir}/jffs2.md5'
 "
 
 exec_test_set_prereq mksquashfs
 test_expect_success mksquashfs "squashfs" "
-	run_genimage squashfs.config &&
+	run_genimage squashfs.config test.squashfs &&
+	check_size_range images/test.squashfs 4000 4100 &&
 	unsquashfs -ls images/test.squashfs  | sed -n '/squashfs-root/s;squashfs-root/;;p' | sort > '${filelist_test}' &&
 	check_filelist
 "
 
 exec_test_set_prereq tar
 test_expect_success tar "tar" "
-	run_genimage tar.config &&
+	run_genimage tar.config test.tar.gz &&
+	check_size_range images/test.tar.gz 500 600 &&
 	zcat images/test.tar.gz | tar -t | sed -n -e 's;/$;;' -e 's;^\./\(..*\)$;\1;p' | sort > '${filelist_test}' &&
 	check_filelist
 "
 
 exec_test_set_prereq mkfs.ubifs
 test_expect_success mkfs_ubifs "ubifs" "
-	run_genimage ubifs.config
+	run_genimage ubifs.config test.ubifs &&
+	check_size_range images/test.ubifs 200000 300000
 "
 
 setup_ubi_images() {
@@ -200,14 +237,16 @@ setup_ubi_images() {
 exec_test_set_prereq ubinize
 test_expect_success ubinize "ubi" "
 	setup_ubi_images &&
-	run_genimage ubi.config
+	run_genimage ubi.config test.ubi &&
+	check_size_range images/test.ubi 550000 600000
 "
 
 exec_test_set_prereq dd
 exec_test_set_prereq mkdosfs
 exec_test_set_prereq mcopy
 test_expect_success dd,mkdosfs,mcopy "vfat" "
-	run_genimage vfat.config &&
+	run_genimage vfat.config test.vfat &&
+	check_size images/test.vfat 4194304
 	mdir -/ -f -b -i images/test.vfat / | sed -e 's;^::/;;' -e 's;/$;;' | sort > '${filelist_test}' &&
 	check_filelist
 "
