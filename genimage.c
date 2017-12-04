@@ -347,18 +347,37 @@ static struct mountpoint *get_mountpoint(const char *path)
 	return NULL;
 }
 
+static inline char *sanitize_path(const char *path)
+{
+	char *path_sanitized;
+	char *c;
+
+	path_sanitized = strdup(path);
+	c = path_sanitized;
+
+	while ((c = strchr(c, '/'))) {
+		*c = '-';
+		c++;
+	}
+
+	return path_sanitized;
+}
+
 static struct mountpoint *add_mountpoint(const char *path)
 {
 	struct mountpoint *mp;
+	char *path_sanitized;
 
 	mp = get_mountpoint(path);
 	if (mp)
 		return mp;
 
+	path_sanitized = sanitize_path(path);
 	mp = xzalloc(sizeof(*mp));
 	mp->path = strdup(path);
-	xasprintf(&mp->mountpath, "%s/%s", tmppath(), mp->path);
+	xasprintf(&mp->mountpath, "%s/%s", tmppath(), path_sanitized);
 	list_add_tail(&mp->list, &mountpoints);
+	free(path_sanitized);
 
 	return mp;
 }
@@ -397,7 +416,7 @@ static int collect_mountpoints(void)
 	list_for_each_entry(mp, &mountpoints, list) {
 		if (!strlen(mp->path))
 			continue;
-		ret = systemp(NULL, "mv %s/root/%s %s", tmppath(), mp->path, tmppath());
+		ret = systemp(NULL, "mv %s/root/%s %s", tmppath(), mp->path, mp->mountpath);
 		if (ret)
 			return ret;
 		ret = systemp(NULL, "mkdir %s/root/%s", tmppath(), mp->path);
