@@ -554,6 +554,10 @@ static int setenv_image(const struct image *image)
 	if (ret)
 		return ret;
 
+	ret = overwriteenv("IMAGEMOUNTPATH", image->mp ? image->mp->mountpath : NULL);
+	if (ret)
+		return ret;
+
 	return 0;
 }
 
