@@ -1,7 +1,7 @@
 AC_PREREQ(2.60)
 AC_INIT([genimage],
         [9],
-        [s.hauer@pengutronix.de],
+        [oss-tools@pengutronix.de],
         [genimage],
         [http://www.pengutronix.de/genimage/])
 AC_CONFIG_SRCDIR([genimage.c])
