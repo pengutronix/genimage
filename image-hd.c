@@ -295,7 +295,7 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 						part->name);
 				return -EINVAL;
 			}
-		} else if (!part->offset) {
+		} else if (!part->offset && part->in_partition_table) {
 			if (!now && hd->partition_table)
 				now = 512;
 			part->offset = roundup(now, hd->align);
