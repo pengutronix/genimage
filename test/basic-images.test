@@ -191,7 +191,14 @@ test_expect_success "hdimage" "
 	# check partitions; filter output to handle different sfdisk versions
 	sfdisk -d images/test.hdimage 2>/dev/null | grep '^images/' | \
 		sed -e 's/  *//g' -e 's;Id=;type=;' >> hdimage.fdisk &&
-	test_cmp '${testdir}/hdimage.fdisk' hdimage.fdisk
+	test_cmp '${testdir}/hdimage.fdisk' hdimage.fdisk &&
+	check_size images/test.hdimage-2 11534336 &&
+	# check the this identifier
+	fdisk -l images/test.hdimage-2 | grep identifier: > hdimage.fdisk-2 &&
+	# check partitions; filter output to handle different sfdisk versions
+	sfdisk -d images/test.hdimage-2 2>/dev/null | grep '^images/' | \
+		sed -e 's/  *//g' -e 's;Id=;type=;' -e '/start=0,size=0,type=0/d' >> hdimage.fdisk-2 &&
+	test_cmp '${testdir}/hdimage.fdisk-2' hdimage.fdisk-2
 "
 
 exec_test_set_prereq genisoimage

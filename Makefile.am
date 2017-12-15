@@ -57,6 +57,7 @@ EXTRA_DIST += \
 	test/flash.md5 \
 	test/hdimage.config \
 	test/hdimage.fdisk \
+	test/hdimage.fdisk-2 \
 	test/iso.config \
 	test/jffs2.config \
 	test/jffs2.md5 \
