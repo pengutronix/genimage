@@ -1,0 +1,8 @@
+Disk identifier: 0x12345678
+images/test.hdimage-2p1:start=2048,size=2048,type=83
+images/test.hdimage-2p2:start=4096,size=20480,type=f
+images/test.hdimage-2p5:start=6144,size=2048,type=83
+images/test.hdimage-2p6:start=10240,size=2048,type=83
+images/test.hdimage-2p7:start=14336,size=2048,type=83
+images/test.hdimage-2p8:start=18432,size=2048,type=83
+images/test.hdimage-2p9:start=22528,size=2048,type=83
