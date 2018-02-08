@@ -255,7 +255,7 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 	}
 	if (!hd->extended_partition && partition_table_entries > 4)
 	        hd->extended_partition = 4;
-	has_extended = partition_table_entries >= hd->extended_partition;
+	has_extended = hd->extended_partition > 0;
 
 	partition_table_entries = 0;
 	list_for_each_entry(part, &image->partitions, list) {
