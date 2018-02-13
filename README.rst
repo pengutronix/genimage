@@ -92,6 +92,157 @@ partition options:
 :in-partition-table:	Boolean specifying whether to include this partition in
 			the partition table.
 
+The image configuration options
+-------------------------------
+
+cpio
+****
+Generates cpio images.
+
+Options:
+
+:format:		archive format. Passed to the ``-H`` option to the cpio command.
+			Valid options are ``bin``, ``odc``, ``newc``, ``crc``, ``tar``,
+			``ustar``, ``hpbin`` and ``hpodc``
+:extraargs:		Extra arguments passed to the cpio tool
+:compress:		If given, pipe image through compression tool. Valid options are
+			for example ``gzip``, ``lzop`` or any other tool that compresses
+			from stdin to stdout.
+
+cramfs
+******
+Generates cramfs images.
+
+Options:
+
+:extraargs:		Extra arguments passed to mkcramfs
+
+ext2, ext3, ext4
+****************
+Generates ext* images.
+
+Options:
+
+:extraargs:		Extra arguments passed to genext2fs
+:features:		Filesystem features. Passed to the ``-O`` option of tune2fs. This
+			is a comma separated list of enabled or disabled features. See
+			``man tune2fs`` for features. Default for ext3 images is
+			``has_journral``. Default for ext4 images is
+			``extents,uninit_bg,dir_index,has_journal``.
+:label:			Specify the volume-label. Passed to the ``-L`` option of tune2fs
+:fs-timestamp:		Sets different timestamps in the image. Sets the given timestamp
+			using the debugfs commands ``set_current_time``,
+			``set_super_value mkfs_time`` and ``set_super_value lastcheck``
+
+flash
+*****
+Generates flash images. These are basically the partition contents padded to the
+partition sizes concatenated together. There is no partition table. Needs a valid
+flashtype where the flash parameters are read from.
+
+hdimage
+*******
+Generates DOS partition images.
+
+Options:
+
+:align:			Partition alignment. Defaults to 512 bytes
+:partition-table:	Boolean. If true, writes a DOS partition table. If false, no
+			partition table is generated. Defaults to true.
+:extended-partition:	Number of the extended partition. Contains the number of the
+			extended partition between 1 and 4 or 0 for automatic. Defaults
+			to 0.
+:disk-signature:	32 bit integer used as disk signature (offset 440 in the MBR)
+
+iso
+***
+Generates an ISO image.
+
+Options:
+
+:boot-image:		Path to the El Torito boot image. Passed to the ``-b`` option
+			of genisofs
+:bootargs:		Bootargs for the El Torito boot image. Defaults to
+			``-no-emul-boot -boot-load-size 4 -boot-info-table -c boot.cat -hide boot.cat``
+:extraargs:		Extra arguments passed to genisofs
+:input-charset:		The input charset. Passed to the -input-charset option of genisofs.
+			Defaults to ``default``
+:volume-id:		Volume ID. Passed to the ``-V`` option of genisofs
+
+jffs2
+*****
+Generates a JFFS image. Needs a valid flashtype where the flash parameters are
+read from.
+
+Options:
+
+:extraargs:		Extra arguments passed to mkfs.jffs2
+
+squashfs
+********
+Generates a squashfs image.
+
+Options:
+
+:extraargs:		Extra arguments passed to mksquashfs
+:compression:		compression type for the image. Possible values are ``gzip``
+			(default), ``lzo``, ``xz`` or ``none``
+:block-size:		Block size. Passed to the ``-b`` option of mksquashfs. Defaults
+			to 4096.
+
+rauc
+****
+Generates a RAUC update bundle.
+
+Options:
+
+:extraargs:		Extra arguments passed to rauc
+:image:
+:files:
+:file:
+:key:			Path to the key file. Passed to the ``--key`` option of rauc
+:cert:			Path to the certificate file. Passed to the ``--cert`` option
+			of rauc
+:manifest:		content of the manifest file
+
+tar
+***
+
+Generates a tar image.
+
+ubi
+***
+Generates an UBI image. Needs a valid flashtype where the flash parameters are
+read from.
+
+Options:
+
+:extraargs:		Extra arguments passed to ubinize
+
+ubifs
+*****
+Generates a UBIFS image. Needs a valid flashtype where the flash parameters are
+read from.
+
+Options:
+
+:extraargs:		Extra arguments passed to mkubifs
+:max-size:		Maximum size of the UBIFS image
+
+vfat
+****
+Generates a VFAT image.
+
+Options:
+
+:extraargs:		Extra arguments passed to mkdosfs
+:file:			Specify a file to be added into the filesystem image. Usage is:
+			file foo { image = "bar" } which adds a file "foo" in the
+			filesystem image from input file "bar"
+:files:			A list of filenames added into the filesystem image. Like :file:
+			above, but without the ability to add the files under different
+			name.
+
 The Flash Section
 -----------------
 
