@@ -107,6 +107,10 @@ There are the following options:
 :vid-header-offset:	offset of the volume identifier header
 :sub-page-size:		The size of a sub page in bytes.
 
+Several flash related image types need a valid flash section. From the image types
+the flash type section is referred to using the ``flashtype`` option which contains
+the name of the flash type to be used.
+
 For more information of the meaning of these values see the ubi(fs) and mtd faqs:
 
 http://www.linux-mtd.infradead.org/faq/general.html
@@ -120,6 +124,10 @@ example flash section::
 	  minimum-io-unit-size = 512
 	  vid-header-offset = 512
 	  sub-page-size = 512
+  }
+  ...
+  image jffs2 {
+	  flashtype = "nand-64M-512"
   }
 
 
