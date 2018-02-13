@@ -274,18 +274,22 @@ static struct config opts[] = {
 		.name = "rootpath",
 		.opt = CFG_STR("rootpath", NULL, CFGF_NONE),
 		.env = "GENIMAGE_ROOTPATH",
+		.def = "root",
 	}, {
 		.name = "tmppath",
 		.opt = CFG_STR("tmppath", NULL, CFGF_NONE),
 		.env = "GENIMAGE_TMPPATH",
+		.def = "tmp",
 	}, {
 		.name = "inputpath",
 		.opt = CFG_STR("inputpath", NULL, CFGF_NONE),
 		.env = "GENIMAGE_INPUTPATH",
+		.def = "input",
 	}, {
 		.name = "outputpath",
 		.opt = CFG_STR("outputpath", NULL, CFGF_NONE),
 		.env = "GENIMAGE_OUTPUTPATH",
+		.def = "images",
 	}, {
 		.name = "cpio",
 		.opt = CFG_STR("cpio", NULL, CFGF_NONE),
