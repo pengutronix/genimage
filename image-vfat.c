@@ -33,7 +33,7 @@ static int vfat_generate(struct image *image)
 	if (ret)
 		return ret;
 
-	ret = systemp(image, "%s %s %s >/dev/null", get_opt("mkdosfs"),
+	ret = systemp(image, "%s %s %s", get_opt("mkdosfs"),
 			extraargs, imageoutfile(image));
 	if (ret)
 		return ret;

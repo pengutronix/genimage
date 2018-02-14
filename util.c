@@ -22,7 +22,9 @@
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 #include <unistd.h>
+#include <fcntl.h>
 
 #include "genimage.h"
 
@@ -162,7 +164,10 @@ int systemp(struct image *image, const char *fmt, ...)
 {
 	va_list args;
 	char *buf;
+	const char *o;
 	int ret;
+	int status;
+	pid_t pid;
 
 	va_start (args, fmt);
 
@@ -173,13 +178,50 @@ int systemp(struct image *image, const char *fmt, ...)
 	if (!buf)
 		return -ENOMEM;
 
-	image_info(image, "cmd: %s\n", buf);
+	if (loglevel() >= 3)
+		o = " (stderr+stdout):";
+	else if (loglevel() >= 1)
+		o = " (stderr):";
+	else
+		o = "";
 
-	ret = system(buf);
+	image_info(image, "cmd: \"%s\"%s\n", buf, o);
 
-	if (ret > 0)
-		ret = WEXITSTATUS(ret);
+	pid = fork();
 
+	if (!pid) {
+		int fd;
+
+		if (loglevel() < 1) {
+			fd = open("/dev/null", O_WRONLY);
+			dup2(fd, STDERR_FILENO);
+		}
+
+		if (loglevel() < 3) {
+			fd = open("/dev/null", O_WRONLY);
+			dup2(fd, STDOUT_FILENO);
+		} else {
+			dup2(STDERR_FILENO, STDOUT_FILENO);
+		}
+
+		ret = execl("/bin/sh", "sh", "-c", buf, NULL);
+		if (ret < 0) {
+			ret = -errno;
+			error("Cannot execute %s: %s\n", buf, strerror(errno));
+			goto err_out;
+		}
+	} else {
+		ret = waitpid(pid, &status, 0);
+		if (ret < 0) {
+			ret = -errno;
+			error("Failed to wait for command execution: %s\n", strerror(errno));
+			goto err_out;
+		}
+	}
+
+	ret = WEXITSTATUS(status);
+
+err_out:
 	free(buf);
 
 	return ret;

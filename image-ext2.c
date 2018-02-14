@@ -63,7 +63,7 @@ static int ext2_generate(struct image *image)
 			"set_current_time %s\n"
 			"set_super_value mkfs_time %s\n"
 			"set_super_value lastcheck %s\n"
-			"set_super_value mtime 00000000' | %s -w '%s' > /dev/null",
+			"set_super_value mtime 00000000' | %s -w '%s'",
 			fs_timestamp, fs_timestamp, fs_timestamp,
 			get_opt("debugfs"), imageoutfile(image));
 		if (ret)

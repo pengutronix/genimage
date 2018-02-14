@@ -28,7 +28,7 @@ setup_data() {
 
 run_genimage() {
 	if [ "$verbose" = "t" ]; then
-		vargs="--loglevel=2"
+		vargs="--loglevel=3"
 	fi
 	rm -rf tmp images "${root_test}"
 	mkdir "${root_test}" images
