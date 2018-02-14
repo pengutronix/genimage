@@ -409,6 +409,11 @@ static struct config opts[] = {
 		.env = "GENIMAGE_UBINIZE",
 		.def = "ubinize",
 	}, {
+		.name = "mkimage",
+		.opt = CFG_STR("mkimage", NULL, CFGF_NONE),
+		.env = "GENIMAGE_MKIMAGE",
+		.def = "mkimage",
+	}, {
 		.name = "config",
 		.env = "GENIMAGE_CONFIG",
 		.def = "genimage.cfg",

@@ -20,6 +20,7 @@ genimage_SOURCES = \
 	image-cramfs.c \
 	image-ext2.c \
 	image-file.c \
+	image-fit.c \
 	image-flash.c \
 	image-hd.c \
 	image-iso.c \
@@ -52,6 +53,8 @@ EXTRA_DIST += \
 	test/ext3test.dump \
 	test/ext4.config \
 	test/ext4test.dump \
+	test/fit.its \
+	test/fit.config \
 	test/flash-types.config \
 	test/flash.config \
 	test/flash.md5 \

@@ -1,0 +1,33 @@
+/dts-v1/;
+
+/ {
+	description = "Test FIT image";
+	#address-cells = <1>;
+
+	images {
+		kernel {
+			description = "kernel";
+			type = "kernel";
+			arch = "arm";
+			os = "linux";
+			compression = "none";
+		};
+
+		ramdisk {
+			description = "ramdisk";
+			type = "ramdisk";
+			arch = "arm";
+			os = "linux";
+			compression = "none";
+		};
+	};
+
+	configurations {
+		default = "conf";
+		conf {
+			description = "test dummy config";
+			kernel = "kernel";
+			ramdisk = "ramdisk";
+		};
+	};
+};

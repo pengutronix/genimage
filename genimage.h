@@ -100,6 +100,7 @@ extern struct image_handler tar_handler;
 extern struct image_handler ubi_handler;
 extern struct image_handler ubifs_handler;
 extern struct image_handler vfat_handler;
+extern struct image_handler fit_handler;
 
 #define ARRAY_SIZE(arr)		(sizeof(arr) / sizeof((arr)[0]))
 

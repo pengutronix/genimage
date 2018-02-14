@@ -258,6 +258,18 @@ test_expect_success dd,mkdosfs,mcopy "vfat" "
 	check_filelist
 "
 
+setup_fit_its() {
+	setup_test_images &&
+	cp ${testdir}/fit.its input/
+}
+
+exec_test_set_prereq mkimage
+exec_test_set_prereq dtc
+test_expect_success mkimage,dtc "fit" "
+	setup_fit_its &&
+	run_genimage fit.config test.fit
+"
+
 test_done
 
 # vim: syntax=sh
