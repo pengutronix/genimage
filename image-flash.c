@@ -40,7 +40,7 @@ static int flash_generate(struct image *image)
 		const char *infile;
 		int ret;
 
-		image_log(image, 1, "writing image partition '%s' (0x%llx@0x%llx)\n",
+		image_info(image, "writing image partition '%s' (0x%llx@0x%llx)\n",
 			part->name, part->size, part->offset);
 
 		ret = pad_file(image, NULL, outfile, part->offset, 0xFF, mode);

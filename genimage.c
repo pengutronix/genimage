@@ -672,7 +672,7 @@ int main(int argc, char *argv[])
 			child = image_get(part->image);
 			if (child)
 				continue;
-			image_log(image, 2, "adding implicit file rule for '%s'\n", part->image);
+			image_debug(image, "adding implicit file rule for '%s'\n", part->image);
 			child = xzalloc(sizeof *image);
 			INIT_LIST_HEAD(&child->partitions);
 			list_add_tail(&child->list, &images);

@@ -36,7 +36,7 @@ static int rauc_generate(struct image *image)
 	char *key = cfg_getstr(image->imagesec, "key");
 	char *manifest_file;
 
-	image_log(image, 2, "manifest = '%s'\n", manifest);
+	image_debug(image, "manifest = '%s'\n", manifest);
 
 	xasprintf(&manifest_file, "%s/manifest.raucm", mountpath(image));
 	ret = insert_data(image, manifest, manifest_file, strlen(manifest), 0);
@@ -72,7 +72,7 @@ static int rauc_generate(struct image *image)
 				return ret;
 		}
 
-		image_log(image, 1, "adding file '%s' as '%s' ...\n",
+		image_info(image, "adding file '%s' as '%s' ...\n",
 				child->file, target);
 		ret = systemp(image, "cp --remove-destination '%s' '%s/%s'",
 				file, mountpath(image), target);
