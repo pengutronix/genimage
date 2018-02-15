@@ -20,6 +20,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <getopt.h>
+#include <unistd.h>
 
 #include "genimage.h"
 
@@ -244,24 +245,56 @@ err_out:
 	return ret;
 }
 
+static char *abspath(const char *path)
+{
+	char *p;
+
+	if (*path == '/')
+		return strdup(path);
+
+	xasprintf(&p, "%s/%s", get_current_dir_name(), path);
+
+	return p;
+}
+
 const char *imagepath(void)
 {
-	return get_opt("outputpath");
+	static const char *outputpath;
+
+	if (!outputpath)
+		outputpath = abspath(get_opt("outputpath"));
+
+	return outputpath;
 }
 
 const char *inputpath(void)
 {
-	return get_opt("inputpath");
+	static const char *inputpath;
+
+	if (!inputpath)
+		inputpath = abspath(get_opt("inputpath"));
+
+	return inputpath;
 }
 
 const char *rootpath(void)
 {
-	return get_opt("rootpath");
+	static const char *rootpath;
+
+	if (!rootpath)
+		rootpath = abspath(get_opt("rootpath"));
+
+	return rootpath;
 }
 
 const char *tmppath(void)
 {
-	return get_opt("tmppath");
+	static const char *tmppath;
+
+	if (!tmppath)
+		tmppath = abspath(get_opt("tmppath"));
+
+	return tmppath;
 }
 
 static struct config opts[] = {
