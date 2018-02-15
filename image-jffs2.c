@@ -29,7 +29,7 @@ static int jffs2_generate(struct image *image)
 
 	extraargs = cfg_getstr(image->imagesec, "extraargs");
 
-	ret = systemp(image, "%s --eraseblock=%d -d %s -o %s %s",
+	ret = systemp(image, "%s --eraseblock=%d -d '%s' -o '%s' %s",
 			get_opt("mkfsjffs2"),
 			image->flash_type->pebsize, mountpath(image), imageoutfile(image),
 			extraargs);

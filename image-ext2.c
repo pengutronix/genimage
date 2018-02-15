@@ -30,7 +30,7 @@ static int ext2_generate(struct image *image)
 	const char *label = cfg_getstr(image->imagesec, "label");
 	const char *fs_timestamp = cfg_getstr(image->imagesec, "fs-timestamp");
 
-	ret = systemp(image, "%s -d %s --size-in-blocks=%lld -i 16384 %s %s",
+	ret = systemp(image, "%s -d '%s' --size-in-blocks=%lld -i 16384 '%s' %s",
 			get_opt("genext2fs"),
 			mountpath(image), image->size / 1024, imageoutfile(image),
 			extraargs);
@@ -39,19 +39,19 @@ static int ext2_generate(struct image *image)
 		return ret;
 
 	if (features && features[0] != '\0') {
-		ret = systemp(image, "%s -O \"%s\" %s", get_opt("tune2fs"),
+		ret = systemp(image, "%s -O '%s' '%s'", get_opt("tune2fs"),
 				features, imageoutfile(image));
 		if (ret)
 			return ret;
 	}
 	if (label && label[0] != '\0') {
-		ret = systemp(image, "%s -L \"%s\" %s", get_opt("tune2fs"),
+		ret = systemp(image, "%s -L '%s' '%s'", get_opt("tune2fs"),
 				label, imageoutfile(image));
 		if (ret)
 			return ret;
 	}
 
-	ret = systemp(image, "%s -pvfD %s", get_opt("e2fsck"),
+	ret = systemp(image, "%s -pvfD '%s'", get_opt("e2fsck"),
 			imageoutfile(image));
 
 	/* e2fsck return 1 when the filesystem was successfully modified */

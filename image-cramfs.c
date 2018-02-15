@@ -26,7 +26,7 @@ static int cram_generate(struct image *image)
 {
 	char *extraargs = cfg_getstr(image->imagesec, "extraargs");
 
-	return systemp(image, "%s%s%s %s %s %s",
+	return systemp(image, "%s%s%s %s '%s' '%s'",
 			get_opt("mkcramfs"),
 			image->name ? " -n " : "",
 			image->name ? image->name : "", /* name */

@@ -34,7 +34,7 @@ static int ubifs_generate(struct image *image)
 	else
 		max_leb_cnt = image->size / image->flash_type->lebsize;
 
-	ret = systemp(image, "%s -d  %s -e %d -m %d -c %d -o %s %s",
+	ret = systemp(image, "%s -d  '%s' -e %d -m %d -c %d -o '%s' %s",
 			get_opt("mkfsubifs"),
 			mountpath(image),
 			image->flash_type->lebsize,
