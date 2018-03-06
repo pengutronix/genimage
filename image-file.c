@@ -63,9 +63,10 @@ static int file_setup(struct image *image, cfg_t *cfg)
 
 	ret = stat(f->infile, &s);
 	if (ret) {
+		ret = -errno;
 		image_error(image, "stat(%s) failed: %s\n", f->infile,
 				strerror(errno));
-		return -errno;
+		return ret;
 	}
 	if (!image->size)
 		image->size = s.st_size;
