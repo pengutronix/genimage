@@ -222,16 +222,16 @@ int pad_file(struct image *image, const char *infile, const char *outfile,
 	if (infile) {
 		f = fopen(infile, "r");
 		if (!f) {
-			image_error(image, "open %s: %s\n", infile, strerror(errno));
 			ret = -errno;
+			image_error(image, "open %s: %s\n", infile, strerror(errno));
 			goto err_out;
 		}
 	}
 
 	outf = fopen(outfile, mode == MODE_OVERWRITE ? "w" : "a");
 	if (!outf) {
-		image_error(image, "open %s: %s\n", outfile, strerror(errno));
 		ret = -errno;
+		image_error(image, "open %s: %s\n", outfile, strerror(errno));
 		goto err_out;
 	}
 
@@ -306,14 +306,14 @@ int insert_data(struct image *image, const char *data, const char *outfile,
 	if (!outf && errno == ENOENT)
 		outf = fopen(outfile, "w");
 	if (!outf) {
-		image_error(image, "open %s: %s\n", outfile, strerror(errno));
 		ret = -errno;
+		image_error(image, "open %s: %s\n", outfile, strerror(errno));
 		goto err_out;
 	}
 	ret = fseek(outf, offset, SEEK_SET);
 	if (ret) {
-		image_error(image, "seek %s: %s\n", outfile, strerror(errno));
 		ret = -errno;
+		image_error(image, "seek %s: %s\n", outfile, strerror(errno));
 		goto err_out;
 	}
 	while (size) {
