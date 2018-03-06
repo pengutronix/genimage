@@ -40,8 +40,8 @@ static int ubi_generate(struct image *image)
 
 	fini = fopen(tempfile, "w");
 	if (!fini) {
-		image_error(image, "creating temp file failed: %s\n", strerror(errno));
 		ret = -errno;
+		image_error(image, "creating temp file failed: %s\n", strerror(errno));
 		goto err_free;
 	}
 
