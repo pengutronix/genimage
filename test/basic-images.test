@@ -213,6 +213,17 @@ test_expect_success mkfs_jffs2 "jffs2" "
 	md5sum -c '${testdir}/jffs2.md5'
 "
 
+exec_test_set_prereq qemu-img
+test_expect_success "qemu" "
+	setup_test_images &&
+	run_genimage qemu.config test.qcow &&
+	check_size images/test.qcow 196608 &&
+	qemu-img check images/test.qcow &&
+	qemu-img info images/test.qcow &&
+	qemu-img info images/test.qcow | diff -q '${testdir}/qemu.info' - &&
+	check_filelist
+"
+
 exec_test_set_prereq mksquashfs
 test_expect_success mksquashfs "squashfs" "
 	run_genimage squashfs.config test.squashfs &&

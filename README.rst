@@ -75,7 +75,7 @@ Here are all options for images:
 additionally each image can have one of the following sections describing the
 type of the image:
 
-cpio, cramfs, ext2, ext3, ext4, file, flash, hdimage, iso, jffs2, squashfs,
+cpio, cramfs, ext2, ext3, ext4, file, flash, hdimage, iso, jffs2, qemu, squashfs,
 tar, ubi, ubifs, vfat.
 
 partition options:
@@ -177,6 +177,17 @@ read from.
 Options:
 
 :extraargs:		Extra arguments passed to mkfs.jffs2
+
+qemu
+****
+Generates a QEMU image. Needs at least one valid partition.
+
+Options:
+
+:format:		A valid ``qemu-img`` like ``qcow``, ``qcow2``, ``parallels``, ``vdi``,
+			``vhdx`` or ``vmdk``. Check ``qemu-img convert --help`` for the complete
+			list of possible values. Defaults to ``qcow2``.
+:extraargs:		Extra arguments passed to ``qemu-img convert``
 
 squashfs
 ********
@@ -319,6 +330,7 @@ command line switches. For instance, a config option ``foo`` can be passed as a
 :mkfsjffs2:	path to the mkfs.jffs2 program (default mkfs.jffs2)
 :mkfsubifs:	path to the mkfs.ubifs program (default mkfs.ubifs)
 :mksquashfs:	path to the mksquashfs program (default mksquashfs)
+:qemu-img:	path to the qemu-img program (default qemu-img)
 :tar:		path to the tar program (default tar)
 :tune2fs:	path to the tune2fs program (default tune2fs)
 :ubinize:	path to the ubinize program (default ubinize)

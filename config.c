@@ -352,6 +352,11 @@ static struct config opts[] = {
 		.env = "GENIMAGE_MKSQUASHFS",
 		.def = "mksquashfs",
 	}, {
+		.name = "qemu-img",
+		.opt = CFG_STR("qemu-img", NULL, CFGF_NONE),
+		.env = "GENIMAGE_QEMU",
+		.def = "qemu-img",
+	}, {
 		.name = "rauc",
 		.opt = CFG_STR("rauc", NULL, CFGF_NONE),
 		.env = "GENIMAGE_RAUC",

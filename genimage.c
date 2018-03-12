@@ -46,6 +46,7 @@ static struct image_handler *handlers[] = {
 	&hdimage_handler,
 	&iso_handler,
 	&jffs2_handler,
+	&qemu_handler,
 	&rauc_handler,
 	&squashfs_handler,
 	&tar_handler,

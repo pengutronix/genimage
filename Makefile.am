@@ -24,6 +24,7 @@ genimage_SOURCES = \
 	image-hd.c \
 	image-iso.c \
 	image-jffs2.c \
+	image-qemu.c \
 	image-rauc.c \
 	image-squashfs.c \
 	image-tar.c \
@@ -61,6 +62,8 @@ EXTRA_DIST += \
 	test/iso.config \
 	test/jffs2.config \
 	test/jffs2.md5 \
+	test/qemu.config \
+	test/qemu.info \
 	test/sharness.sh \
 	test/squashfs.config \
 	test/tar.config \
