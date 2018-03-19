@@ -11,6 +11,7 @@ addons:
       - genext2fs
       - genisoimage
       - mtools
+      - qemu-utils
       - squashfs-tools
 # FIXME: dtc on travis is too old
 #      - device-tree-compiler
