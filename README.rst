@@ -134,6 +134,16 @@ Options:
 			using the debugfs commands ``set_current_time``,
 			``set_super_value mkfs_time`` and ``set_super_value lastcheck``
 
+FIT
+***
+Generates U-Boot FIT images.
+
+Options:
+
+:its:			String option holding the path of the input its file
+:keydir:		String option holding the directory containing the keys
+			used for signing.
+
 flash
 *****
 Generates flash images. These are basically the partition contents padded to the

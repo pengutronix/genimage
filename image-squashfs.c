@@ -40,7 +40,7 @@ static int squash_generate(struct image *image)
 	else
 		snprintf(compression, sizeof(compression), "-comp %s", comp_setup);
 
-	return systemp(image, "%s %s %s -b %u -noappend %s %s",
+	return systemp(image, "%s '%s' '%s' -b %u -noappend %s %s",
 			get_opt("mksquashfs"),
 			mountpath(image), /* source dir */
 			imageoutfile(image), /* destination file */

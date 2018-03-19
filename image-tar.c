@@ -32,7 +32,7 @@ static int tar_generate(struct image *image)
 	if (strstr(image->file, ".tar.bz2"))
 		comp = "j";
 
-	ret = systemp(image, "%s c%s -f %s -C %s .",
+	ret = systemp(image, "%s c%s -f '%s' -C '%s' .",
 			get_opt("tar"),
 			comp,
 			imageoutfile(image), mountpath(image));

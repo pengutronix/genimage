@@ -25,18 +25,22 @@
 static int iso_generate(struct image *image)
 {
 	int ret;
+	char *boot;
 	char *boot_image = cfg_getstr(image->imagesec, "boot-image");
 	char *bootargs = cfg_getstr(image->imagesec, "bootargs");
 	char *extraargs = cfg_getstr(image->imagesec, "extraargs");
 	char *input_charset = cfg_getstr(image->imagesec, "input-charset");
 	char *volume_id = cfg_getstr(image->imagesec, "volume-id");
 
-	ret = systemp(image, "%s -input-charset %s -R -hide-rr-moved %s %s %s -V '%s' %s -o %s %s",
+	if (boot_image)
+		xasprintf(&boot, "-b '%s' %s", boot_image, bootargs);
+	else
+		boot = "";
+
+	ret = systemp(image, "%s -input-charset %s -R -hide-rr-moved %s -V '%s' %s -o '%s' '%s'",
 			get_opt("genisoimage"),
 			input_charset,
-			boot_image ? "-b" : "",
-			boot_image ? boot_image : "",
-			boot_image ? bootargs : "",
+			boot,
 			volume_id,
 			extraargs,
 			imageoutfile(image),

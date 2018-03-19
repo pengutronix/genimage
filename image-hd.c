@@ -64,7 +64,7 @@ static int hdimage_setup_mbr(struct image *image, char *part_table)
 	struct partition *part;
 	int i = 0;
 
-	image_log(image, 1, "writing MBR\n");
+	image_info(image, "writing MBR\n");
 
 	*((int*)part_table) = hd->disksig;
 	part_table += 6;
@@ -115,7 +115,7 @@ static int hdimage_setup_ebr(struct image *image, struct partition *part, char *
 	struct hdimage *hd = image->handler_priv;
 	struct partition_entry *entry;
 
-	image_log(image, 1, "writing EBR\n");
+	image_info(image, "writing EBR\n");
 
 	entry = (struct partition_entry *)ebr;
 
@@ -157,7 +157,7 @@ static int hdimage_generate(struct image *image)
 		struct image *child;
 		const char *infile;
 
-		image_log(image, 1, "adding partition '%s'%s%s%s%s ...\n", part->name,
+		image_info(image, "adding partition '%s'%s%s%s%s ...\n", part->name,
 			part->in_partition_table ? " (in MBR)" : "",
 			part->image ? " from '": "",
 			part->image ? part->image : "",

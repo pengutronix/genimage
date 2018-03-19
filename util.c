@@ -22,23 +22,30 @@
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 #include <unistd.h>
+#include <fcntl.h>
 
 #include "genimage.h"
 
-static int skip_log(int level)
+static int loglevel(void)
 {
-	static int loglevel = -1;
+	static int level = -1;
 
-	if (loglevel < 0) {
+	if (level < 0) {
 		const char *l = get_opt("loglevel");
 		if (l)
-			loglevel = atoi(l);
+			level = atoi(l);
 		else
-			loglevel = 1;
+			level = 1;
 	}
 
-	return (level > loglevel);
+	return level;
+}
+
+static int skip_log(int level)
+{
+	return (level > loglevel());
 }
 
 static void xvasprintf(char **strp, const char *fmt, va_list ap)
@@ -60,65 +67,94 @@ void xasprintf(char **strp, const char *fmt, ...)
 	va_end (args);
 }
 
-void image_error(struct image *image, const char *fmt, ...)
+static void image_log(struct image *image, int level, const char *fmt,
+		      va_list args)
 {
-	va_list args;
 	char *buf;
-
-	va_start (args, fmt);
-
-	xvasprintf(&buf, fmt, args);
-
-	va_end (args);
-
-	fprintf(stderr, "%s(%s): %s", image->handler ?
-		image->handler->type : "unknown", image->file, buf);
-
-	free(buf);
-}
-
-void image_log(struct image *image, int level,  const char *fmt, ...)
-{
-	va_list args;
-	char *buf;
+	const char *p;
 
 	if (skip_log(level))
 		return;
 
-	va_start (args, fmt);
-
 	xvasprintf(&buf, fmt, args);
 
-	va_end (args);
+	switch (level) {
+		case 0:
+			p = "ERROR";
+			break;
+		case 1:
+			p = "INFO";
+			break;
+		case 2:
+			p = "DEBUG";
+			break;
+		case 3:
+		default:
+			p = "VDEBUG";
+			break;
+	}
 
-	fprintf(stderr, "%s(%s): %s", image->handler->type, image->file, buf);
+	if (image)
+		fprintf(stderr, "%s: %s(%s): %s", p, image->handler ?
+			image->handler->type : "unknown", image->file, buf);
+	else
+		fprintf(stderr, "%s: %s", p, buf);
 
 	free(buf);
+}
+
+void image_error(struct image *image, const char *fmt, ...)
+{
+	va_list args;
+
+	va_start(args, fmt);
+	image_log(image, 0, fmt, args);
+	va_end(args);
+}
+
+void image_info(struct image *image, const char *fmt, ...)
+{
+	va_list args;
+
+	va_start(args, fmt);
+	image_log(image, 1, fmt, args);
+	va_end(args);
+}
+
+void image_debug(struct image *image, const char *fmt, ...)
+{
+	va_list args;
+
+	va_start(args, fmt);
+	image_log(image, 2, fmt, args);
+	va_end(args);
 }
 
 void error(const char *fmt, ...)
 {
 	va_list args;
 
-	va_start (args, fmt);
-
-	vfprintf(stderr, fmt, args);
-
-	va_end (args);
+	va_start(args, fmt);
+	image_log(NULL, 0, fmt, args);
+	va_end(args);
 }
 
-void logmsg(int level, const char *fmt, ...)
+void info(const char *fmt, ...)
 {
 	va_list args;
 
-	if (skip_log(level))
-		return;
+	va_start(args, fmt);
+	image_log(NULL, 1, fmt, args);
+	va_end(args);
+}
 
-	va_start (args, fmt);
+void debug(const char *fmt, ...)
+{
+	va_list args;
 
-	vfprintf(stderr, fmt, args);
-
-	va_end (args);
+	va_start(args, fmt);
+	image_log(NULL, 2, fmt, args);
+	va_end(args);
 }
 
 /*
@@ -128,7 +164,10 @@ int systemp(struct image *image, const char *fmt, ...)
 {
 	va_list args;
 	char *buf;
+	const char *o;
 	int ret;
+	int status;
+	pid_t pid;
 
 	va_start (args, fmt);
 
@@ -139,16 +178,50 @@ int systemp(struct image *image, const char *fmt, ...)
 	if (!buf)
 		return -ENOMEM;
 
-	if (image)
-		image_log(image, 2, "cmd: %s\n", buf);
+	if (loglevel() >= 3)
+		o = " (stderr+stdout):";
+	else if (loglevel() >= 1)
+		o = " (stderr):";
 	else
-		logmsg(2, "cmd: %s\n", buf);
+		o = "";
 
-	ret = system(buf);
+	image_info(image, "cmd: \"%s\"%s\n", buf, o);
 
-	if (ret > 0)
-		ret = WEXITSTATUS(ret);
+	pid = fork();
 
+	if (!pid) {
+		int fd;
+
+		if (loglevel() < 1) {
+			fd = open("/dev/null", O_WRONLY);
+			dup2(fd, STDERR_FILENO);
+		}
+
+		if (loglevel() < 3) {
+			fd = open("/dev/null", O_WRONLY);
+			dup2(fd, STDOUT_FILENO);
+		} else {
+			dup2(STDERR_FILENO, STDOUT_FILENO);
+		}
+
+		ret = execl("/bin/sh", "sh", "-c", buf, NULL);
+		if (ret < 0) {
+			ret = -errno;
+			error("Cannot execute %s: %s\n", buf, strerror(errno));
+			goto err_out;
+		}
+	} else {
+		ret = waitpid(pid, &status, 0);
+		if (ret < 0) {
+			ret = -errno;
+			error("Failed to wait for command execution: %s\n", strerror(errno));
+			goto err_out;
+		}
+	}
+
+	ret = WEXITSTATUS(status);
+
+err_out:
 	free(buf);
 
 	return ret;

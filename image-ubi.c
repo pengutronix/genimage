@@ -76,7 +76,7 @@ static int ubi_generate(struct image *image)
 
 	fclose(fini);
 
-	ret = systemp(image, "%s -s %d -O %d -p %d -m %d -o %s %s %s",
+	ret = systemp(image, "%s -s %d -O %d -p %d -m %d -o '%s' '%s' %s",
 			get_opt("ubinize"),
 			image->flash_type->sub_page_size,
 			image->flash_type->vid_header_offset,

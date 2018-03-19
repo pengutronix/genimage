@@ -20,6 +20,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <getopt.h>
+#include <unistd.h>
 
 #include "genimage.h"
 
@@ -244,24 +245,56 @@ err_out:
 	return ret;
 }
 
+static char *abspath(const char *path)
+{
+	char *p;
+
+	if (*path == '/')
+		return strdup(path);
+
+	xasprintf(&p, "%s/%s", get_current_dir_name(), path);
+
+	return p;
+}
+
 const char *imagepath(void)
 {
-	return get_opt("outputpath");
+	static const char *outputpath;
+
+	if (!outputpath)
+		outputpath = abspath(get_opt("outputpath"));
+
+	return outputpath;
 }
 
 const char *inputpath(void)
 {
-	return get_opt("inputpath");
+	static const char *inputpath;
+
+	if (!inputpath)
+		inputpath = abspath(get_opt("inputpath"));
+
+	return inputpath;
 }
 
 const char *rootpath(void)
 {
-	return get_opt("rootpath");
+	static const char *rootpath;
+
+	if (!rootpath)
+		rootpath = abspath(get_opt("rootpath"));
+
+	return rootpath;
 }
 
 const char *tmppath(void)
 {
-	return get_opt("tmppath");
+	static const char *tmppath;
+
+	if (!tmppath)
+		tmppath = abspath(get_opt("tmppath"));
+
+	return tmppath;
 }
 
 static struct config opts[] = {
@@ -274,18 +307,22 @@ static struct config opts[] = {
 		.name = "rootpath",
 		.opt = CFG_STR("rootpath", NULL, CFGF_NONE),
 		.env = "GENIMAGE_ROOTPATH",
+		.def = "root",
 	}, {
 		.name = "tmppath",
 		.opt = CFG_STR("tmppath", NULL, CFGF_NONE),
 		.env = "GENIMAGE_TMPPATH",
+		.def = "tmp",
 	}, {
 		.name = "inputpath",
 		.opt = CFG_STR("inputpath", NULL, CFGF_NONE),
 		.env = "GENIMAGE_INPUTPATH",
+		.def = "input",
 	}, {
 		.name = "outputpath",
 		.opt = CFG_STR("outputpath", NULL, CFGF_NONE),
 		.env = "GENIMAGE_OUTPUTPATH",
+		.def = "images",
 	}, {
 		.name = "cpio",
 		.opt = CFG_STR("cpio", NULL, CFGF_NONE),
@@ -371,6 +408,11 @@ static struct config opts[] = {
 		.opt = CFG_STR("ubinize", NULL, CFGF_NONE),
 		.env = "GENIMAGE_UBINIZE",
 		.def = "ubinize",
+	}, {
+		.name = "mkimage",
+		.opt = CFG_STR("mkimage", NULL, CFGF_NONE),
+		.env = "GENIMAGE_MKIMAGE",
+		.def = "mkimage",
 	}, {
 		.name = "config",
 		.env = "GENIMAGE_CONFIG",

@@ -33,7 +33,7 @@ static int vfat_generate(struct image *image)
 	if (ret)
 		return ret;
 
-	ret = systemp(image, "%s %s %s >/dev/null", get_opt("mkdosfs"),
+	ret = systemp(image, "%s %s '%s'", get_opt("mkdosfs"),
 			extraargs, imageoutfile(image));
 	if (ret)
 		return ret;
@@ -48,15 +48,15 @@ static int vfat_generate(struct image *image)
 		while ((next = strchr(next, '/')) != NULL) {
 			*next = '\0';
 			/* ignore the error: mdd fails if the target exists. */
-			systemp(image, "%s -DsS -i %s ::%s",
+			systemp(image, "%s -DsS -i %s '::%s'",
 				get_opt("mmd"), imageoutfile(image), path);
 			*next = '/';
 			++next;
 		}
 
-		image_log(image, 1, "adding file '%s' as '%s' ...\n",
+		image_info(image, "adding file '%s' as '%s' ...\n",
 				child->file, *target ? target : child->file);
-		ret = systemp(image, "%s -bsp -i %s %s ::%s",
+		ret = systemp(image, "%s -bsp -i '%s' '%s' '::%s'",
 				get_opt("mcopy"), imageoutfile(image),
 				file, target);
 		if (ret)
@@ -65,7 +65,7 @@ static int vfat_generate(struct image *image)
 	if (!list_empty(&image->partitions))
 		return 0;
 
-	ret = systemp(image, "%s -bsp -i %s %s/* ::", get_opt("mcopy"),
+	ret = systemp(image, "%s -bsp -i '%s' '%s'/* ::", get_opt("mcopy"),
 			imageoutfile(image), mountpath(image));
 	return ret;
 }

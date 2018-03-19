@@ -42,6 +42,7 @@ static struct image_handler *handlers[] = {
 	&ext3_handler,
 	&ext4_handler,
 	&file_handler,
+	&fit_handler,
 	&flash_handler,
 	&hdimage_handler,
 	&iso_handler,
@@ -226,7 +227,7 @@ static int image_generate(struct image *image)
 	}
 
 	if (ret) {
-		systemp(image, "rm -f %s", imageoutfile(image));
+		systemp(image, "rm -f \"%s\"", imageoutfile(image));
 		return ret;
 	}
 
@@ -400,11 +401,11 @@ static int collect_mountpoints(void)
 
 	add_root_mountpoint();
 
-	ret = systemp(NULL, "mkdir -p %s", tmppath());
+	ret = systemp(NULL, "mkdir -p \"%s\"", tmppath());
 	if (ret)
 		return ret;
 
-	ret = systemp(NULL, "cp -a %s %s/root", rootpath(), tmppath());
+	ret = systemp(NULL, "cp -a \"%s\" \"%s/root\"", rootpath(), tmppath());
 	if (ret)
 		return ret;
 
@@ -416,16 +417,16 @@ static int collect_mountpoints(void)
 	list_for_each_entry(mp, &mountpoints, list) {
 		if (!strlen(mp->path))
 			continue;
-		ret = systemp(NULL, "mv %s/root/%s %s", tmppath(), mp->path, mp->mountpath);
+		ret = systemp(NULL, "mv \"%s/root/%s\" \"%s\"", tmppath(), mp->path, mp->mountpath);
 		if (ret)
 			return ret;
-		ret = systemp(NULL, "mkdir %s/root/%s", tmppath(), mp->path);
+		ret = systemp(NULL, "mkdir \"%s/root/%s\"", tmppath(), mp->path);
 		if (ret)
 			return ret;
-		ret = systemp(NULL, "chmod --reference=%s %s/root/%s", mp->mountpath, tmppath(), mp->path);
+		ret = systemp(NULL, "chmod --reference=\"%s\" \"%s/root/%s\"", mp->mountpath, tmppath(), mp->path);
 		if (ret)
 			return ret;
-		ret = systemp(NULL, "chown --reference=%s %s/root/%s", mp->mountpath, tmppath(), mp->path);
+		ret = systemp(NULL, "chown --reference=\"%s\" \"%s/root/%s\"", mp->mountpath, tmppath(), mp->path);
 		if (ret)
 			return ret;
 	}
@@ -460,7 +461,7 @@ static void check_tmp_path(void)
 
 	dir = opendir(tmp);
 	if (!dir) {
-		ret = systemp(NULL, "mkdir -p %s", tmppath());
+		ret = systemp(NULL, "mkdir -p \"%s\"", tmppath());
 		if (ret)
 			exit(1);
 		return;
@@ -482,7 +483,7 @@ static void check_tmp_path(void)
 static void cleanup(void)
 {
 	if (tmppath_generated)
-		systemp(NULL, "rm -rf %s/*", tmppath());
+		systemp(NULL, "rm -rf \"%s\"/*", tmppath());
 }
 
 static cfg_opt_t top_opts[] = {
@@ -622,7 +623,7 @@ int main(int argc, char *argv[])
 
 	check_tmp_path();
 
-	ret = systemp(NULL, "rm -rf %s/*", tmppath());
+	ret = systemp(NULL, "rm -rf \"%s\"/*", tmppath());
 	if (ret)
 		goto cleanup;
 
@@ -672,7 +673,7 @@ int main(int argc, char *argv[])
 			child = image_get(part->image);
 			if (child)
 				continue;
-			image_log(image, 2, "adding implicit file rule for '%s'\n", part->image);
+			image_debug(image, "adding implicit file rule for '%s'\n", part->image);
 			child = xzalloc(sizeof *image);
 			INIT_LIST_HEAD(&child->partitions);
 			list_add_tail(&child->list, &images);
@@ -696,7 +697,7 @@ int main(int argc, char *argv[])
 	if (ret)
 		goto cleanup;
 
-	ret = systemp(NULL, "mkdir -p %s", imagepath());
+	ret = systemp(NULL, "mkdir -p \"%s\"", imagepath());
 	if (ret)
 		goto cleanup;
 

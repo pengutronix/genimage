@@ -28,7 +28,7 @@ setup_data() {
 
 run_genimage() {
 	if [ "$verbose" = "t" ]; then
-		vargs="--loglevel=2"
+		vargs="--loglevel=3"
 	fi
 	rm -rf tmp images "${root_test}"
 	mkdir "${root_test}" images
@@ -256,6 +256,18 @@ test_expect_success dd,mkdosfs,mcopy "vfat" "
 	check_size images/test.vfat 4194304
 	mdir -/ -f -b -i images/test.vfat / | sed -e 's;^::/;;' -e 's;/$;;' | sort > '${filelist_test}' &&
 	check_filelist
+"
+
+setup_fit_its() {
+	setup_test_images &&
+	cp ${testdir}/fit.its input/
+}
+
+exec_test_set_prereq mkimage
+exec_test_set_prereq dtc
+test_expect_success mkimage,dtc "fit" "
+	setup_fit_its &&
+	run_genimage fit.config test.fit
 "
 
 test_done

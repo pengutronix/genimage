@@ -12,6 +12,9 @@ addons:
       - genisoimage
       - mtools
       - squashfs-tools
+# FIXME: dtc on travis is too old
+#      - device-tree-compiler
+#      - u-boot-tools
 script:
   - ./autogen.sh
   - ./configure

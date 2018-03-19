@@ -29,7 +29,7 @@ static int cpio_generate(struct image *image)
 	char *extraargs = cfg_getstr(image->imagesec, "extraargs");
 	char *comp = cfg_getstr(image->imagesec, "compress");
 
-	ret = systemp(image, "(cd \"%s\" && find . | %s -H \"%s\" %s -o %s %s) > %s",
+	ret = systemp(image, "(cd '%s' && find . | %s -H '%s' %s -o %s %s) > '%s'",
 			mountpath(image),
 			get_opt("cpio"),
 			format, extraargs, comp[0] != '\0' ? "|" : "", comp,
