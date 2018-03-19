@@ -222,16 +222,16 @@ int pad_file(struct image *image, const char *infile, const char *outfile,
 	if (infile) {
 		f = fopen(infile, "r");
 		if (!f) {
-			image_error(image, "open %s: %s\n", infile, strerror(errno));
 			ret = -errno;
+			image_error(image, "open %s: %s\n", infile, strerror(errno));
 			goto err_out;
 		}
 	}
 
 	outf = fopen(outfile, mode == MODE_OVERWRITE ? "w" : "a");
 	if (!outf) {
-		image_error(image, "open %s: %s\n", outfile, strerror(errno));
 		ret = -errno;
+		image_error(image, "open %s: %s\n", outfile, strerror(errno));
 		goto err_out;
 	}
 
@@ -243,6 +243,7 @@ int pad_file(struct image *image, const char *infile, const char *outfile,
 		if (ret)
 			goto err_out;
 		if ((unsigned long long)s.st_size > size) {
+			image_error(image, "input file '%s' too large\n", outfile);
 			ret = -EINVAL;
 			goto err_out;
 		}
@@ -257,6 +258,7 @@ int pad_file(struct image *image, const char *infile, const char *outfile,
 		w = fwrite(buf, 1, r, outf);
 		if (w < r) {
 			ret = -errno;
+			image_error(image, "write %s: %s\n", outfile, strerror(errno));
 			goto err_out;
 		}
 		size -= r;
@@ -281,6 +283,7 @@ fill:
 		r = fwrite(buf, 1, now, outf);
 		if (r < now) {
 			ret = -errno;
+			image_error(image, "write %s: %s\n", outfile, strerror(errno));
 			goto err_out;
 		}
 		size -= now;
@@ -306,14 +309,14 @@ int insert_data(struct image *image, const char *data, const char *outfile,
 	if (!outf && errno == ENOENT)
 		outf = fopen(outfile, "w");
 	if (!outf) {
-		image_error(image, "open %s: %s\n", outfile, strerror(errno));
 		ret = -errno;
+		image_error(image, "open %s: %s\n", outfile, strerror(errno));
 		goto err_out;
 	}
 	ret = fseek(outf, offset, SEEK_SET);
 	if (ret) {
-		image_error(image, "seek %s: %s\n", outfile, strerror(errno));
 		ret = -errno;
+		image_error(image, "seek %s: %s\n", outfile, strerror(errno));
 		goto err_out;
 	}
 	while (size) {
@@ -322,6 +325,7 @@ int insert_data(struct image *image, const char *data, const char *outfile,
 		r = fwrite(data, 1, now, outf);
 		if (r < now) {
 			ret = -errno;
+			image_error(image, "write %s: %s\n", outfile, strerror(errno));
 			goto err_out;
 		}
 		size -= now;
