@@ -94,6 +94,7 @@ extern struct image_handler flash_handler;
 extern struct image_handler hdimage_handler;
 extern struct image_handler iso_handler;
 extern struct image_handler jffs2_handler;
+extern struct image_handler qemu_handler;
 extern struct image_handler rauc_handler;
 extern struct image_handler squashfs_handler;
 extern struct image_handler tar_handler;
