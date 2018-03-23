@@ -219,13 +219,16 @@ Generates a RAUC update bundle.
 
 Options:
 
-:extraargs:		Extra arguments passed to rauc
-:image:
-:files:
-:file:
-:key:			Path to the key file. Passed to the ``--key`` option of rauc
+:extraargs:		Extra arguments passed to RAUC
+:file:			Specify a file to be added into the RAUC bundle. Usage is:
+			``file foo { image = "bar" }`` which adds a file "foo" in the
+			RAUC bundle from then input file "bar"
+:files:			A list of filenames added into the RAUC bundle. Like **file**
+			above, but without the ability to add the files under different
+			name.
+:key:			Path to the key file. Passed to the ``--key`` option of RAUC
 :cert:			Path to the certificate file. Passed to the ``--cert`` option
-			of rauc
+			of RAUC
 :manifest:		content of the manifest file
 
 tar
