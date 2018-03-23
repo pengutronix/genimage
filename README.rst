@@ -234,7 +234,7 @@ Options:
 tar
 ***
 
-Generates a tar image.
+Generates a tar image. The image will be compressed as defined by the filename suffix.
 
 ubi
 ***
