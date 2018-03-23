@@ -74,13 +74,13 @@ Here are all options for images:
 :partition:	can be given multiple times and refers to a partition described
 		below
 
-additionally each image can have one of the following sections describing the
+Additionally each image can have one of the following sections describing the
 type of the image:
 
 cpio, cramfs, ext2, ext3, ext4, file, flash, hdimage, iso, jffs2, qemu, squashfs,
 tar, ubi, ubifs, vfat.
 
-partition options:
+Partition options:
 
 :offset:		The offset of this partition as a total offset to the beginning
 			of the device.
@@ -89,7 +89,7 @@ partition options:
 			on the device.
 :partition-type:	Used by dos partition tables to specify the partition type.
 :image:			The image file this partition shall be filled with
-:autoresize:		used by ubi (FIXME: do we need this? isn't size = 0 enough)	
+:autoresize:		used by ubi (FIXME: do we need this? Isn't size = 0 enough)
 :bootable:		Boolean specifying whether to set the bootable flag.
 :in-partition-table:	Boolean specifying whether to include this partition in
 			the partition table.
@@ -260,9 +260,9 @@ Options:
 
 :extraargs:		Extra arguments passed to mkdosfs
 :file:			Specify a file to be added into the filesystem image. Usage is:
-			file foo { image = "bar" } which adds a file "foo" in the
-			filesystem image from input file "bar"
-:files:			A list of filenames added into the filesystem image. Like :file:
+			``file foo { image = "bar" }`` which adds a file "foo" in the
+			filesystem image from the input file "bar"
+:files:			A list of filenames added into the filesystem image. Like **file**
 			above, but without the ability to add the files under different
 			name.
 
@@ -288,11 +288,11 @@ Several flash related image types need a valid flash section. From the image typ
 the flash type section is referred to using the ``flashtype`` option which contains
 the name of the flash type to be used.
 
-For more information of the meaning of these values see the ubi(fs) and mtd faqs:
+For more information of the meaning of these values see the ubi(fs) and mtd FAQs:
 
 http://www.linux-mtd.infradead.org/faq/general.html
 
-example flash section::
+Example flash section::
 
   flash nand-64M-512 {
 	  pebsize = 16384
@@ -357,5 +357,5 @@ Include Configurations Fragments
 To include a ``"foo.cfg"`` config file, use the following statement::
 
     include("foo.cfg")
-    
-This allows to re-use, for example flash configuration files, accross different image configurations.
+
+This allows to re-use, for example flash configuration files, across different image configurations.
