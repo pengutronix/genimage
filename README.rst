@@ -64,7 +64,9 @@ Here are all options for images:
 :name:		The name of this image. This is used for some image types
 		to set the name of the image.
 :size:		Size of this image in bytes
-:mountpoint:	mountpoint if image refers to a filesystem image.
+:mountpoint:	mountpoint if image refers to a filesystem image. The
+		default is "/". The content of "${rootpath}${mountpoint}"
+		will be used used fill the filesystem.
 :exec-pre:	Custom command to run before generating the image.
 :exec-post:	Custom command to run after generating the image.
 :flashtype:	refers to a flash section. Optional for non flash like images
@@ -263,6 +265,9 @@ Options:
 :files:			A list of filenames added into the filesystem image. Like :file:
 			above, but without the ability to add the files under different
 			name.
+
+Note: If no content is specified with ``file`` or ``files`` then
+``rootpath`` and ``mountpoint`` are used to provide the content.
 
 The Flash Section
 -----------------
