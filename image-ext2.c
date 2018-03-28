@@ -15,20 +15,24 @@
  */
 
 #include <confuse.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
 #include <errno.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+
 
 #include "genimage.h"
 
-static int ext2_generate(struct image *image)
+static int ext2_generate_genext2fs(struct image *image)
 {
 	int ret;
 	const char *extraargs = cfg_getstr(image->imagesec, "extraargs");
 	const char *features = cfg_getstr(image->imagesec, "features");
 	const char *label = cfg_getstr(image->imagesec, "label");
-	const char *fs_timestamp = cfg_getstr(image->imagesec, "fs-timestamp");
 
 	ret = systemp(image, "%s -d '%s' --size-in-blocks=%lld -i 16384 '%s' %s",
 			get_opt("genext2fs"),
@@ -50,6 +54,61 @@ static int ext2_generate(struct image *image)
 		if (ret)
 			return ret;
 	}
+	return 0;
+}
+
+static int ext2_generate_mke2fs(struct image *image)
+{
+	char *extraargs = cfg_getstr(image->imagesec, "extraargs");
+	char *label = cfg_getstr(image->imagesec, "label");
+	char *conf = cfg_getstr(image->imagesec, "mke2fs_conf");
+	char *conf_env = "";
+
+	if (label && label[0] == '\0')
+		label = NULL;
+
+	if (conf) {
+		int fd;
+		/* mke2fs ignores a missing config file, so make sure it exists. */
+		fd = open(conf, O_RDONLY);
+		if (fd < 0) {
+			int ret = errno;
+			image_error(image, "Failed to open mke2fs_conf '%s': %s\n",
+					conf, strerror(ret));
+			return -ret;
+		}
+		close(fd);
+		xasprintf(&conf_env, "MKE2FS_CONFIG='%s' ", conf);
+	}
+
+	return systemp(image, "%s%s -t %s -E root_owner=0:0 "
+			"-E lazy_itable_init=0,lazy_journal_init=0 "
+			"%s -d '%s' %s %s%s '%s' %lld",
+			conf_env, get_opt("mke2fs"), image->handler->type,
+			image->size < 0x20000000000 ? "-O ^huge_file" : "",
+			mountpath(image), extraargs,
+			label ? "-L " : "", label ? label : "",
+			imageoutfile(image), image->size / 1024);
+}
+
+static int ext2_generate(struct image *image)
+{
+	const char *fs_timestamp = cfg_getstr(image->imagesec, "fs-timestamp");
+	const char *tool = cfg_getstr(image->imagesec, "tool");
+	int ret;
+
+	if (strcmp(tool, "mke2fs") == 0)
+		ret = ext2_generate_mke2fs(image);
+	else if (strcmp(tool, "genext2fs") == 0)
+		ret = ext2_generate_genext2fs(image);
+	else {
+		image_error(image, "unknown tool to create %s images: %s",
+			image->handler->type, tool);
+		ret = -EINVAL;
+	}
+
+	if (ret)
+		return ret;
 
 	ret = systemp(image, "%s -pvfD '%s'", get_opt("e2fsck"),
 			imageoutfile(image));
@@ -87,6 +146,8 @@ static cfg_opt_t ext2_opts[] = {
 	CFG_STR("features", 0, CFGF_NONE),
 	CFG_STR("label", 0, CFGF_NONE),
 	CFG_STR("fs-timestamp", NULL, CFGF_NONE),
+	CFG_STR("tool", "genext2fs", CFGF_NONE),
+	CFG_STR("mke2fs_conf", 0, CFGF_NONE),
 	CFG_END()
 };
 
@@ -102,6 +163,8 @@ static cfg_opt_t ext3_opts[] = {
 	CFG_STR("features", "has_journal", CFGF_NONE),
 	CFG_STR("label", 0, CFGF_NONE),
 	CFG_STR("fs-timestamp", NULL, CFGF_NONE),
+	CFG_STR("tool", "genext2fs", CFGF_NONE),
+	CFG_STR("mke2fs_conf", 0, CFGF_NONE),
 	CFG_END()
 };
 
@@ -117,6 +180,8 @@ static cfg_opt_t ext4_opts[] = {
 	CFG_STR("features", "extents,uninit_bg,dir_index,has_journal", CFGF_NONE),
 	CFG_STR("label", 0, CFGF_NONE),
 	CFG_STR("fs-timestamp", NULL, CFGF_NONE),
+	CFG_STR("tool", "genext2fs", CFGF_NONE),
+	CFG_STR("mke2fs_conf", 0, CFGF_NONE),
 	CFG_END()
 };
 
