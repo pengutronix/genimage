@@ -1,0 +1,70 @@
+Filesystem volume name:   mke2fs
+Last mounted on:          <not available>
+Filesystem magic number:  0xEF53
+Filesystem revision #:    1 (dynamic)
+Filesystem features:      has_journal ext_attr resize_inode dir_index filetype extent 64bit flex_bg sparse_super large_file dir_nlink extra_isize metadata_csum
+Filesystem flags:         signed_directory_hash 
+Default mount options:    user_xattr acl
+Filesystem state:         clean
+Errors behavior:          Continue
+Filesystem OS type:       Linux
+Inode count:              8192
+Block count:              32768
+Reserved block count:     1638
+Free blocks:              26838
+Free inodes:              8141
+First block:              1
+Block size:               1024
+Fragment size:            1024
+Group descriptor size:    64
+Reserved GDT blocks:      255
+Blocks per group:         8192
+Fragments per group:      8192
+Inodes per group:         2048
+Inode blocks per group:   256
+Flex block group size:    16
+Filesystem created:       Sat Jan  1 00:00:00 2000
+Last mount time:          n/a
+Last write time:          Sat Jan  1 00:00:00 2000
+Mount count:              0
+Maximum mount count:      -1
+Last checked:             Sat Jan  1 00:00:00 2000
+Check interval:           0 (<none>)
+Lifetime writes:          343 kB
+Reserved blocks uid:      0 (user root)
+Reserved blocks gid:      0 (group root)
+First inode:              11
+Inode size:	          128
+Journal inode:            8
+Default directory hash:   half_md4
+Journal backup:           inode blocks
+Checksum type:            crc32c
+Journal features:         (none)
+Journal size:             4096k
+Journal length:           4096
+Journal sequence:         0x00000001
+Journal start:            0
+
+
+  Primary superblock at 1, Group descriptors at 2-2
+  Reserved GDT blocks at 3-257
+  Inode table at 266-521 (+265)
+  6873 free blocks, 1997 free inodes, 18 directories, 1997 unused inodes
+  Free blocks: 1320-8192
+  Free inodes: 52-2048
+  Backup superblock at 8193, Group descriptors at 8194-8194
+  Reserved GDT blocks at 8195-8449
+  Inode table at 522-777 (bg #0 + 521)
+  7935 free blocks, 2048 free inodes, 0 directories, 2048 unused inodes
+  Free blocks: 8450-16384
+  Free inodes: 2049-4096
+  Inode table at 778-1033 (bg #0 + 777)
+  4096 free blocks, 2048 free inodes, 0 directories, 2048 unused inodes
+  Free blocks: 20481-24576
+  Free inodes: 4097-6144
+  Backup superblock at 24577, Group descriptors at 24578-24578
+  Reserved GDT blocks at 24579-24833
+  Inode table at 1034-1289 (bg #0 + 1033)
+  7934 free blocks, 2048 free inodes, 0 directories, 2048 unused inodes
+  Free blocks: 24834-32767
+  Free inodes: 6145-8192
