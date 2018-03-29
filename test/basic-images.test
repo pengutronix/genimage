@@ -23,7 +23,7 @@ setup_data() {
 	find "${root_orig}" -print0 | xargs -0 touch -c -d "2011-11-11 UTC"
 	find "${root_orig}"/ -mindepth 1 -printf "%P\n" | sort  > "${filelist_orig}"
 
-	cp "${testdir}"/*.config .
+	cp "${testdir}"/*.conf* .
 }
 
 run_genimage() {
@@ -124,7 +124,7 @@ check_ext() {
 	# Hash Seed is randomly generated
 	seed="Directory Hash Seed:"
 	# checksum depends on random data
-	csum1="Group 0: (Blocks 1-4095) csum"
+	csum1="Checksum: \|.* csum "
 	# format change
 	csum2="Group 0: (Blocks 1-4095) \\[ITABLE_ZEROED\\]\|  Checksum .*, unused inodes 205"
 	dumpe2fs "${1}" | grep -v "^\($uuid\|$seed\|$csum1\|$csum2\)" > "dump" &&
@@ -144,7 +144,7 @@ check_ext() {
 			debugfs -R "rdump \"${x}\" \"${root_test}\"" "${1}" || break
 		done
 	) &&
-	check_size "${1}" 4194304 &&
+	check_size "${1}" "${3}" &&
 	check_root
 	func_check
 }
@@ -153,17 +153,24 @@ exec_test_set_prereq genext2fs
 exec_test_set_prereq e2fsck
 test_expect_success genext2fs,e2fsck "ext2" "
 	run_genimage ext2.config test.ext2 &&
-	check_ext images/test.ext2 ext2test
+	check_ext images/test.ext2 ext2test 4194304
 "
 
 test_expect_success genext2fs,e2fsck "ext3" "
 	run_genimage ext3.config test.ext3 &&
-	check_ext images/test.ext3 ext3test
+	check_ext images/test.ext3 ext3test 4194304
 "
 
 test_expect_success genext2fs,e2fsck "ext4" "
 	run_genimage ext4.config test.ext4 &&
-	check_ext images/test.ext4 ext4test
+	check_ext images/test.ext4 ext4test 4194304
+"
+
+# make sure mke2fs supports '-d root-directory'
+[ "$(mke2fs |& sed -n 's/.*\(-d \).*/\1/p')" = "-d " ] && test_set_prereq mke2fs
+test_expect_success mke2fs,e2fsck "mke2fs" "
+	run_genimage mke2fs.config mke2fs.ext4 &&
+	check_ext images/mke2fs.ext4 mke2fs 33554432
 "
 
 setup_test_images() {

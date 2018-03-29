@@ -65,6 +65,9 @@ EXTRA_DIST += \
 	test/iso.config \
 	test/jffs2.config \
 	test/jffs2.md5 \
+	test/mke2fs.conf \
+	test/mke2fs.config \
+	test/mke2fs.dump \
 	test/qemu.config \
 	test/qemu.info \
 	test/sharness.sh \

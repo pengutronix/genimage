@@ -374,6 +374,11 @@ static struct config opts[] = {
 		.env = "GENIMAGE_MKDOSFS",
 		.def = "mkdosfs",
 	}, {
+		.name = "mke2fs",
+		.opt = CFG_STR("mke2fs", NULL, CFGF_NONE),
+		.env = "GENIMAGE_MKE2FS",
+		.def = "mke2fs",
+	}, {
 		.name = "mkfsjffs2",
 		.opt = CFG_STR("mkfsjffs2", NULL, CFGF_NONE),
 		.env = "GENIMAGE_MKFJFFS2",
