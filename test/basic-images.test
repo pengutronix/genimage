@@ -124,7 +124,7 @@ check_ext() {
 	# Hash Seed is randomly generated
 	seed="Directory Hash Seed:"
 	# checksum depends on random data
-	csum1="Checksum: \|.* csum "
+	csum1="Checksum: \|Group 0: (Blocks 1-4095) csum"
 	# format change
 	csum2="Group 0: (Blocks 1-4095) \\[ITABLE_ZEROED\\]\|  Checksum .*, unused inodes 205"
 	dumpe2fs "${1}" | grep -v "^\($uuid\|$seed\|$csum1\|$csum2\)" > "dump" &&

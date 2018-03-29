@@ -2,7 +2,7 @@ Filesystem volume name:   mke2fs
 Last mounted on:          <not available>
 Filesystem magic number:  0xEF53
 Filesystem revision #:    1 (dynamic)
-Filesystem features:      has_journal ext_attr resize_inode dir_index filetype extent 64bit flex_bg sparse_super large_file dir_nlink extra_isize metadata_csum
+Filesystem features:      has_journal ext_attr resize_inode dir_index filetype extent 64bit flex_bg sparse_super dir_nlink extra_isize metadata_csum
 Filesystem flags:         signed_directory_hash 
 Default mount options:    user_xattr acl
 Filesystem state:         clean
@@ -46,24 +46,36 @@ Journal sequence:         0x00000001
 Journal start:            0
 
 
+Group 0: (Blocks 1-8192) csum 0xcb99 [ITABLE_ZEROED]
   Primary superblock at 1, Group descriptors at 2-2
   Reserved GDT blocks at 3-257
+  Block bitmap at 258 (+257), csum 0x064f6fdd
+  Inode bitmap at 262 (+261), csum 0xb1052088
   Inode table at 266-521 (+265)
   6873 free blocks, 1997 free inodes, 18 directories, 1997 unused inodes
   Free blocks: 1320-8192
   Free inodes: 52-2048
+Group 1: (Blocks 8193-16384) csum 0xfabf [INODE_UNINIT, BLOCK_UNINIT, ITABLE_ZEROED]
   Backup superblock at 8193, Group descriptors at 8194-8194
   Reserved GDT blocks at 8195-8449
+  Block bitmap at 259 (bg #0 + 258), csum 0x00000000
+  Inode bitmap at 263 (bg #0 + 262), csum 0x00000000
   Inode table at 522-777 (bg #0 + 521)
   7935 free blocks, 2048 free inodes, 0 directories, 2048 unused inodes
   Free blocks: 8450-16384
   Free inodes: 2049-4096
+Group 2: (Blocks 16385-24576) csum 0xada9 [INODE_UNINIT, ITABLE_ZEROED]
+  Block bitmap at 260 (bg #0 + 259), csum 0x040008b2
+  Inode bitmap at 264 (bg #0 + 263), csum 0x00000000
   Inode table at 778-1033 (bg #0 + 777)
   4096 free blocks, 2048 free inodes, 0 directories, 2048 unused inodes
   Free blocks: 20481-24576
   Free inodes: 4097-6144
+Group 3: (Blocks 24577-32767) csum 0x8723 [INODE_UNINIT, ITABLE_ZEROED]
   Backup superblock at 24577, Group descriptors at 24578-24578
   Reserved GDT blocks at 24579-24833
+  Block bitmap at 261 (bg #0 + 260), csum 0x78c21b7c
+  Inode bitmap at 265 (bg #0 + 264), csum 0x00000000
   Inode table at 1034-1289 (bg #0 + 1033)
   7934 free blocks, 2048 free inodes, 0 directories, 2048 unused inodes
   Free blocks: 24834-32767

@@ -15,23 +15,28 @@
  */
 
 #include <confuse.h>
+
 #include <errno.h>
-#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 #include <sys/stat.h>
-#include <sys/types.h>
-
 
 #include "genimage.h"
+
+struct ext {
+	int use_mke2fs;
+	const char *features;
+	char *usage_type_args;
+	char *conf_env;
+	char *size_features;
+};
 
 static int ext2_generate_genext2fs(struct image *image)
 {
 	int ret;
+	struct ext *ext = image->handler_priv;
 	const char *extraargs = cfg_getstr(image->imagesec, "extraargs");
-	const char *features = cfg_getstr(image->imagesec, "features");
 	const char *label = cfg_getstr(image->imagesec, "label");
 
 	ret = systemp(image, "%s -d '%s' --size-in-blocks=%lld -i 16384 '%s' %s",
@@ -42,9 +47,9 @@ static int ext2_generate_genext2fs(struct image *image)
 	if (ret)
 		return ret;
 
-	if (features && features[0] != '\0') {
+	if (ext->features && ext->features[0] != '\0') {
 		ret = systemp(image, "%s -O '%s' '%s'", get_opt("tune2fs"),
-				features, imageoutfile(image));
+				ext->features, imageoutfile(image));
 		if (ret)
 			return ret;
 	}
@@ -59,33 +64,17 @@ static int ext2_generate_genext2fs(struct image *image)
 
 static int ext2_generate_mke2fs(struct image *image)
 {
-	char *extraargs = cfg_getstr(image->imagesec, "extraargs");
-	char *label = cfg_getstr(image->imagesec, "label");
-	char *conf = cfg_getstr(image->imagesec, "mke2fs_conf");
-	char *conf_env = "";
+	struct ext *ext = image->handler_priv;
+	const char *extraargs = cfg_getstr(image->imagesec, "extraargs");
+	const char *label = cfg_getstr(image->imagesec, "label");
+	const char *options = "root_owner=0:0,lazy_itable_init=0,lazy_journal_init=0";
 
 	if (label && label[0] == '\0')
 		label = NULL;
 
-	if (conf) {
-		int fd;
-		/* mke2fs ignores a missing config file, so make sure it exists. */
-		fd = open(conf, O_RDONLY);
-		if (fd < 0) {
-			int ret = errno;
-			image_error(image, "Failed to open mke2fs_conf '%s': %s\n",
-					conf, strerror(ret));
-			return -ret;
-		}
-		close(fd);
-		xasprintf(&conf_env, "MKE2FS_CONFIG='%s' ", conf);
-	}
-
-	return systemp(image, "%s%s -t %s -E root_owner=0:0 "
-			"-E lazy_itable_init=0,lazy_journal_init=0 "
-			"%s -d '%s' %s %s%s '%s' %lld",
-			conf_env, get_opt("mke2fs"), image->handler->type,
-			image->size < 0x20000000000 ? "-O ^huge_file" : "",
+	return systemp(image, "%s%s -t %s%s -E '%s'%s -d '%s' %s %s%s '%s' %lld",
+			ext->conf_env, get_opt("mke2fs"), image->handler->type,
+			ext->usage_type_args, options, ext->size_features,
 			mountpath(image), extraargs,
 			label ? "-L " : "", label ? label : "",
 			imageoutfile(image), image->size / 1024);
@@ -93,19 +82,14 @@ static int ext2_generate_mke2fs(struct image *image)
 
 static int ext2_generate(struct image *image)
 {
+	struct ext *ext = image->handler_priv;
 	const char *fs_timestamp = cfg_getstr(image->imagesec, "fs-timestamp");
-	const char *tool = cfg_getstr(image->imagesec, "tool");
 	int ret;
 
-	if (strcmp(tool, "mke2fs") == 0)
+	if (ext->use_mke2fs)
 		ret = ext2_generate_mke2fs(image);
-	else if (strcmp(tool, "genext2fs") == 0)
+	else
 		ret = ext2_generate_genext2fs(image);
-	else {
-		image_error(image, "unknown tool to create %s images: %s",
-			image->handler->type, tool);
-		ret = -EINVAL;
-	}
 
 	if (ret)
 		return ret;
@@ -133,20 +117,77 @@ static int ext2_generate(struct image *image)
 
 static int ext2_setup(struct image *image, cfg_t *cfg)
 {
+	struct ext *ext = xzalloc(sizeof(*ext));
+	const char *conf = cfg_getstr(image->imagesec, "mke2fs_conf");
+	const char *usage_type = cfg_getstr(image->imagesec, "usage-type");
+
 	if (!image->size) {
 		image_error(image, "no size given or must not be zero\n");
 		return -EINVAL;
 	}
 
+	ext->use_mke2fs = cfg_getbool(cfg, "use-mke2fs");
+
+	ext->features = cfg_getstr(image->imagesec, "features");
+	if (!ext->features) {
+		if (!ext->use_mke2fs) {
+			if (!strcmp(image->handler->type, "ext3"))
+				ext->features = "has_journal";
+			else if (!strcmp(image->handler->type, "ext4"))
+				ext->features = "extents,uninit_bg,dir_index,has_journal";
+		}
+	}
+
+	if (ext->use_mke2fs) {
+		int is_large = image->size >= 4ll * 1024 * 1024 * 1024;
+		int is_huge = image->size >= 2048ll * 1024 * 1024 * 1024;
+		struct stat s;
+		int ret;
+
+		if (conf) {
+			/* mke2fs ignores a missing config file, so make sure it exists. */
+			ret = stat(conf, &s);
+			if (ret) {
+				image_error(image, "mke2fs.conf(%s) does not exist: %s\n",
+						conf, strerror(errno));
+				return -errno;
+			}
+			xasprintf(&ext->conf_env,"MKE2FS_CONFIG=\"%s\" ", conf);
+		} else
+			ext->conf_env = "";
+
+		if (usage_type)
+			xasprintf(&ext->usage_type_args, " -T '%s'", usage_type);
+		else
+			ext->usage_type_args = "";
+
+		xasprintf(&ext->size_features, "%s%s",
+			is_large ? "" : " -O '^large_file'",
+			is_huge ? "" :  " -O '^huge_file'");
+	}
+	else {
+		if (conf) {
+			image_error(image, "'mke2fs.conf' is only used for 'mke2fs'\n");
+			return -EINVAL;
+		}
+		if (usage_type) {
+			image_error(image, "'usage_type' is only used for 'mke2fs'\n");
+			return -EINVAL;
+		}
+	}
+
+	image->handler_priv = ext;
+
 	return 0;
 }
 
-static cfg_opt_t ext2_opts[] = {
+static cfg_opt_t ext_opts[] = {
 	CFG_STR("extraargs", "", CFGF_NONE),
-	CFG_STR("features", 0, CFGF_NONE),
+	CFG_STR("features", NULL, CFGF_NONE),
 	CFG_STR("label", 0, CFGF_NONE),
 	CFG_STR("fs-timestamp", NULL, CFGF_NONE),
-	CFG_STR("tool", "genext2fs", CFGF_NONE),
+	CFG_BOOL("use-mke2fs", cfg_false, CFGF_NONE),
+	CFG_STR("usage-type", NULL, CFGF_NONE),
 	CFG_STR("mke2fs_conf", 0, CFGF_NONE),
 	CFG_END()
 };
@@ -155,40 +196,20 @@ struct image_handler ext2_handler = {
 	.type = "ext2",
 	.generate = ext2_generate,
 	.setup = ext2_setup,
-	.opts = ext2_opts,
-};
-
-static cfg_opt_t ext3_opts[] = {
-	CFG_STR("extraargs", "", CFGF_NONE),
-	CFG_STR("features", "has_journal", CFGF_NONE),
-	CFG_STR("label", 0, CFGF_NONE),
-	CFG_STR("fs-timestamp", NULL, CFGF_NONE),
-	CFG_STR("tool", "genext2fs", CFGF_NONE),
-	CFG_STR("mke2fs_conf", 0, CFGF_NONE),
-	CFG_END()
+	.opts = ext_opts,
 };
 
 struct image_handler ext3_handler = {
 	.type = "ext3",
 	.generate = ext2_generate,
 	.setup = ext2_setup,
-	.opts = ext3_opts,
-};
-
-static cfg_opt_t ext4_opts[] = {
-	CFG_STR("extraargs", "", CFGF_NONE),
-	CFG_STR("features", "extents,uninit_bg,dir_index,has_journal", CFGF_NONE),
-	CFG_STR("label", 0, CFGF_NONE),
-	CFG_STR("fs-timestamp", NULL, CFGF_NONE),
-	CFG_STR("tool", "genext2fs", CFGF_NONE),
-	CFG_STR("mke2fs_conf", 0, CFGF_NONE),
-	CFG_END()
+	.opts = ext_opts,
 };
 
 struct image_handler ext4_handler = {
 	.type = "ext4",
 	.generate = ext2_generate,
 	.setup = ext2_setup,
-	.opts = ext4_opts,
+	.opts = ext_opts,
 };
 
