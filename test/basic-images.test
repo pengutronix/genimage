@@ -274,8 +274,8 @@ exec_test_set_prereq mkdosfs
 exec_test_set_prereq mcopy
 test_expect_success dd,mkdosfs,mcopy "vfat" "
 	run_genimage vfat.config test.vfat &&
-	check_size images/test.vfat 4194304
-	mdir -/ -f -b -i images/test.vfat / | sed -e 's;^::/;;' -e 's;/$;;' | sort > '${filelist_test}' &&
+	check_size images/test.vfat 4193280
+	MTOOLS_SKIP_CHECK=1 mdir -/ -f -b -i images/test.vfat / | sed -e 's;^::/;;' -e 's;/$;;' | sort > '${filelist_test}' &&
 	check_filelist
 "
 
