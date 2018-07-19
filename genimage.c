@@ -432,6 +432,16 @@ static int collect_mountpoints(void)
 			return ret;
 	}
 
+	/*
+	 * After the mv/mkdir of the mountpoints the timestamps of the
+	 * mountpoint and all parent dirs are changed. Fix that here.
+	 */
+	ret = systemp(NULL,
+		      "find '%s/root' -depth -type d -printf '%%P\\0' | xargs -0 -I {} touch -r '%s/{}' '%s/root/{}'",
+		      tmppath(), rootpath(), tmppath());
+	if (ret)
+		return ret;
+
 	return 0;
 }
 
