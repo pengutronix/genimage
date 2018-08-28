@@ -14,8 +14,13 @@ file or from commandline switches.
 The Configuration File
 ======================
 
-The config file of genimage uses a simple configuration language, provided by libconfuse.
+The config file of genimage uses a simple configuration language, provided by `libconfuse`_.
 This supports nested sections, as well as simple key-value pairs.
+
+.. _libconfuse: https://github.com/martinh/libconfuse
+
+Single-line comments can be introduced with ``#`` or ``//``,
+multi-line comments look like ``/* … */`` (as in C).
 
 The config file is separated into the main sections ``image``, ``flash`` and ``config``,
 and provides an ``include`` primitive.
