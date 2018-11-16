@@ -223,7 +223,7 @@ test_expect_success mkfs_jffs2 "jffs2" "
 exec_test_set_prereq dd
 exec_test_set_prereq diff
 exec_test_set_prereq qemu-img
-test_expect_success dd,diff,qemu_img "qemu" "
+test_expect_success dd,diff,qemu-img "qemu" "
 	setup_test_images &&
 	run_genimage qemu.config test.qcow &&
 	check_size images/test.qcow 196608 &&
