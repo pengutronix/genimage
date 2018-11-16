@@ -97,7 +97,7 @@ setup_data
 set -o pipefail
 
 exec_test_set_prereq cpio
-test_expect_success "cpio" "
+test_expect_success cpio "cpio" "
 	run_genimage cpio.config test.cpio &&
 	zcat images/test.cpio | cpio --extract -t | grep -v '^\.$'  | sort > '${filelist_test}' &&
 	check_size_range images/test.cpio 400 550 &&
