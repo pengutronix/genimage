@@ -67,14 +67,15 @@ static int ext2_generate_mke2fs(struct image *image)
 	struct ext *ext = image->handler_priv;
 	const char *extraargs = cfg_getstr(image->imagesec, "extraargs");
 	const char *label = cfg_getstr(image->imagesec, "label");
-	const char *options = "root_owner=0:0,lazy_itable_init=0,lazy_journal_init=0";
+	const char *root_owner = cfg_getstr(image->imagesec, "root-owner");
+	const char *options = "lazy_itable_init=0,lazy_journal_init=0";
 
 	if (label && label[0] == '\0')
 		label = NULL;
 
-	return systemp(image, "%s%s -t %s%s -E '%s'%s -d '%s' %s %s%s '%s' %lld",
+	return systemp(image, "%s%s -t %s%s -E 'root_owner=%s,%s'%s -d '%s' %s %s%s '%s' %lld",
 			ext->conf_env, get_opt("mke2fs"), image->handler->type,
-			ext->usage_type_args, options, ext->size_features,
+			ext->usage_type_args, root_owner, options, ext->size_features,
 			mountpath(image), extraargs,
 			label ? "-L " : "", label ? label : "",
 			imageoutfile(image), image->size / 1024);
@@ -182,6 +183,7 @@ static int ext2_setup(struct image *image, cfg_t *cfg)
 }
 
 static cfg_opt_t ext_opts[] = {
+	CFG_STR("root-owner", "0:0", CFGF_NONE),
 	CFG_STR("extraargs", "", CFGF_NONE),
 	CFG_STR("features", NULL, CFGF_NONE),
 	CFG_STR("label", 0, CFGF_NONE),
