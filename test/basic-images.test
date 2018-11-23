@@ -18,6 +18,7 @@ root_orig="$(pwd)/root"
 root_test="$(pwd)/root.test"
 
 setup_data() {
+	umask 0022
 	mkdir -p "${root_orig}"/{foo,bar,baz,"with spaces"}/{1,2,3}
 	touch "${root_orig}"/{foo,bar,baz,"with spaces"}/{1,2,3}/{one,two}
 	find "${root_orig}" -print0 | xargs -0 touch -c -d "2011-11-11 UTC"
