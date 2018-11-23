@@ -10,6 +10,7 @@ addons:
       - fakeroot
       - genext2fs
       - genisoimage
+      - mtd-utils
       - mtools
       - qemu-utils
       - squashfs-tools
