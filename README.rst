@@ -134,7 +134,7 @@ Options:
 :features:		Filesystem features. Passed to the ``-O`` option of tune2fs. This
 			is a comma separated list of enabled or disabled features. See
 			``man tune2fs`` for features. Default for ext3 images is
-			``has_journral``. Default for ext4 images is
+			``has_journal``. Default for ext4 images is
 			``extents,uninit_bg,dir_index,has_journal``.
 :label:			Specify the volume-label. Passed to the ``-L`` option of tune2fs
 :fs-timestamp:		Sets different timestamps in the image. Sets the given timestamp
