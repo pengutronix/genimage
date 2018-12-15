@@ -209,6 +209,11 @@ test_expect_success fdisk,sfdisk "hdimage" "
 	test_cmp '${testdir}/hdimage.fdisk-2' hdimage.fdisk-2
 "
 
+test_expect_success "hdimage2" "
+	setup_test_images &&
+	test_must_fail run_genimage hdimage2.config test.hdimage
+"
+
 exec_test_set_prereq genisoimage
 test_expect_success genisoimage "iso" "
 	run_genimage iso.config test.iso &&
