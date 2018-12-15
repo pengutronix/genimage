@@ -60,6 +60,7 @@ EXTRA_DIST += \
 	test/flash.config \
 	test/flash.md5 \
 	test/hdimage.config \
+	test/hdimage2.config \
 	test/hdimage.fdisk \
 	test/hdimage.fdisk-2 \
 	test/iso.config \
@@ -69,7 +70,7 @@ EXTRA_DIST += \
 	test/mke2fs.config \
 	test/mke2fs.dump \
 	test/qemu.config \
-	test/qemu.info \
+	test/qemu.qcow.gz \
 	test/sharness.sh \
 	test/squashfs.config \
 	test/tar.config \
