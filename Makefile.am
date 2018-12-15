@@ -69,7 +69,7 @@ EXTRA_DIST += \
 	test/mke2fs.config \
 	test/mke2fs.dump \
 	test/qemu.config \
-	test/qemu.info \
+	test/qemu.qcow.gz \
 	test/sharness.sh \
 	test/squashfs.config \
 	test/tar.config \

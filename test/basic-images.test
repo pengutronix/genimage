@@ -177,8 +177,8 @@ test_expect_success mke2fs,e2fsck "mke2fs" "
 setup_test_images() {
 	rm -rf input &&
 	mkdir input &&
-	dd if=/dev/null of=input/part1.img bs=512 count=7 &&
-	dd if=/dev/null of=input/part2.img bs=512 count=11
+	dd if=/dev/zero of=input/part1.img bs=512 count=7 &&
+	dd if=/dev/zero of=input/part2.img bs=512 count=11
 }
 
 exec_test_set_prereq dd
@@ -193,14 +193,14 @@ exec_test_set_prereq sfdisk
 test_expect_success "hdimage" "
 	setup_test_images &&
 	run_genimage hdimage.config test.hdimage &&
-	check_size images/test.hdimage 9437184 &&
+	check_size images/test.hdimage 9442816 &&
 	# check the this identifier
 	fdisk -l images/test.hdimage | grep identifier: > hdimage.fdisk &&
 	# check partitions; filter output to handle different sfdisk versions
 	sfdisk -d images/test.hdimage 2>/dev/null | grep '^images/' | \
 		sed -e 's/  *//g' -e 's;Id=;type=;' >> hdimage.fdisk &&
 	test_cmp '${testdir}/hdimage.fdisk' hdimage.fdisk &&
-	check_size images/test.hdimage-2 11534336 &&
+	check_size images/test.hdimage-2 11539968 &&
 	# check the this identifier
 	fdisk -l images/test.hdimage-2 | grep identifier: > hdimage.fdisk-2 &&
 	# check partitions; filter output to handle different sfdisk versions
@@ -227,12 +227,9 @@ exec_test_set_prereq qemu-img
 test_expect_success dd,diff,qemu-img "qemu" "
 	setup_test_images &&
 	run_genimage qemu.config test.qcow &&
-	check_size images/test.qcow 196608 &&
 	qemu-img check images/test.qcow &&
-	qemu-img info images/test.qcow | \
-	        sed -e '/refcount bits:/d' -e '/corrupt:/d' > qemu.info &&
-	test_cmp '${testdir}/qemu.info' qemu.info &&
-	check_filelist
+	zcat '${testdir}/qemu.qcow.gz' > qemu.qcow &&
+	qemu-img compare images/test.qcow qemu.qcow
 "
 
 exec_test_set_prereq mksquashfs

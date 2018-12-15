@@ -1,8 +1,0 @@
-image: images/test.qcow
-file format: qcow2
-virtual size: 0 (0 bytes)
-disk size: 192K
-cluster_size: 65536
-Format specific information:
-    compat: 1.1
-    lazy refcounts: false
