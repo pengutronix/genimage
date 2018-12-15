@@ -190,7 +190,7 @@ test_expect_success "flash" "
 
 exec_test_set_prereq fdisk
 exec_test_set_prereq sfdisk
-test_expect_success "hdimage" "
+test_expect_success fdisk,sfdisk "hdimage" "
 	setup_test_images &&
 	run_genimage hdimage.config test.hdimage &&
 	check_size images/test.hdimage 9442816 &&
