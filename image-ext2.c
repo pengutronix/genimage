@@ -73,6 +73,9 @@ static int ext2_generate_mke2fs(struct image *image)
 	if (label && label[0] == '\0')
 		label = NULL;
 
+	if (is_block_device(imageoutfile(image)))
+		pad_file(image, NULL, 2048, 0x0, MODE_OVERWRITE);
+
 	return systemp(image, "%s%s -t %s%s -E 'root_owner=%s,%s'%s -d '%s' %s %s%s '%s' %lld",
 			ext->conf_env, get_opt("mke2fs"), image->handler->type,
 			ext->usage_type_args, root_owner, options, ext->size_features,
