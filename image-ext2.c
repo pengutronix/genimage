@@ -119,8 +119,14 @@ static int ext2_generate(struct image *image)
 static int ext2_setup(struct image *image, cfg_t *cfg)
 {
 	struct ext *ext = xzalloc(sizeof(*ext));
-	const char *conf = cfg_getstr(image->imagesec, "mke2fs_conf");
+	const char *conf = cfg_getstr(image->imagesec, "mke2fs-conf");
 	const char *usage_type = cfg_getstr(image->imagesec, "usage-type");
+
+	if (!conf) {
+		conf = cfg_getstr(image->imagesec, "mke2fs_conf");
+		if (conf)
+			image_info(image, "option 'mke2fs_conf' is deprecated, use mke2fs-conf instead.\n");
+	}
 
 	if (!image->size) {
 		image_error(image, "no size given or must not be zero\n");
@@ -190,6 +196,7 @@ static cfg_opt_t ext_opts[] = {
 	CFG_STR("fs-timestamp", NULL, CFGF_NONE),
 	CFG_BOOL("use-mke2fs", cfg_false, CFGF_NONE),
 	CFG_STR("usage-type", NULL, CFGF_NONE),
+	CFG_STR("mke2fs-conf", 0, CFGF_NONE),
 	CFG_STR("mke2fs_conf", 0, CFGF_NONE),
 	CFG_END()
 };
