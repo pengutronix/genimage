@@ -668,7 +668,11 @@ int main(int argc, char *argv[])
 		image->mountpoint = cfg_getstr(imagesec, "mountpoint");
 		image->exec_pre = cfg_getstr(imagesec, "exec-pre");
 		image->exec_post = cfg_getstr(imagesec, "exec-post");
-		xasprintf(&image->outfile, "%s/%s", imagepath(), image->file);
+		if (image->file[0] == '/')
+			image->outfile = strdup(image->file);
+		else
+			xasprintf(&image->outfile, "%s/%s", imagepath(),
+					image->file);
 		if (image->mountpoint && *image->mountpoint == '/')
 			image->mountpoint++;
 		str = cfg_getstr(imagesec, "flashtype");
