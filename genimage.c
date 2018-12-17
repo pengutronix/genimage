@@ -20,6 +20,7 @@
 #include <string.h>
 #include <errno.h>
 #include <libgen.h>
+#include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <dirent.h>
@@ -231,7 +232,11 @@ static int image_generate(struct image *image)
 	}
 
 	if (ret) {
-		systemp(image, "rm -f \"%s\"", imageoutfile(image));
+		struct stat s;
+		if (lstat(imageoutfile(image), &s) != 0 ||
+				((s.st_mode & S_IFMT) == S_IFREG) ||
+				((s.st_mode & S_IFMT) == S_IFLNK))
+			systemp(image, "rm -f \"%s\"", imageoutfile(image));
 		return ret;
 	}
 
