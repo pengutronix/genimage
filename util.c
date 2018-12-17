@@ -285,9 +285,10 @@ static size_t min(size_t a, size_t b)
 	return a < b ? a : b;
 }
 
-int pad_file(struct image *image, const char *infile, const char *outfile,
+int pad_file(struct image *image, const char *infile,
 		size_t size, unsigned char fillpattern, enum pad_mode mode)
 {
+	const char *outfile = imageoutfile(image);
 	int f = -1, outf = -1;
 	void *buf = NULL;
 	int now, r, w;

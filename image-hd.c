@@ -293,7 +293,7 @@ static int hdimage_insert_gpt(struct image *image, struct list_head *partitions)
 		return ret;
 	}
 
-	ret = pad_file(image, NULL, outfile, image->size, 0x0, MODE_APPEND);
+	ret = pad_file(image, NULL, image->size, 0x0, MODE_APPEND);
 	if (ret) {
 		image_error(image, "failed to pad image to size %lld\n",
 			    part->offset);
@@ -331,7 +331,6 @@ static int hdimage_generate(struct image *image)
 	struct partition *part;
 	struct hdimage *hd = image->handler_priv;
 	enum pad_mode mode = MODE_OVERWRITE;
-	const char *outfile = imageoutfile(image);
 	int ret;
 
 	list_for_each_entry(part, &image->partitions, list) {
@@ -345,7 +344,7 @@ static int hdimage_generate(struct image *image)
 			part->image ? "'" : "");
 
 		if (part->image || part->extended) {
-			ret = pad_file(image, NULL, outfile, part->offset, 0x0, mode);
+			ret = pad_file(image, NULL, part->offset, 0x0, mode);
 			if (ret) {
 				image_error(image, "failed to pad image to size %lld\n",
 						part->offset);
@@ -368,7 +367,7 @@ static int hdimage_generate(struct image *image)
 		child = image_get(part->image);
 		infile = imageoutfile(child);
 
-		ret = pad_file(image, infile, outfile, child->size, 0x0, MODE_APPEND);
+		ret = pad_file(image, infile, child->size, 0x0, MODE_APPEND);
 
 		if (ret) {
 			image_error(image, "failed to write image partition '%s'\n",
