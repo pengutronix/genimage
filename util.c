@@ -288,22 +288,23 @@ static size_t min(size_t a, size_t b)
 int pad_file(struct image *image, const char *infile, const char *outfile,
 		size_t size, unsigned char fillpattern, enum pad_mode mode)
 {
-	FILE *f = NULL, *outf = NULL;
+	int f = -1, outf = -1;
 	void *buf = NULL;
 	int now, r, w;
 	int ret = 0;
 
 	if (infile) {
-		f = fopen(infile, "r");
-		if (!f) {
+		f = open(infile, O_RDONLY);
+		if (f < 0) {
 			ret = -errno;
 			image_error(image, "open %s: %s\n", infile, strerror(errno));
 			goto err_out;
 		}
 	}
 
-	outf = fopen(outfile, mode == MODE_OVERWRITE ? "w" : "a");
-	if (!outf) {
+	outf = open(outfile, mode == MODE_OVERWRITE ?
+			O_WRONLY|O_CREAT|O_TRUNC : O_WRONLY|O_APPEND, 0666);
+	if (outf < 0) {
 		ret = -errno;
 		image_error(image, "open %s: %s\n", outfile, strerror(errno));
 		goto err_out;
@@ -328,8 +329,8 @@ int pad_file(struct image *image, const char *infile, const char *outfile,
 	while (size) {
 		now = min(size, 4096);
 
-		r = fread(buf, 1, now, f);
-		w = fwrite(buf, 1, r, outf);
+		r = read(f, buf, now);
+		w = write(outf, buf, r);
 		if (w < r) {
 			ret = -errno;
 			image_error(image, "write %s: %s\n", outfile, strerror(errno));
@@ -341,7 +342,7 @@ int pad_file(struct image *image, const char *infile, const char *outfile,
 			goto fill;
 	}
 
-	now = fread(buf, 1, 1, f);
+	now = read(f, buf, 1);
 	if (now == 1) {
 		image_error(image, "input file '%s' too large\n", infile);
 		ret = -EINVAL;
@@ -354,7 +355,7 @@ fill:
 	while (size) {
 		now = min(size, 4096);
 
-		r = fwrite(buf, 1, now, outf);
+		r = write(outf, buf, now);
 		if (r < now) {
 			ret = -errno;
 			image_error(image, "write %s: %s\n", outfile, strerror(errno));
@@ -364,10 +365,10 @@ fill:
 	}
 err_out:
 	free(buf);
-	if (f)
-		fclose(f);
-	if (outf)
-		fclose(outf);
+	if (f >= 0)
+		close(f);
+	if (outf >= 0)
+		close(outf);
 
 	return ret;
 }
