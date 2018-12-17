@@ -387,6 +387,7 @@ static int hdimage_generate(struct image *image)
 			if (ret)
 				return ret;
 		}
+		return reload_partitions(image);
 	}
 
 	return 0;

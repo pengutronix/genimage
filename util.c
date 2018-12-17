@@ -20,9 +20,11 @@
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
+#include <linux/fs.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <ctype.h>
@@ -531,4 +533,26 @@ char *uuid_random(void)
 		 random() & 0xffff, random() & 0xffff, random() & 0xffff);
 
 	return uuid;
+}
+
+int reload_partitions(struct image *image)
+{
+	const char *outfile = imageoutfile(image);
+	int fd;
+
+	if (!is_block_device(outfile))
+		return 0;
+
+	fd = open(outfile, O_WRONLY|O_EXCL);
+	if (fd < 0) {
+		int ret = -errno;
+		image_error(image, "open: %s\n", strerror(errno));
+		return ret;
+	}
+	/* no error because not all block devices support this */
+	if (ioctl(fd, BLKRRPART) < 0)
+		image_info(image, "failed to re-read partition table: %s\n",
+			strerror(errno));
+	close(fd);
+	return 0;
 }
