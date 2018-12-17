@@ -376,20 +376,17 @@ err_out:
 int insert_data(struct image *image, const char *data, const char *outfile,
 		size_t size, long offset)
 {
-	FILE *outf = NULL;
+	int outf = -1;
 	int now, r;
 	int ret = 0;
 
-	outf = fopen(outfile, "r+");
-	if (!outf && errno == ENOENT)
-		outf = fopen(outfile, "w");
-	if (!outf) {
+	outf = open(outfile, O_WRONLY|O_CREAT, 0666);
+	if (outf < 0) {
 		ret = -errno;
 		image_error(image, "open %s: %s\n", outfile, strerror(errno));
 		goto err_out;
 	}
-	ret = fseek(outf, offset, SEEK_SET);
-	if (ret) {
+	if (lseek(outf, offset, SEEK_SET) < 0) {
 		ret = -errno;
 		image_error(image, "seek %s: %s\n", outfile, strerror(errno));
 		goto err_out;
@@ -397,7 +394,7 @@ int insert_data(struct image *image, const char *data, const char *outfile,
 	while (size) {
 		now = min(size, 4096);
 
-		r = fwrite(data, 1, now, outf);
+		r = write(outf, data, now);
 		if (r < now) {
 			ret = -errno;
 			image_error(image, "write %s: %s\n", outfile, strerror(errno));
@@ -407,8 +404,8 @@ int insert_data(struct image *image, const char *data, const char *outfile,
 		data += now;
 	}
 err_out:
-	if (outf)
-		fclose(outf);
+	if (outf >= 0)
+		close(outf);
 
 	return ret;
 }
