@@ -58,16 +58,18 @@ static void hdimage_setup_chs(unsigned int lba, unsigned char *chs)
 	chs[2] = (c & 0xff);
 }
 
-static int hdimage_setup_mbr(struct image *image, struct list_head *partitions, char *part_table)
+static int hdimage_insert_mbr(struct image *image, struct list_head *partitions)
 {
 	struct hdimage *hd = image->handler_priv;
+	char mbr[6+4*sizeof(struct mbr_partition_entry)+2], *part_table;
 	struct partition *part;
-	int i = 0;
+	int ret, i = 0;
 
 	image_info(image, "writing MBR\n");
 
-	*((int*)part_table) = hd->disksig;
-	part_table += 6;
+	memset(mbr, 0, sizeof(mbr));
+	memcpy(mbr, &hd->disksig, sizeof(hd->disksig));
+	part_table = mbr + 6;
 
 	list_for_each_entry(part, partitions, list) {
 		struct mbr_partition_entry *entry;
@@ -107,17 +109,28 @@ static int hdimage_setup_mbr(struct image *image, struct list_head *partitions, 
 	part_table += 4 * sizeof(struct mbr_partition_entry);
 	part_table[0] = 0x55;
 	part_table[1] = 0xaa;
+
+	ret = insert_data(image, mbr, imageoutfile(image), sizeof(mbr), 440);
+	if (ret) {
+		image_error(image, "failed to write MBR\n");
+		return ret;
+	}
+
 	return 0;
 }
 
-static int hdimage_setup_ebr(struct image *image, struct partition *part, char *ebr)
+static int hdimage_insert_ebr(struct image *image, struct partition *part)
 {
 	struct hdimage *hd = image->handler_priv;
 	struct mbr_partition_entry *entry;
+	char ebr[4*sizeof(struct mbr_partition_entry)+2], *part_table;
+	int ret;
 
 	image_info(image, "writing EBR\n");
 
-	entry = (struct mbr_partition_entry *)ebr;
+	memset(ebr, 0, sizeof(ebr));
+	part_table = ebr;
+	entry = (struct mbr_partition_entry *)part_table;
 
 	entry->boot = 0x00;
 	entry->partition_type = part->partition_type;
@@ -139,9 +152,17 @@ static int hdimage_setup_ebr(struct image *image, struct partition *part, char *
 		break;
 	}
 
-	ebr += 4 * sizeof(struct mbr_partition_entry);
-	ebr[0] = 0x55;
-	ebr[1] = 0xaa;
+	part_table += 4 * sizeof(struct mbr_partition_entry);
+	part_table[0] = 0x55;
+	part_table[1] = 0xaa;
+
+	ret = insert_data(image, ebr, imageoutfile(image), sizeof(ebr),
+			  part->offset - hd->align + 446);
+	if (ret) {
+		image_error(image, "failed to write EBR\n");
+		return ret;
+	}
+
 	return 0;
 }
 
@@ -174,11 +195,7 @@ static int hdimage_generate(struct image *image)
 		}
 
 		if (part->extended) {
-			char ebr[4*sizeof(struct mbr_partition_entry)+2];
-			memset(ebr, 0, sizeof(ebr));
-			ret = hdimage_setup_ebr(image, part, ebr);
-			ret = insert_data(image, ebr, outfile, sizeof(ebr),
-					part->offset - hd->align + 446);
+			ret = hdimage_insert_ebr(image, part);
 			if (ret) {
 				image_error(image, "failed to write EBR\n");
 				return ret;
@@ -201,18 +218,9 @@ static int hdimage_generate(struct image *image)
 	}
 
 	if (hd->partition_table) {
-		char part_table[6+4*sizeof(struct mbr_partition_entry)+2];
-
-		memset(part_table, 0, sizeof(part_table));
-		ret = hdimage_setup_mbr(image, &image->partitions, part_table);
+		ret = hdimage_insert_mbr(image, &image->partitions);
 		if (ret)
 			return ret;
-
-		ret = insert_data(image, part_table, outfile, sizeof(part_table), 440);
-		if (ret) {
-			image_error(image, "failed to write MBR\n");
-			return ret;
-		}
 		mode = MODE_APPEND;
 	}
 
