@@ -58,7 +58,7 @@ static void hdimage_setup_chs(unsigned int lba, unsigned char *chs)
 	chs[2] = (c & 0xff);
 }
 
-static int hdimage_setup_mbr(struct image *image, char *part_table)
+static int hdimage_setup_mbr(struct image *image, struct list_head *partitions, char *part_table)
 {
 	struct hdimage *hd = image->handler_priv;
 	struct partition *part;
@@ -69,7 +69,7 @@ static int hdimage_setup_mbr(struct image *image, char *part_table)
 	*((int*)part_table) = hd->disksig;
 	part_table += 6;
 
-	list_for_each_entry(part, &image->partitions, list) {
+	list_for_each_entry(part, partitions, list) {
 		struct mbr_partition_entry *entry;
 
 		if (!part->in_partition_table)
@@ -87,7 +87,7 @@ static int hdimage_setup_mbr(struct image *image, char *part_table)
 		else {
 			unsigned long long size = 0;
 			struct partition *p = part;
-			list_for_each_entry_from(p, &image->partitions, list) {
+			list_for_each_entry_from(p, partitions, list) {
 				if (!p->extended)
 					break;
 				size += hd->align + p->size;
@@ -204,7 +204,7 @@ static int hdimage_generate(struct image *image)
 		char part_table[6+4*sizeof(struct mbr_partition_entry)+2];
 
 		memset(part_table, 0, sizeof(part_table));
-		ret = hdimage_setup_mbr(image, part_table);
+		ret = hdimage_setup_mbr(image, &image->partitions, part_table);
 		if (ret)
 			return ret;
 
