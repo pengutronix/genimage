@@ -32,7 +32,7 @@ struct hdimage {
 	uint32_t disksig;
 };
 
-struct partition_entry {
+struct mbr_partition_entry {
 	unsigned char boot;
 
 	unsigned char first_chs[3];
@@ -70,13 +70,13 @@ static int hdimage_setup_mbr(struct image *image, char *part_table)
 	part_table += 6;
 
 	list_for_each_entry(part, &image->partitions, list) {
-		struct partition_entry *entry;
+		struct mbr_partition_entry *entry;
 
 		if (!part->in_partition_table)
 			continue;
 
-		entry = (struct partition_entry *)(part_table + i *
-				sizeof(struct partition_entry));
+		entry = (struct mbr_partition_entry *)(part_table + i *
+				sizeof(struct mbr_partition_entry));
 
 		entry->boot = part->bootable ? 0x80 : 0x00;
 		if (!part->extended) {
@@ -104,7 +104,7 @@ static int hdimage_setup_mbr(struct image *image, char *part_table)
 			break;
 		i++;
 	}
-	part_table += 4 * sizeof(struct partition_entry);
+	part_table += 4 * sizeof(struct mbr_partition_entry);
 	part_table[0] = 0x55;
 	part_table[1] = 0xaa;
 	return 0;
@@ -113,11 +113,11 @@ static int hdimage_setup_mbr(struct image *image, char *part_table)
 static int hdimage_setup_ebr(struct image *image, struct partition *part, char *ebr)
 {
 	struct hdimage *hd = image->handler_priv;
-	struct partition_entry *entry;
+	struct mbr_partition_entry *entry;
 
 	image_info(image, "writing EBR\n");
 
-	entry = (struct partition_entry *)ebr;
+	entry = (struct mbr_partition_entry *)ebr;
 
 	entry->boot = 0x00;
 	entry->partition_type = part->partition_type;
@@ -139,7 +139,7 @@ static int hdimage_setup_ebr(struct image *image, struct partition *part, char *
 		break;
 	}
 
-	ebr += 4 * sizeof(struct partition_entry);
+	ebr += 4 * sizeof(struct mbr_partition_entry);
 	ebr[0] = 0x55;
 	ebr[1] = 0xaa;
 	return 0;
@@ -174,7 +174,7 @@ static int hdimage_generate(struct image *image)
 		}
 
 		if (part->extended) {
-			char ebr[4*sizeof(struct partition_entry)+2];
+			char ebr[4*sizeof(struct mbr_partition_entry)+2];
 			memset(ebr, 0, sizeof(ebr));
 			ret = hdimage_setup_ebr(image, part, ebr);
 			ret = insert_data(image, ebr, outfile, sizeof(ebr),
@@ -201,7 +201,7 @@ static int hdimage_generate(struct image *image)
 	}
 
 	if (hd->partition_table) {
-		char part_table[6+4*sizeof(struct partition_entry)+2];
+		char part_table[6+4*sizeof(struct mbr_partition_entry)+2];
 
 		memset(part_table, 0, sizeof(part_table));
 		ret = hdimage_setup_mbr(image, part_table);
