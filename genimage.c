@@ -20,6 +20,7 @@
 #include <string.h>
 #include <errno.h>
 #include <libgen.h>
+#include <sys/time.h>
 #include <sys/types.h>
 #include <dirent.h>
 
@@ -94,6 +95,8 @@ static cfg_opt_t partition_opts[] = {
 	CFG_STR("image", NULL, CFGF_NONE),
 	CFG_BOOL("autoresize", 0, CFGF_NONE),
 	CFG_BOOL("in-partition-table", cfg_true, CFGF_NONE),
+	CFG_STR("partition-uuid", NULL, CFGF_NONE),
+	CFG_STR("partition-type-uuid", "L", CFGF_NONE),
 	CFG_END()
 };
 
@@ -302,6 +305,8 @@ static int parse_partitions(struct image *image, cfg_t *imagesec)
 		part->image = cfg_getstr(partsec, "image");
 		part->autoresize = cfg_getbool(partsec, "autoresize");
 		part->in_partition_table = cfg_getbool(partsec, "in-partition-table");
+		part->partition_type_uuid = cfg_getstr(partsec, "partition-type-uuid");
+		part->partition_uuid = cfg_getstr(partsec, "partition-uuid");
 	}
 
 	return 0;
@@ -589,6 +594,11 @@ int main(int argc, char *argv[])
 	cfg_opt_t image_end[] = {
 		CFG_END()
 	};
+	struct timeval tv;
+
+	/* Seed the rng */
+	gettimeofday(&tv, NULL);
+	srandom(tv.tv_usec);
 
 	memcpy(imageopts, image_common_opts, sizeof(image_common_opts));
 
