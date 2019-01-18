@@ -1,6 +1,6 @@
 language: c
 compiler: gcc
-dist: trusty
+dist: xenial
 addons:
   apt:
     packages:
