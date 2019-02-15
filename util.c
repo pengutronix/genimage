@@ -25,6 +25,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <ctype.h>
 
 #include "genimage.h"
 
@@ -409,4 +410,71 @@ err_out:
 		fclose(outf);
 
 	return ret;
+}
+
+int uuid_validate(const char *str)
+{
+	int i;
+
+	if (strlen(str) != 36)
+		return -1;
+	for (i = 0; i < 36; i++) {
+		if (i == 8 || i == 13 || i == 18 || i == 23) {
+			if (str[i] != '-')
+				return -1;
+			continue;
+		}
+		if (!isxdigit(str[i]))
+			return -1;
+	}
+
+	return 0;
+}
+
+static unsigned char uuid_byte(const char *hex)
+{
+	char buf[3];
+
+	buf[0] = hex[0];
+	buf[1] = hex[1];
+	buf[2] = 0;
+	return strtoul(buf, NULL, 16);
+}
+
+void uuid_parse(const char *str, unsigned char *uuid)
+{
+	uuid[0] = uuid_byte(str + 6);
+	uuid[1] = uuid_byte(str + 4);
+	uuid[2] = uuid_byte(str + 2);
+	uuid[3] = uuid_byte(str);
+
+	uuid[4] = uuid_byte(str + 11);
+	uuid[5] = uuid_byte(str + 9);
+
+	uuid[6] = uuid_byte(str + 16);
+	uuid[7] = uuid_byte(str + 14);
+
+	uuid[8] = uuid_byte(str + 19);
+	uuid[9] = uuid_byte(str + 21);
+
+	uuid[10] = uuid_byte(str + 24);
+	uuid[11] = uuid_byte(str + 26);
+	uuid[12] = uuid_byte(str + 28);
+	uuid[13] = uuid_byte(str + 30);
+	uuid[14] = uuid_byte(str + 32);
+	uuid[15] = uuid_byte(str + 34);
+}
+
+char *uuid_random(void)
+{
+	char *uuid;
+
+	asprintf(&uuid, "%04lx%04lx-%04lx-%04lx-%04lx-%04lx%04lx%04lx",
+		 random() & 0xffff, random() & 0xffff,
+		 random() & 0xffff,
+		 (random() & 0x0fff) | 0x4000,
+		 (random() & 0x3fff) | 0x8000,
+		 random() & 0xffff, random() & 0xffff, random() & 0xffff);
+
+	return uuid;
 }

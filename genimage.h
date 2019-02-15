@@ -1,6 +1,8 @@
 #ifndef __PTX_IMAGE_H
 #define __PTX_IMAGE_H
 
+#include <stdint.h>
+#include <confuse.h>
 #include "list.h"
 
 struct image_handler;
@@ -41,6 +43,8 @@ struct partition {
 	int autoresize;
 	int in_partition_table;
 	const char *name;
+	const char *partition_type_uuid;
+	const char *partition_uuid;
 };
 
 struct image {
@@ -142,4 +146,11 @@ static inline const char *imageoutfile(const struct image *image)
 {
 	return image->outfile;
 }
+
+int uuid_validate(const char *str);
+void uuid_parse(const char *str, unsigned char *uuid);
+char *uuid_random(void);
+
+uint32_t crc32(const void *data, size_t len);
+
 #endif /* __PTX_IMAGE_H */

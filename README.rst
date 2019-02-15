@@ -98,6 +98,18 @@ Partition options:
 :bootable:		Boolean specifying whether to set the bootable flag.
 :in-partition-table:	Boolean specifying whether to include this partition in
 			the partition table.
+:partition-uuid:	UUID string used by GPT partition tables to specify the partition
+			id. Defaults to a random value.
+:partition-type-uuid:	String used by GPT partition tables to specify the partition type.
+			Either a UUID or a shortcut:
+			 * L: Linux filesystem (0fc63daf-8483-4772-8e79-3d69d8477de4)
+			 * S: Swap (0657fd6d-a4ab-43c4-84e5-0933c84b4f4f)
+			 * H: Home (933ac7e1-2eb4-4f13-b844-0e14e2aef915)
+			 * U: EFI System (c12a7328-f81f-11d2-ba4b-00a0c93ec93b)
+			 * R: Linux RAID (a19d880f-05fc-4d3b-a006-743f0f84911e)
+			 * V: Linux LVM (e6d6d379-f507-44c2-a23c-238f2a3df928)
+			 * F: FAT32 / Basic Data Partition (ebd0a0a2-b9e5-4433-87c0-68b6b72699c7)
+			Defaults to L.
 
 The image configuration options
 -------------------------------
@@ -164,12 +176,16 @@ Generates DOS partition images.
 Options:
 
 :align:			Partition alignment. Defaults to 512 bytes
-:partition-table:	Boolean. If true, writes a DOS partition table. If false, no
+:partition-table:	Boolean. If true, writes a partition table. If false, no
 			partition table is generated. Defaults to true.
 :extended-partition:	Number of the extended partition. Contains the number of the
 			extended partition between 1 and 4 or 0 for automatic. Defaults
 			to 0.
 :disk-signature:	32 bit integer used as disk signature (offset 440 in the MBR)
+:gpt:			Boolean. If true, a GPT type partion table is written. If false
+			a DOS type partition table is written. Defaults to false.
+:disk-uuid:		UUID string used as disk id in GPT partitioning. Defaults to a
+			random value.
 
 iso
 ***

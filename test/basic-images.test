@@ -214,6 +214,20 @@ test_expect_success "hdimage2" "
 	test_must_fail run_genimage hdimage2.config test.hdimage
 "
 
+sfdisk -h | grep -q gpt && test_set_prereq sfdisk-gpt
+fdisk -h | grep -q gpt && test_set_prereq fdisk-gpt
+test_expect_success fdisk-gpt,sfdisk-gpt "hdimage4" "
+	setup_test_images &&
+	run_genimage hdimage4.config test.hdimage &&
+	check_size images/test.hdimage 7356928 &&
+	# check the this identifier
+	fdisk -l images/test.hdimage | grep identifier: > hdimage4.fdisk &&
+	# check partitions; filter output to handle different sfdisk versions
+	sfdisk -d images/test.hdimage 2>/dev/null | grep '^images/' | \
+		sed -e 's/  *//g' -e 's;Id=;type=;' >> hdimage4.fdisk &&
+	test_cmp '${testdir}/hdimage4.fdisk' hdimage4.fdisk
+"
+
 exec_test_set_prereq genisoimage
 test_expect_success genisoimage "iso" "
 	run_genimage iso.config test.iso &&

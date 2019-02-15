@@ -16,6 +16,7 @@ genimage_SOURCES = \
 	genimage.c \
 	config.c \
 	util.c \
+	crc32.c \
 	image-cpio.c \
 	image-cramfs.c \
 	image-ext2.c \
@@ -63,6 +64,8 @@ EXTRA_DIST += \
 	test/hdimage2.config \
 	test/hdimage.fdisk \
 	test/hdimage.fdisk-2 \
+	test/hdimage4.config \
+	test/hdimage4.fdisk \
 	test/iso.config \
 	test/jffs2.config \
 	test/jffs2.md5 \
