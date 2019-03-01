@@ -117,7 +117,7 @@ cfg_opt_t *get_confuse_opts(void)
 {
 	struct config *c;
 	int num_opts = 0;
-	cfg_opt_t *opts;
+	cfg_opt_t *options;
 	int i = 0;
 	cfg_opt_t cfg_end[] = {
 		CFG_END()
@@ -128,18 +128,18 @@ cfg_opt_t *get_confuse_opts(void)
 			num_opts++;
 	}
 
-	opts = xzalloc(sizeof(cfg_opt_t) * (num_opts + 1));
+	options = xzalloc(sizeof(cfg_opt_t) * (num_opts + 1));
 
 	list_for_each_entry(c, &optlist, list) {
 		if (c->opt.name) {
-			memcpy(&opts[i], &c->opt, sizeof(cfg_opt_t));
+			memcpy(&options[i], &c->opt, sizeof(cfg_opt_t));
 			i++;
 		}
 	}
 
-	memcpy(&opts[i], cfg_end, sizeof(cfg_opt_t));
+	memcpy(&options[i], cfg_end, sizeof(cfg_opt_t));
 
-	return opts;
+	return options;
 }
 
 /*
