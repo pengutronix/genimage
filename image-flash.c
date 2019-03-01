@@ -86,7 +86,7 @@ static int flash_setup(struct image *image, cfg_t *cfg)
 		return -EINVAL;
 	}
 
-	flashsize = image->flash_type->pebsize * image->flash_type->numpebs;
+	flashsize = (unsigned long long)image->flash_type->pebsize * image->flash_type->numpebs;
 
 	list_for_each_entry(part, &image->partitions, list) {
 		if (last) {
