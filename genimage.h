@@ -65,6 +65,7 @@ struct image {
 	struct mountpoint *mp;
 	char *outfile;
 	int seen;
+	off_t last_offset;
 };
 
 struct image_handler {
@@ -135,10 +136,12 @@ enum pad_mode {
 	MODE_OVERWRITE,
 };
 
-int pad_file(struct image *image, const char *infile, const char *outfile,
+int is_block_device(const char *filename);
+int pad_file(struct image *image, const char *infile,
 		size_t size, unsigned char fillpattern, enum pad_mode mode);
 int insert_data(struct image *image, const char *data, const char *outfile,
 		size_t size, long offset);
+int reload_partitions(struct image *image);
 
 unsigned long long cfg_getint_suffix(cfg_t *sec, const char *name);
 

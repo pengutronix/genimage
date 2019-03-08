@@ -20,9 +20,11 @@
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
+#include <linux/fs.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <ctype.h>
@@ -285,37 +287,96 @@ static size_t min(size_t a, size_t b)
 	return a < b ? a : b;
 }
 
-int pad_file(struct image *image, const char *infile, const char *outfile,
+int is_block_device(const char *filename) {
+	struct stat s;
+	return stat(filename, &s) == 0 && ((s.st_mode & S_IFMT) == S_IFBLK);
+}
+
+static int open_file(struct image *image, const char *filename, int extra_flags)
+{
+	int flags = O_WRONLY | extra_flags;
+	int ret, fd;
+
+	/* make sure block devices are unused before writing */
+	if (is_block_device(filename))
+		flags |= O_EXCL;
+	else
+		flags |= O_CREAT;
+
+	fd = open(filename, flags, 0666);
+	if (fd < 0) {
+		ret = -errno;
+		image_error(image, "open %s: %s\n", filename, strerror(errno));
+		return ret;
+	}
+	return fd;
+}
+
+int pad_file(struct image *image, const char *infile,
 		size_t size, unsigned char fillpattern, enum pad_mode mode)
 {
-	FILE *f = NULL, *outf = NULL;
+	const char *outfile = imageoutfile(image);
+	int f = -1, outf = -1, flags = 0;
 	void *buf = NULL;
 	int now, r, w;
+	struct stat s;
 	int ret = 0;
 
 	if (infile) {
-		f = fopen(infile, "r");
-		if (!f) {
+		f = open(infile, O_RDONLY);
+		if (f < 0) {
 			ret = -errno;
 			image_error(image, "open %s: %s\n", infile, strerror(errno));
 			goto err_out;
 		}
 	}
+	if (mode == MODE_OVERWRITE) {
+		image->last_offset = 0;
+		flags = O_TRUNC;
+	}
+	outf = open_file(image, outfile, flags);
+	if (outf < 0) {
+		ret = outf;
+		goto err_out;
+	}
 
-	outf = fopen(outfile, mode == MODE_OVERWRITE ? "w" : "a");
-	if (!outf) {
+	ret = fstat(outf, &s);
+	if (ret) {
 		ret = -errno;
-		image_error(image, "open %s: %s\n", outfile, strerror(errno));
+		image_error(image, "stat %s: %s\n", outfile, strerror(errno));
+		goto err_out;
+	}
+	if (((s.st_mode & S_IFMT) == S_IFREG) && (mode == MODE_APPEND)) {
+		off_t offset = lseek(outf, 0, SEEK_END);
+		if (offset < 0) {
+			ret = -errno;
+			image_error(image, "seek: %s\n", strerror(errno));
+			goto err_out;
+		}
+		if (offset != image->last_offset) {
+			ret = -EINVAL;
+			image_error(image, "pad_file: unexpected offset: %lld !=  %lld\n",
+					(long long)offset, (long long)image->last_offset);
+			goto err_out;
+		}
+	}
+	if (((s.st_mode & S_IFMT) == S_IFBLK) && (mode == MODE_APPEND)) {
+		if (lseek(outf, image->last_offset, SEEK_SET) < 0) {
+			ret = -errno;
+			image_error(image, "seek: %s\n", strerror(errno));
+			goto err_out;
+		}
+	}
+	if (((s.st_mode & S_IFMT) != S_IFREG) &&
+			((s.st_mode & S_IFMT) != S_IFBLK)) {
+		ret = -EINVAL;
+		image_error(image, "pad_file: not a regular file or block device\n");
 		goto err_out;
 	}
 
 	buf = xzalloc(4096);
 
 	if (!infile) {
-		struct stat s;
-		ret = stat(outfile, &s);
-		if (ret)
-			goto err_out;
 		if ((unsigned long long)s.st_size > size) {
 			image_error(image, "input file '%s' too large\n", outfile);
 			ret = -EINVAL;
@@ -328,8 +389,8 @@ int pad_file(struct image *image, const char *infile, const char *outfile,
 	while (size) {
 		now = min(size, 4096);
 
-		r = fread(buf, 1, now, f);
-		w = fwrite(buf, 1, r, outf);
+		r = read(f, buf, now);
+		w = write(outf, buf, r);
 		if (w < r) {
 			ret = -errno;
 			image_error(image, "write %s: %s\n", outfile, strerror(errno));
@@ -341,7 +402,7 @@ int pad_file(struct image *image, const char *infile, const char *outfile,
 			goto fill;
 	}
 
-	now = fread(buf, 1, 1, f);
+	now = read(f, buf, 1);
 	if (now == 1) {
 		image_error(image, "input file '%s' too large\n", infile);
 		ret = -EINVAL;
@@ -354,7 +415,7 @@ fill:
 	while (size) {
 		now = min(size, 4096);
 
-		r = fwrite(buf, 1, now, outf);
+		r = write(outf, buf, now);
 		if (r < now) {
 			ret = -errno;
 			image_error(image, "write %s: %s\n", outfile, strerror(errno));
@@ -362,12 +423,13 @@ fill:
 		}
 		size -= now;
 	}
+	image->last_offset = lseek(outf, 0, SEEK_CUR);
 err_out:
 	free(buf);
-	if (f)
-		fclose(f);
-	if (outf)
-		fclose(outf);
+	if (f >= 0)
+		close(f);
+	if (outf >= 0)
+		close(outf);
 
 	return ret;
 }
@@ -375,20 +437,15 @@ err_out:
 int insert_data(struct image *image, const char *data, const char *outfile,
 		size_t size, long offset)
 {
-	FILE *outf = NULL;
+	int outf = -1;
 	int now, r;
 	int ret = 0;
 
-	outf = fopen(outfile, "r+");
-	if (!outf && errno == ENOENT)
-		outf = fopen(outfile, "w");
-	if (!outf) {
-		ret = -errno;
-		image_error(image, "open %s: %s\n", outfile, strerror(errno));
-		goto err_out;
-	}
-	ret = fseek(outf, offset, SEEK_SET);
-	if (ret) {
+	outf = open_file(image, outfile, 0);
+	if (outf < 0)
+		return outf;
+
+	if (lseek(outf, offset, SEEK_SET) < 0) {
 		ret = -errno;
 		image_error(image, "seek %s: %s\n", outfile, strerror(errno));
 		goto err_out;
@@ -396,7 +453,7 @@ int insert_data(struct image *image, const char *data, const char *outfile,
 	while (size) {
 		now = min(size, 4096);
 
-		r = fwrite(data, 1, now, outf);
+		r = write(outf, data, now);
 		if (r < now) {
 			ret = -errno;
 			image_error(image, "write %s: %s\n", outfile, strerror(errno));
@@ -406,8 +463,7 @@ int insert_data(struct image *image, const char *data, const char *outfile,
 		data += now;
 	}
 err_out:
-	if (outf)
-		fclose(outf);
+	close(outf);
 
 	return ret;
 }
@@ -477,4 +533,26 @@ char *uuid_random(void)
 		 random() & 0xffff, random() & 0xffff, random() & 0xffff);
 
 	return uuid;
+}
+
+int reload_partitions(struct image *image)
+{
+	const char *outfile = imageoutfile(image);
+	int fd;
+
+	if (!is_block_device(outfile))
+		return 0;
+
+	fd = open(outfile, O_WRONLY|O_EXCL);
+	if (fd < 0) {
+		int ret = -errno;
+		image_error(image, "open: %s\n", strerror(errno));
+		return ret;
+	}
+	/* no error because not all block devices support this */
+	if (ioctl(fd, BLKRRPART) < 0)
+		image_info(image, "failed to re-read partition table: %s\n",
+			strerror(errno));
+	close(fd);
+	return 0;
 }

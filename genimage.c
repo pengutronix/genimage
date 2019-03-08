@@ -20,6 +20,7 @@
 #include <string.h>
 #include <errno.h>
 #include <libgen.h>
+#include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <dirent.h>
@@ -231,7 +232,11 @@ static int image_generate(struct image *image)
 	}
 
 	if (ret) {
-		systemp(image, "rm -f \"%s\"", imageoutfile(image));
+		struct stat s;
+		if (lstat(imageoutfile(image), &s) != 0 ||
+				((s.st_mode & S_IFMT) == S_IFREG) ||
+				((s.st_mode & S_IFMT) == S_IFLNK))
+			systemp(image, "rm -f \"%s\"", imageoutfile(image));
 		return ret;
 	}
 
@@ -663,7 +668,11 @@ int main(int argc, char *argv[])
 		image->mountpoint = cfg_getstr(imagesec, "mountpoint");
 		image->exec_pre = cfg_getstr(imagesec, "exec-pre");
 		image->exec_post = cfg_getstr(imagesec, "exec-post");
-		xasprintf(&image->outfile, "%s/%s", imagepath(), image->file);
+		if (image->file[0] == '/')
+			image->outfile = strdup(image->file);
+		else
+			xasprintf(&image->outfile, "%s/%s", imagepath(),
+					image->file);
 		if (image->mountpoint && *image->mountpoint == '/')
 			image->mountpoint++;
 		str = cfg_getstr(imagesec, "flashtype");
