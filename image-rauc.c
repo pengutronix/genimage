@@ -135,6 +135,16 @@ static int rauc_parse(struct image *image, cfg_t *cfg)
 	return 0;
 }
 
+static int rauc_setup(struct image *image, cfg_t *cfg)
+{
+	char *manifest = cfg_getstr(image->imagesec, "manifest");
+	if (!manifest) {
+		image_error(image, "Mandatory 'manifest' option is missing!\n");
+		return -EINVAL;
+	}
+	return 0;
+}
+
 static cfg_opt_t file_opts[] = {
 	CFG_STR("image", NULL, CFGF_NONE),
 	CFG_END()
@@ -154,5 +164,6 @@ struct image_handler rauc_handler = {
 	.type = "rauc",
 	.generate = rauc_generate,
 	.parse = rauc_parse,
+	.setup = rauc_setup,
 	.opts = rauc_opts,
 };
