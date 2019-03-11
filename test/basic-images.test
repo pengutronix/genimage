@@ -89,6 +89,25 @@ check_size() {
 	fi
 }
 
+get_disk_usage() {
+	local file="${1}"
+	if [ ! -f "${file}" ]; then
+		echo "Failed to check file disk usage: '${file}' does not exist!"
+		return 1
+	fi
+	set -- $(du -B 1 "${file}")
+	usage="${1}"
+}
+
+check_disk_usage_range() {
+        local usage
+        get_disk_usage "${1}" || return
+	if [ "${usage}" -lt "${2}" -o "${usage}" -gt "${3}" ]; then
+		echo "Incorrect file disk usage for '${1}': expected min: ${2} max: ${3} found: ${usage}"
+                return 1
+        fi
+}
+
 exec_test_set_prereq() {
 	command -v "${1}" > /dev/null && test_set_prereq "${1/./_}"
 }
@@ -194,6 +213,7 @@ test_expect_success fdisk,sfdisk "hdimage" "
 	setup_test_images &&
 	run_genimage hdimage.config test.hdimage &&
 	check_size images/test.hdimage 9442816 &&
+	check_disk_usage_range images/test.hdimage 40960 57344 &&
 	# check the this identifier
 	fdisk -l images/test.hdimage | grep identifier: > hdimage.fdisk &&
 	# check partitions; filter output to handle different sfdisk versions
