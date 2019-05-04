@@ -404,7 +404,7 @@ static unsigned long long roundup(unsigned long long value, unsigned long long a
 static int hdimage_setup(struct image *image, cfg_t *cfg)
 {
 	struct partition *part;
-	int has_extended;
+	int has_extended, autoresize = 0;
 	unsigned int partition_table_entries = 0;
 	unsigned long long now = 0;
 	struct hdimage *hd = xzalloc(sizeof(*hd));
@@ -448,33 +448,15 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 
 	partition_table_entries = 0;
 	list_for_each_entry(part, &image->partitions, list) {
-		if (part->image) {
-			struct image *child = image_get(part->image);
-			if (!child) {
-				image_error(image, "could not find %s\n",
-						part->image);
-				return -EINVAL;
-			}
-			if (!part->size) {
-				if (part->in_partition_table)
-					part->size = roundup(child->size, hd->align);
-				else
-					part->size = child->size;
-			} else if (child->size > part->size) {
-				image_error(image, "part %s size (%lld) too small for %s (%lld)\n",
-						part->name, part->size, child->file, child->size);
-				return -EINVAL;
-			}
-		}
-		if (!part->size) {
-			image_error(image, "part %s size must not be zero\n",
-					part->name);
+		if (autoresize) {
+			image_error(image, "'autoresize' is only supported "
+					"for the last partition\n");
 			return -EINVAL;
 		}
-		if (part->in_partition_table && (part->size % 512)) {
-			image_error(image, "part %s size (%lld) must be a "
-					"multiple of 1 sector (512 bytes)\n",
-					part->name, part->size);
+		autoresize = part->autoresize;
+		if (autoresize && image->size == 0) {
+			image_error(image, "the images size must be specified "
+					"when using a 'autoresize' partition\n");
 			return -EINVAL;
 		}
 		if (hd->gpt) {
@@ -537,6 +519,45 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 					now += GPT_SECTORS * 512;
 			}
 			part->offset = roundup(now, hd->align);
+		}
+		if (autoresize) {
+			long long partsize = image->size - now;
+			if (hd->gpt)
+				partsize -= GPT_SECTORS * 512;
+			if (partsize < 0) {
+				image_error(image, "partitions exceed device size\n");
+				return -EINVAL;
+			}
+			part->size = partsize;
+		}
+		if (part->image) {
+			struct image *child = image_get(part->image);
+			if (!child) {
+				image_error(image, "could not find %s\n",
+						part->image);
+				return -EINVAL;
+			}
+			if (!part->size) {
+				if (part->in_partition_table)
+					part->size = roundup(child->size, hd->align);
+				else
+					part->size = child->size;
+			} else if (child->size > part->size) {
+				image_error(image, "part %s size (%lld) too small for %s (%lld)\n",
+						part->name, part->size, child->file, child->size);
+				return -EINVAL;
+			}
+		}
+		if (!part->size) {
+			image_error(image, "part %s size must not be zero\n",
+					part->name);
+			return -EINVAL;
+		}
+		if (part->in_partition_table && (part->size % 512)) {
+			image_error(image, "part %s size (%lld) must be a "
+					"multiple of 1 sector (512 bytes)\n",
+					part->name, part->size);
+			return -EINVAL;
 		}
 		now = part->offset + part->size;
 	}
