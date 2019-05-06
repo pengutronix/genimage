@@ -51,6 +51,8 @@ EXTRA_DIST += \
 	test/cramfs.config \
 	test/ext2.config \
 	test/ext2test.dump \
+	test/ext2percent.config \
+	test/ext2test-percent.dump \
 	test/ext3.config \
 	test/ext3test.dump \
 	test/ext4.config \

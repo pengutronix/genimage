@@ -157,6 +157,11 @@ static int image_setup(struct image *image)
 
 	image->seen = -1;
 
+	if (image->size_is_percent) {
+		image->size = image_dir_size(image) * image->size / 100;
+		image->size_is_percent = cfg_false;
+	}
+
 	list_for_each_entry(part, &image->partitions, list) {
 		struct image *child;
 		if (!part->image)
@@ -664,7 +669,8 @@ int main(int argc, char *argv[])
 		list_add_tail(&image->list, &images);
 		image->file = cfg_title(imagesec);
 		image->name = cfg_getstr(imagesec, "name");
-		image->size = cfg_getint_suffix(imagesec, "size");
+		image->size = cfg_getint_suffix_percent(imagesec, "size",
+				&image->size_is_percent);
 		image->mountpoint = cfg_getstr(imagesec, "mountpoint");
 		image->exec_pre = cfg_getstr(imagesec, "exec-pre");
 		image->exec_post = cfg_getstr(imagesec, "exec-post");
@@ -717,6 +723,10 @@ int main(int argc, char *argv[])
 	if (ret)
 		goto cleanup;
 
+	ret = collect_mountpoints();
+	if (ret)
+		goto cleanup;
+
 	list_for_each_entry(image, &images, list) {
 		ret = image_setup(image);
 		if (ret)
@@ -728,10 +738,6 @@ int main(int argc, char *argv[])
 		goto cleanup;
 
 	ret = systemp(NULL, "mkdir -p \"%s\"", imagepath());
-	if (ret)
-		goto cleanup;
-
-	ret = collect_mountpoints();
 	if (ret)
 		goto cleanup;
 
