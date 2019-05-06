@@ -124,7 +124,8 @@ extern struct image_handler fit_handler;
 	(type *)( (char *)__mptr - offsetof(type,member) );})
 
 void *xzalloc(size_t n);
-unsigned long long strtoul_suffix(const char *str, char **endp, int base);
+unsigned long long strtoul_suffix(const char *str, char **endp,
+		cfg_bool_t *percent);
 
 int init_config(void);
 cfg_opt_t *get_confuse_opts(void);
@@ -144,6 +145,8 @@ int insert_data(struct image *image, const char *data, const char *outfile,
 int reload_partitions(struct image *image);
 
 unsigned long long cfg_getint_suffix(cfg_t *sec, const char *name);
+unsigned long long cfg_getint_suffix_percent(cfg_t *sec, const char *name,
+		cfg_bool_t *percent);
 
 static inline const char *imageoutfile(const struct image *image)
 {

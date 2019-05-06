@@ -251,12 +251,16 @@ void *xzalloc(size_t n)
  * Like simple_strtoul() but handles an optional G, M, K or k
  * suffix for Gigabyte, Megabyte or Kilobyte
  */
-unsigned long long strtoul_suffix(const char *str, char **endp, int base)
+unsigned long long strtoul_suffix(const char *str, char **endp,
+		cfg_bool_t *percent)
 {
 	unsigned long long val;
 	char *end;
 
-	val = strtoull(str, &end, base);
+	val = strtoull(str, &end, 0);
+
+	if (percent)
+		*percent = cfg_false;
 
 	switch (*end) {
 	case 'G':
@@ -271,6 +275,12 @@ unsigned long long strtoul_suffix(const char *str, char **endp, int base)
 		end++;
 	case '\0':
 		break;
+	case '%':
+		if (percent) {
+			*percent = cfg_true;
+			break;
+		}
+		/* fall-through */
 	default:
 		error("Invalid size suffix '%s' in '%s'\n", end, str);
 		exit(1);
