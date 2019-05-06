@@ -28,6 +28,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <ctype.h>
+#include <dirent.h>
 
 #include "genimage.h"
 
@@ -565,4 +566,53 @@ int reload_partitions(struct image *image)
 			strerror(errno));
 	close(fd);
 	return 0;
+}
+
+#define ROUND_UP(num,align) ((((num) + ((align) - 1)) & ~((align) - 1)))
+
+static unsigned long long dir_size(struct image *image, int dirfd,
+		const char *subdir, size_t blocksize)
+{
+	struct dirent *d;
+	DIR *dir;
+	int fd;
+	unsigned long long size = 0;
+	struct stat st;
+
+	fd = openat(dirfd, subdir, O_RDONLY);
+	if (fd < 0) {
+		image_error(image, "failed to open '%s': %s", subdir,
+				strerror(errno));
+		return 0;
+	}
+
+	dir = fdopendir(dup(fd));
+	if (dir == NULL) {
+		image_error(image, "failed to opendir '%s': %s", subdir,
+				strerror(errno));
+		return 0;
+	}
+	while ((d = readdir(dir)) != NULL) {
+		if (d->d_type == DT_DIR) {
+			if (d->d_name[0] == '.' && (d->d_name[1] == '\0' ||
+			    (d->d_name[1] == '.' && d->d_name[2] == '\0')))
+				continue;
+			size += dir_size(image, fd, d->d_name, blocksize);
+			continue;
+		}
+		if (d->d_type != DT_REG)
+			continue;
+		if (fstatat(fd,  d->d_name, &st, AT_NO_AUTOMOUNT) < 0) {
+			image_error(image, "failed to stat '%s': %s",
+					d->d_name, strerror(errno));
+			continue;
+		}
+		size += ROUND_UP(st.st_size, blocksize);
+	}
+	return size + blocksize;
+}
+
+unsigned long long image_dir_size(struct image *image)
+{
+	return dir_size(image, AT_FDCWD, mountpath(image), 4096);
 }
