@@ -152,7 +152,22 @@ unsigned long long cfg_getint_suffix(cfg_t *sec, const char *name)
 	unsigned long long val = 0;
 
 	if (str)
-		val = strtoul_suffix(str, NULL, 0);
+		val = strtoul_suffix(str, NULL, NULL);
+
+	return val;
+}
+
+/*
+ * Like cfg_getint_suffix() but allow '%' as suffix as well
+ */
+unsigned long long cfg_getint_suffix_percent(cfg_t *sec, const char *name,
+		cfg_bool_t *percent)
+{
+	const char *str = cfg_getstr(sec, name);
+	unsigned long long val = 0;
+
+	if (str)
+		val = strtoul_suffix(str, NULL, percent);
 
 	return val;
 }

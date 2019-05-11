@@ -68,7 +68,11 @@ Here are all options for images:
 
 :name:		The name of this image. This is used for some image types
 		to set the name of the image.
-:size:		Size of this image in bytes
+:size:		Size of this image in bytes. 'k', 'M' or 'G' can be used as suffix to
+		specify the size in multiple of 1024 etc. If the image if filled from
+		a mountpoint then '%' as suffix indicates a percentage. '200%' means
+		the resulting filesystem should be about 50% filled. Note that is is
+		only a rough estimate based on the original size of the content.
 :mountpoint:	mountpoint if image refers to a filesystem image. The
 		default is "/". The content of "${rootpath}${mountpoint}"
 		will be used used fill the filesystem.
