@@ -389,7 +389,7 @@ int pad_file(struct image *image, const char *infile,
 
 	if (!infile) {
 		if ((unsigned long long)s.st_size > size) {
-			image_error(image, "input file '%s' too large\n", outfile);
+			image_error(image, "output file '%s' too large\n", outfile);
 			ret = -EINVAL;
 			goto err_out;
 		}
