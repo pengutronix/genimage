@@ -89,12 +89,16 @@ Partition options:
 
 :offset:		The offset of this partition as a total offset to the beginning
 			of the device.
-:size:			The size of this partition in bytes. The last partition may have
-			size 0 to make this partition use the rest of the available space
-			on the device.
+:size:			The size of this partition in bytes. If the size and
+			autoresize are both not set then the size of the partition
+			image is used.
 :partition-type:	Used by dos partition tables to specify the partition type.
 :image:			The image file this partition shall be filled with
-:autoresize:		used by ubi (FIXME: do we need this? Isn't size = 0 enough)
+:autoresize:		Boolean specifying that the partition should be resized
+			automatically. For UBI volumes this means that the
+			``autoresize`` flag is set. Only one volume can have this flag.
+			For hd images this can be used for the last partition. If set
+			the partition will fill the remaining space of the image.
 :bootable:		Boolean specifying whether to set the bootable flag.
 :in-partition-table:	Boolean specifying whether to include this partition in
 			the partition table.
