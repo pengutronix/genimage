@@ -33,6 +33,7 @@ struct hdimage {
 	uint32_t disksig;
 	const char *disk_uuid;
 	cfg_bool_t gpt;
+	cfg_bool_t fill;
 };
 
 struct mbr_partition_entry {
@@ -379,6 +380,14 @@ static int hdimage_generate(struct image *image)
 		}
 	}
 
+	if (hd->fill) {
+		ret = extend_file(image, image->size);
+		if (ret) {
+			image_error(image, "failed to fill the image.\n");
+			return ret;
+		}
+	}
+
 	if (hd->partition_table) {
 		if (hd->gpt) {
 			ret = hdimage_insert_gpt(image, &image->partitions);
@@ -414,6 +423,7 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 	hd->extended_partition = cfg_getint(cfg, "extended-partition");
 	hd->disksig = strtoul(cfg_getstr(cfg, "disk-signature"), NULL, 0);
 	hd->gpt = cfg_getbool(cfg, "gpt");
+	hd->fill = cfg_getbool(cfg, "fill");
 	hd->disk_uuid = cfg_getstr(cfg, "disk-uuid");
 
 	if (hd->extended_partition > 4) {
@@ -585,6 +595,7 @@ cfg_opt_t hdimage_opts[] = {
 	CFG_BOOL("partition-table", cfg_true, CFGF_NONE),
 	CFG_INT("extended-partition", 0, CFGF_NONE),
 	CFG_BOOL("gpt", cfg_false, CFGF_NONE),
+	CFG_BOOL("fill", cfg_false, CFGF_NONE),
 	CFG_END()
 };
 

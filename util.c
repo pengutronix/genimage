@@ -479,6 +479,49 @@ err_out:
 	return ret;
 }
 
+int extend_file(struct image *image, size_t size)
+{
+	const char *outfile = imageoutfile(image);
+	char buf = '\0';
+	int f;
+	off_t offset;
+	int ret = 0;
+
+	f = open_file(image, outfile, 0);
+	if (f < 0)
+		return f;
+
+	offset = lseek(f, 0, SEEK_END);
+	if (offset < 0) {
+		ret = -errno;
+		image_error(image, "seek: %s\n", strerror(errno));
+		goto out;
+	}
+	if ((size_t)offset > size) {
+		ret = -EINVAL;
+		image_error(image, "output file is larger than requested size\n");
+		goto out;
+	}
+	if ((size_t)offset == size)
+		goto out;
+
+	if (lseek(f, size - 1, SEEK_SET) < 0) {
+		ret = -errno;
+		image_error(image, "seek %s: %s\n", outfile, strerror(errno));
+		goto out;
+	}
+	ret = write(f, &buf, 1);
+	if (ret < 1) {
+		ret = -errno;
+		image_error(image, "write %s: %s\n", outfile, strerror(errno));
+		goto out;
+	}
+	ret = 0;
+out:
+	close(f);
+	return ret;
+}
+
 int uuid_validate(const char *str)
 {
 	int i;

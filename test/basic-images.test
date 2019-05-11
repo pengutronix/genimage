@@ -198,7 +198,7 @@ exec_test_set_prereq sfdisk
 test_expect_success fdisk,sfdisk "hdimage" "
 	setup_test_images &&
 	run_genimage hdimage.config test.hdimage &&
-	check_size images/test.hdimage 9442816 &&
+	check_size images/test.hdimage 10485760 &&
 	# check the this identifier
 	fdisk -l images/test.hdimage | grep identifier: > hdimage.fdisk &&
 	# check partitions; filter output to handle different sfdisk versions
