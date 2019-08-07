@@ -392,7 +392,7 @@ static struct mountpoint *add_mountpoint(const char *path)
 	path_sanitized = sanitize_path(path);
 	mp = xzalloc(sizeof(*mp));
 	mp->path = strdup(path);
-	xasprintf(&mp->mountpath, "%s/%s", tmppath(), path_sanitized);
+	xasprintf(&mp->mountpath, "%s/mp-%s", tmppath(), path_sanitized);
 	list_add_tail(&mp->list, &mountpoints);
 	free(path_sanitized);
 
