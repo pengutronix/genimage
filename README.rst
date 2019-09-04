@@ -189,7 +189,9 @@ Options:
 :extended-partition:	Number of the extended partition. Contains the number of the
 			extended partition between 1 and 4 or 0 for automatic. Defaults
 			to 0.
-:disk-signature:	32 bit integer used as disk signature (offset 440 in the MBR)
+:disk-signature:	32 bit integer used as disk signature (offset 440 in the
+                        MBR). Using a special value ``random`` will result in
+                        using random 32 bit number.
 :gpt:			Boolean. If true, a GPT type partion table is written. If false
 			a DOS type partition table is written. Defaults to false.
 :disk-uuid:		UUID string used as disk id in GPT partitioning. Defaults to a

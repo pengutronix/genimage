@@ -416,12 +416,13 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 	int has_extended, autoresize = 0;
 	unsigned int partition_table_entries = 0;
 	unsigned long long now = 0;
+	const char *disk_signature;
 	struct hdimage *hd = xzalloc(sizeof(*hd));
 
 	hd->align = cfg_getint_suffix(cfg, "align");
 	hd->partition_table = cfg_getbool(cfg, "partition-table");
 	hd->extended_partition = cfg_getint(cfg, "extended-partition");
-	hd->disksig = strtoul(cfg_getstr(cfg, "disk-signature"), NULL, 0);
+	disk_signature = cfg_getstr(cfg, "disk-signature");
 	hd->gpt = cfg_getbool(cfg, "gpt");
 	hd->fill = cfg_getbool(cfg, "fill");
 	hd->disk_uuid = cfg_getstr(cfg, "disk-uuid");
@@ -455,6 +456,11 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 	else {
 		hd->disk_uuid = uuid_random();
 	}
+
+	if (!strcmp(disk_signature, "random"))
+		hd->disksig = random();
+	else
+		hd->disksig = strtoul(disk_signature, NULL, 0);
 
 	partition_table_entries = 0;
 	list_for_each_entry(part, &image->partitions, list) {
