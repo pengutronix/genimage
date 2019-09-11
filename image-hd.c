@@ -33,6 +33,7 @@ struct hdimage {
 	uint32_t disksig;
 	const char *disk_uuid;
 	cfg_bool_t gpt;
+	unsigned long long gpt_location;
 	cfg_bool_t fill;
 };
 
@@ -261,14 +262,14 @@ static int hdimage_insert_gpt(struct image *image, struct list_head *partitions)
 	header.backup_lba = htole64(image->size/512 - 1);
 	header.last_usable_lba = htole64(image->size/512 - 1 - GPT_SECTORS);
 	uuid_parse(hd->disk_uuid, header.disk_uuid);
-	header.starting_lba = htole64(2);
+	header.starting_lba = htole64(hd->gpt_location/512);
 	header.number_entries = htole32(GPT_ENTRIES);
 	header.entry_size = htole32(sizeof(struct gpt_partition_entry));
 
 	i = 0;
 	memset(&table, 0, sizeof(table));
 	list_for_each_entry(part, partitions, list) {
-		if (header.first_usable_lba == 0)
+		if (header.first_usable_lba == 0 && part->in_partition_table)
 			header.first_usable_lba = htole64(part->offset / 512);
 
 		if (!part->in_partition_table)
@@ -291,7 +292,7 @@ static int hdimage_insert_gpt(struct image *image, struct list_head *partitions)
 		image_error(image, "failed to write GPT\n");
 		return ret;
 	}
-	ret = insert_data(image, (char *)&table, outfile, sizeof(table), 2*512);
+	ret = insert_data(image, (char *)&table, outfile, sizeof(table), hd->gpt_location);
 	if (ret) {
 		image_error(image, "failed to write GPT table\n");
 		return ret;
@@ -424,6 +425,7 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 	hd->extended_partition = cfg_getint(cfg, "extended-partition");
 	disk_signature = cfg_getstr(cfg, "disk-signature");
 	hd->gpt = cfg_getbool(cfg, "gpt");
+	hd->gpt_location = cfg_getint_suffix(cfg, "gpt-location");
 	hd->fill = cfg_getbool(cfg, "fill");
 	hd->disk_uuid = cfg_getstr(cfg, "disk-uuid");
 
@@ -461,6 +463,14 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 		hd->disksig = random();
 	else
 		hd->disksig = strtoul(disk_signature, NULL, 0);
+
+	if (hd->gpt_location == 0) {
+		hd->gpt_location = 2*512;
+	}
+	else if (hd->gpt_location % 512) {
+		image_error(image, "GPT table location (%lld) must be a "
+				   "multiple of 1 sector (512 bytes)", hd->gpt_location);
+	}
 
 	partition_table_entries = 0;
 	list_for_each_entry(part, &image->partitions, list) {
@@ -601,6 +611,7 @@ cfg_opt_t hdimage_opts[] = {
 	CFG_BOOL("partition-table", cfg_true, CFGF_NONE),
 	CFG_INT("extended-partition", 0, CFGF_NONE),
 	CFG_BOOL("gpt", cfg_false, CFGF_NONE),
+	CFG_STR("gpt-location", NULL, CFGF_NONE),
 	CFG_BOOL("fill", cfg_false, CFGF_NONE),
 	CFG_END()
 };
