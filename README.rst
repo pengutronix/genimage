@@ -194,6 +194,11 @@ Options:
                         using random 32 bit number.
 :gpt:			Boolean. If true, a GPT type partion table is written. If false
 			a DOS type partition table is written. Defaults to false.
+:gpt-location:		Location of the GPT table. Occasionally useful for moving the GPT
+			table away from where a bootloader is placed due to hardware
+			requirements.  All partitions in the table must begin after this
+			table.  Regardless of this setting, the GPT header will still be
+			placed at 512 bytes (sector 1).  Defaults to 1024 bytes (sector 2).
 :disk-uuid:		UUID string used as disk id in GPT partitioning. Defaults to a
 			random value.
 
