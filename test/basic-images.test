@@ -89,6 +89,14 @@ check_size() {
 	fi
 }
 
+sfdisk_validate() {
+	if [ -n "$(sfdisk -q -V "${1}" 2>&1 | grep -v unallocated)" ]; then
+		echo "'sfdisk -V' failed with:"
+		sfdisk -V "${1}" 2>&1
+		return 1
+	fi
+}
+
 exec_test_set_prereq() {
 	command -v "${1}" > /dev/null && test_set_prereq "${1/./_}"
 }
@@ -199,6 +207,7 @@ test_expect_success fdisk,sfdisk "hdimage" "
 	setup_test_images &&
 	run_genimage hdimage.config test.hdimage &&
 	check_size images/test.hdimage 10485760 &&
+	sfdisk_validate images/test.hdimage &&
 	# check the this identifier
 	fdisk -l images/test.hdimage | grep identifier: > hdimage.fdisk &&
 	# check partitions; filter output to handle different sfdisk versions
@@ -225,6 +234,7 @@ test_expect_success fdisk-gpt,sfdisk-gpt "hdimage4" "
 	setup_test_images &&
 	run_genimage hdimage4.config test.hdimage &&
 	check_size images/test.hdimage 7356928 &&
+	sfdisk_validate images/test.hdimage &&
 	# check the this identifier
 	fdisk -l images/test.hdimage | grep identifier: > hdimage4.fdisk &&
 	# check partitions; filter output to handle different sfdisk versions
