@@ -308,6 +308,7 @@ static int hdimage_insert_gpt(struct image *image, struct list_head *partitions)
 	header.header_crc = 0;
 	header.current_lba = htole64(image->size/512 - 1);
 	header.backup_lba = htole64(1);
+	header.starting_lba = htole64(image->size/512 - GPT_SECTORS);
 	header.header_crc = htole32(crc32(&header, sizeof(header)));
 	ret = insert_data(image, (char *)&table, outfile, sizeof(table),
 			  image->size - GPT_SECTORS*512);
