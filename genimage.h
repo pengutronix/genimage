@@ -53,6 +53,7 @@ struct image {
 	unsigned long long size;
 	cfg_bool_t size_is_percent;
 	const char *mountpoint;
+	cfg_bool_t empty;
 	const char *exec_pre;
 	const char *exec_post;
 	unsigned char partition_type;

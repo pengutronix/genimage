@@ -39,10 +39,12 @@ static int ext2_generate_genext2fs(struct image *image)
 	const char *extraargs = cfg_getstr(image->imagesec, "extraargs");
 	const char *label = cfg_getstr(image->imagesec, "label");
 
-	ret = systemp(image, "%s -d '%s' --size-in-blocks=%lld -i 16384 '%s' %s",
+	ret = systemp(image, "%s %s%s%s --size-in-blocks=%lld -i 16384 '%s' %s",
 			get_opt("genext2fs"),
-			mountpath(image), image->size / 1024, imageoutfile(image),
-			extraargs);
+			image->empty ? "" : "-d '",
+			image->empty ? "" : mountpath(image),
+			image->empty ? "" : "'",
+			image->size / 1024, imageoutfile(image), extraargs);
 
 	if (ret)
 		return ret;
@@ -76,11 +78,13 @@ static int ext2_generate_mke2fs(struct image *image)
 	if (is_block_device(imageoutfile(image)))
 		pad_file(image, NULL, 2048, 0x0, MODE_OVERWRITE);
 
-	return systemp(image, "%s%s -t %s%s -E 'root_owner=%s,%s'%s -d '%s' %s %s%s '%s' %lld",
+	return systemp(image, "%s%s -t %s%s -E 'root_owner=%s,%s'%s %s%s%s %s %s%s '%s' %lld",
 			ext->conf_env, get_opt("mke2fs"), image->handler->type,
 			ext->usage_type_args, root_owner, options, ext->size_features,
-			mountpath(image), extraargs,
-			label ? "-L " : "", label ? label : "",
+			image->empty ? "" : "-d '",
+			image->empty ? "" : mountpath(image),
+			image->empty ? "" : "'",
+			extraargs, label ? "-L " : "", label ? label : "",
 			imageoutfile(image), image->size / 1024);
 }
 

@@ -76,6 +76,11 @@ Here are all options for images:
 :mountpoint:	mountpoint if image refers to a filesystem image. The
 		default is "/". The content of "${rootpath}${mountpoint}"
 		will be used used fill the filesystem.
+:empty:		If this is set to true, then the specified rootpath and
+		mountpoint are ignored for this image and an empty
+		filesystem is created. This option is only used for
+		writeable filesystem types, such as extX, vfat, ubifs and
+		jffs2. This defaults to false.
 :exec-pre:	Custom command to run before generating the image.
 :exec-post:	Custom command to run after generating the image.
 :flashtype:	refers to a flash section. Optional for non flash like images
