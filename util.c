@@ -363,8 +363,8 @@ static int map_file_extents(struct image *image, const char *filename, int f,
 		goto err_out;
 
 	/* Build extent array */
-	*extent_count = fiemap->fm_mapped_extents;
-	*extents = xzalloc(fiemap->fm_mapped_extents * sizeof(struct extent));
+	*extent_count = fiemap->fm_extent_count;
+	*extents = xzalloc(*extent_count * sizeof(struct extent));
 	for (i = 0; i < fiemap->fm_mapped_extents; i++) {
 		(*extents)[i].start = fiemap->fm_extents[i].fe_logical;
 		(*extents)[i].end = fiemap->fm_extents[i].fe_logical + fiemap->fm_extents[i].fe_length;
