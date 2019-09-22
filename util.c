@@ -397,7 +397,7 @@ int pad_file(struct image *image, const char *infile,
 	int f = -1, outf = -1, flags = 0;
 	unsigned long f_offset = 0;
 	struct extent *extents;
-	size_t extent_count;
+	size_t extent_count = 0;
 	void *buf = NULL;
 	int now, r, w;
 	unsigned e;
