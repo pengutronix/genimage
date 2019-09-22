@@ -755,5 +755,7 @@ static unsigned long long dir_size(struct image *image, int dirfd,
 
 unsigned long long image_dir_size(struct image *image)
 {
+	if (image->empty)
+		return 0;
 	return dir_size(image, AT_FDCWD, mountpath(image), 4096);
 }

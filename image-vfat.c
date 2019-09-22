@@ -65,8 +65,9 @@ static int vfat_generate(struct image *image)
 	if (!list_empty(&image->partitions))
 		return 0;
 
-	ret = systemp(image, "MTOOLS_SKIP_CHECK=1 %s -bsp -i '%s' '%s'/* ::",
-			get_opt("mcopy"), imageoutfile(image), mountpath(image));
+	if (!image->empty)
+		ret = systemp(image, "MTOOLS_SKIP_CHECK=1 %s -bsp -i '%s' '%s'/* ::",
+				get_opt("mcopy"), imageoutfile(image), mountpath(image));
 	return ret;
 }
 
