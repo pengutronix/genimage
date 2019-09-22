@@ -584,7 +584,6 @@ err_out:
 int extend_file(struct image *image, size_t size)
 {
 	const char *outfile = imageoutfile(image);
-	char buf = '\0';
 	int f;
 	off_t offset;
 	int ret = 0;
@@ -607,15 +606,10 @@ int extend_file(struct image *image, size_t size)
 	if ((size_t)offset == size)
 		goto out;
 
-	if (lseek(f, size - 1, SEEK_SET) < 0) {
+	ret = ftruncate(f, size);
+	if (ret == -1) {
 		ret = -errno;
-		image_error(image, "seek %s: %s\n", outfile, strerror(errno));
-		goto out;
-	}
-	ret = write(f, &buf, 1);
-	if (ret < 1) {
-		ret = -errno;
-		image_error(image, "write %s: %s\n", outfile, strerror(errno));
+		image_error(image, "ftruncate %s: %s\n", outfile, strerror(errno));
 		goto out;
 	}
 	ret = 0;
