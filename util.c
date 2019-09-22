@@ -29,6 +29,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <ctype.h>
+#include <dirent.h>
 
 #include "genimage.h"
 
@@ -252,12 +253,16 @@ void *xzalloc(size_t n)
  * Like simple_strtoul() but handles an optional G, M, K or k
  * suffix for Gigabyte, Megabyte or Kilobyte
  */
-unsigned long long strtoul_suffix(const char *str, char **endp, int base)
+unsigned long long strtoul_suffix(const char *str, char **endp,
+		cfg_bool_t *percent)
 {
 	unsigned long long val;
 	char *end;
 
-	val = strtoull(str, &end, base);
+	val = strtoull(str, &end, 0);
+
+	if (percent)
+		*percent = cfg_false;
 
 	switch (*end) {
 	case 'G':
@@ -272,6 +277,12 @@ unsigned long long strtoul_suffix(const char *str, char **endp, int base)
 		end++;
 	case '\0':
 		break;
+	case '%':
+		if (percent) {
+			*percent = cfg_true;
+			break;
+		}
+		/* fall-through */
 	default:
 		error("Invalid size suffix '%s' in '%s'\n", end, str);
 		exit(1);
@@ -449,7 +460,7 @@ int pad_file(struct image *image, const char *infile,
 
 	if (!infile) {
 		if ((unsigned long long)s.st_size > size) {
-			image_error(image, "input file '%s' too large\n", outfile);
+			image_error(image, "output file '%s' too large\n", outfile);
 			ret = -EINVAL;
 			goto err_out;
 		}
@@ -566,6 +577,49 @@ err_out:
 	return ret;
 }
 
+int extend_file(struct image *image, size_t size)
+{
+	const char *outfile = imageoutfile(image);
+	char buf = '\0';
+	int f;
+	off_t offset;
+	int ret = 0;
+
+	f = open_file(image, outfile, 0);
+	if (f < 0)
+		return f;
+
+	offset = lseek(f, 0, SEEK_END);
+	if (offset < 0) {
+		ret = -errno;
+		image_error(image, "seek: %s\n", strerror(errno));
+		goto out;
+	}
+	if ((size_t)offset > size) {
+		ret = -EINVAL;
+		image_error(image, "output file is larger than requested size\n");
+		goto out;
+	}
+	if ((size_t)offset == size)
+		goto out;
+
+	if (lseek(f, size - 1, SEEK_SET) < 0) {
+		ret = -errno;
+		image_error(image, "seek %s: %s\n", outfile, strerror(errno));
+		goto out;
+	}
+	ret = write(f, &buf, 1);
+	if (ret < 1) {
+		ret = -errno;
+		image_error(image, "write %s: %s\n", outfile, strerror(errno));
+		goto out;
+	}
+	ret = 0;
+out:
+	close(f);
+	return ret;
+}
+
 int uuid_validate(const char *str)
 {
 	int i;
@@ -653,4 +707,53 @@ int reload_partitions(struct image *image)
 			strerror(errno));
 	close(fd);
 	return 0;
+}
+
+#define ROUND_UP(num,align) ((((num) + ((align) - 1)) & ~((align) - 1)))
+
+static unsigned long long dir_size(struct image *image, int dirfd,
+		const char *subdir, size_t blocksize)
+{
+	struct dirent *d;
+	DIR *dir;
+	int fd;
+	unsigned long long size = 0;
+	struct stat st;
+
+	fd = openat(dirfd, subdir, O_RDONLY);
+	if (fd < 0) {
+		image_error(image, "failed to open '%s': %s", subdir,
+				strerror(errno));
+		return 0;
+	}
+
+	dir = fdopendir(dup(fd));
+	if (dir == NULL) {
+		image_error(image, "failed to opendir '%s': %s", subdir,
+				strerror(errno));
+		return 0;
+	}
+	while ((d = readdir(dir)) != NULL) {
+		if (d->d_type == DT_DIR) {
+			if (d->d_name[0] == '.' && (d->d_name[1] == '\0' ||
+			    (d->d_name[1] == '.' && d->d_name[2] == '\0')))
+				continue;
+			size += dir_size(image, fd, d->d_name, blocksize);
+			continue;
+		}
+		if (d->d_type != DT_REG)
+			continue;
+		if (fstatat(fd,  d->d_name, &st, AT_NO_AUTOMOUNT) < 0) {
+			image_error(image, "failed to stat '%s': %s",
+					d->d_name, strerror(errno));
+			continue;
+		}
+		size += ROUND_UP(st.st_size, blocksize);
+	}
+	return size + blocksize;
+}
+
+unsigned long long image_dir_size(struct image *image)
+{
+	return dir_size(image, AT_FDCWD, mountpath(image), 4096);
 }

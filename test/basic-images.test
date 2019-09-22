@@ -89,6 +89,14 @@ check_size() {
 	fi
 }
 
+sfdisk_validate() {
+	if [ -n "$(sfdisk -q -V "${1}" 2>&1 | grep -v unallocated)" ]; then
+		echo "'sfdisk -V' failed with:"
+		sfdisk -V "${1}" 2>&1
+		return 1
+	fi
+}
+
 get_disk_usage() {
 	local file="${1}"
 	if [ ! -f "${file}" ]; then
@@ -176,6 +184,11 @@ test_expect_success genext2fs,e2fsck "ext2" "
 	check_ext images/test.ext2 ext2test 4194304
 "
 
+test_expect_success genext2fs,e2fsck "ext2percent" "
+	run_genimage ext2percent.config test.ext2 &&
+	check_ext images/test.ext2 ext2test-percent 69632
+"
+
 test_expect_success genext2fs,e2fsck "ext3" "
 	run_genimage ext3.config test.ext3 &&
 	check_ext images/test.ext3 ext3test 4194304
@@ -212,7 +225,8 @@ exec_test_set_prereq sfdisk
 test_expect_success fdisk,sfdisk "hdimage" "
 	setup_test_images &&
 	run_genimage hdimage.config test.hdimage &&
-	check_size images/test.hdimage 9442816 &&
+	check_size images/test.hdimage 10485760 &&
+	sfdisk_validate images/test.hdimage &&
 	check_disk_usage_range images/test.hdimage 40960 57344 &&
 	# check the this identifier
 	fdisk -l images/test.hdimage | grep identifier: > hdimage.fdisk &&
@@ -240,6 +254,7 @@ test_expect_success fdisk-gpt,sfdisk-gpt "hdimage4" "
 	setup_test_images &&
 	run_genimage hdimage4.config test.hdimage &&
 	check_size images/test.hdimage 7356928 &&
+	sfdisk_validate images/test.hdimage &&
 	# check the this identifier
 	fdisk -l images/test.hdimage | grep identifier: > hdimage4.fdisk &&
 	# check partitions; filter output to handle different sfdisk versions

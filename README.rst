@@ -68,7 +68,11 @@ Here are all options for images:
 
 :name:		The name of this image. This is used for some image types
 		to set the name of the image.
-:size:		Size of this image in bytes
+:size:		Size of this image in bytes. 'k', 'M' or 'G' can be used as suffix to
+		specify the size in multiple of 1024 etc. If the image if filled from
+		a mountpoint then '%' as suffix indicates a percentage. '200%' means
+		the resulting filesystem should be about 50% filled. Note that is is
+		only a rough estimate based on the original size of the content.
 :mountpoint:	mountpoint if image refers to a filesystem image. The
 		default is "/". The content of "${rootpath}${mountpoint}"
 		will be used used fill the filesystem.
@@ -89,12 +93,16 @@ Partition options:
 
 :offset:		The offset of this partition as a total offset to the beginning
 			of the device.
-:size:			The size of this partition in bytes. The last partition may have
-			size 0 to make this partition use the rest of the available space
-			on the device.
+:size:			The size of this partition in bytes. If the size and
+			autoresize are both not set then the size of the partition
+			image is used.
 :partition-type:	Used by dos partition tables to specify the partition type.
 :image:			The image file this partition shall be filled with
-:autoresize:		used by ubi (FIXME: do we need this? Isn't size = 0 enough)
+:autoresize:		Boolean specifying that the partition should be resized
+			automatically. For UBI volumes this means that the
+			``autoresize`` flag is set. Only one volume can have this flag.
+			For hd images this can be used for the last partition. If set
+			the partition will fill the remaining space of the image.
 :bootable:		Boolean specifying whether to set the bootable flag.
 :in-partition-table:	Boolean specifying whether to include this partition in
 			the partition table.
@@ -181,9 +189,16 @@ Options:
 :extended-partition:	Number of the extended partition. Contains the number of the
 			extended partition between 1 and 4 or 0 for automatic. Defaults
 			to 0.
-:disk-signature:	32 bit integer used as disk signature (offset 440 in the MBR)
+:disk-signature:	32 bit integer used as disk signature (offset 440 in the
+                        MBR). Using a special value ``random`` will result in
+                        using random 32 bit number.
 :gpt:			Boolean. If true, a GPT type partion table is written. If false
 			a DOS type partition table is written. Defaults to false.
+:gpt-location:		Location of the GPT table. Occasionally useful for moving the GPT
+			table away from where a bootloader is placed due to hardware
+			requirements.  All partitions in the table must begin after this
+			table.  Regardless of this setting, the GPT header will still be
+			placed at 512 bytes (sector 1).  Defaults to 1024 bytes (sector 2).
 :disk-uuid:		UUID string used as disk id in GPT partitioning. Defaults to a
 			random value.
 

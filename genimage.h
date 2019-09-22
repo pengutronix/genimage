@@ -51,6 +51,7 @@ struct image {
 	const char *name;
 	const char *file;
 	unsigned long long size;
+	cfg_bool_t size_is_percent;
 	const char *mountpoint;
 	const char *exec_pre;
 	const char *exec_post;
@@ -124,7 +125,8 @@ extern struct image_handler fit_handler;
 	(type *)( (char *)__mptr - offsetof(type,member) );})
 
 void *xzalloc(size_t n);
-unsigned long long strtoul_suffix(const char *str, char **endp, int base);
+unsigned long long strtoul_suffix(const char *str, char **endp,
+		cfg_bool_t *percent);
 
 int init_config(void);
 cfg_opt_t *get_confuse_opts(void);
@@ -141,9 +143,12 @@ int pad_file(struct image *image, const char *infile,
 		size_t size, unsigned char fillpattern, enum pad_mode mode);
 int insert_data(struct image *image, const char *data, const char *outfile,
 		size_t size, long offset);
+int extend_file(struct image *image, size_t size);
 int reload_partitions(struct image *image);
 
 unsigned long long cfg_getint_suffix(cfg_t *sec, const char *name);
+unsigned long long cfg_getint_suffix_percent(cfg_t *sec, const char *name,
+		cfg_bool_t *percent);
 
 static inline const char *imageoutfile(const struct image *image)
 {
@@ -153,6 +158,8 @@ static inline const char *imageoutfile(const struct image *image)
 int uuid_validate(const char *str);
 void uuid_parse(const char *str, unsigned char *uuid);
 char *uuid_random(void);
+
+unsigned long long image_dir_size(struct image *image);
 
 uint32_t crc32(const void *data, size_t len);
 

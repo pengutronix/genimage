@@ -91,29 +91,36 @@ static int rauc_generate(struct image *image)
 
 static int rauc_parse(struct image *image, cfg_t *cfg)
 {
+	const char *pkcs11_prefix = "pkcs11:";
 	unsigned int i;
 	unsigned int num_files;
 	struct partition *part;
+	char *part_image_key;
+	char *part_image_cert;
 
-	part = xzalloc(sizeof *part);
-	part->image = cfg_getstr(image->imagesec, "key");
-	if (!part->image) {
+	part_image_key = cfg_getstr(image->imagesec, "key");
+	if (!part_image_key) {
 		image_error(image, "Mandatory 'key' option is missing!\n");
-		free(part);
 		return -EINVAL;
 	}
-	part->partition_type = RAUC_KEY;
-	list_add_tail(&part->list, &image->partitions);
+	if (strncmp(pkcs11_prefix, part_image_key, strlen(pkcs11_prefix))) {
+		part = xzalloc(sizeof *part);
+		part->image = part_image_key;
+		part->partition_type = RAUC_KEY;
+		list_add_tail(&part->list, &image->partitions);
+	}
 
-	part = xzalloc(sizeof *part);
-	part->image = cfg_getstr(image->imagesec, "cert");
-	if (!part->image) {
+	part_image_cert = cfg_getstr(image->imagesec, "cert");
+	if (!part_image_cert) {
 		image_error(image, "Mandatory 'cert' option is missing!\n");
-		free(part);
 		return -EINVAL;
 	}
-	part->partition_type = RAUC_CERT;
-	list_add_tail(&part->list, &image->partitions);
+	if (strncmp(pkcs11_prefix, part_image_cert, strlen(pkcs11_prefix))) {
+		part = xzalloc(sizeof *part);
+		part->image = part_image_cert;
+		part->partition_type = RAUC_CERT;
+		list_add_tail(&part->list, &image->partitions);
+	}
 
 	num_files = cfg_size(cfg, "file");
 	for (i = 0; i < num_files; i++) {
