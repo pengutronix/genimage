@@ -25,6 +25,7 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <linux/fs.h>
+#include <linux/fiemap.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <ctype.h>
@@ -323,13 +324,83 @@ static int open_file(struct image *image, const char *filename, int extra_flags)
 	return fd;
 }
 
+struct extent {
+	unsigned long long start, end;
+};
+
+/* Build a file extent covering the whole file */
+static int whole_file_exent(size_t size, struct extent **extents,
+			    size_t *extent_count)
+{
+	*extents = xzalloc(sizeof(struct extent));
+	(*extents)[0].start = 0;
+	(*extents)[0].end = size;
+	*extent_count = 1;
+	return 0;
+}
+
+/* Build an file extent array for the file */
+static int map_file_extents(struct image *image, const char *filename, int f,
+			    size_t size, struct extent **extents,
+			    size_t *extent_count)
+{
+	struct fiemap *fiemap;
+	unsigned i;
+	int ret;
+
+	/* Get extent count */
+	fiemap = xzalloc(sizeof(struct fiemap));
+	fiemap->fm_length = size;
+	ret = ioctl(f, FS_IOC_FIEMAP, fiemap);
+	if (ret == -1)
+		goto err_out;
+
+	/* Get extents */
+	fiemap = realloc(fiemap, sizeof(struct fiemap) + fiemap->fm_mapped_extents * sizeof(struct fiemap_extent));
+	fiemap->fm_extent_count = fiemap->fm_mapped_extents;
+	ret = ioctl(f, FS_IOC_FIEMAP, fiemap);
+	if (ret == -1)
+		goto err_out;
+
+	/* Build extent array */
+	*extent_count = fiemap->fm_mapped_extents;
+	*extents = xzalloc(fiemap->fm_mapped_extents * sizeof(struct extent));
+	for (i = 0; i < fiemap->fm_mapped_extents; i++) {
+		(*extents)[i].start = fiemap->fm_extents[i].fe_logical;
+		(*extents)[i].end = fiemap->fm_extents[i].fe_logical + fiemap->fm_extents[i].fe_length;
+	}
+	free(fiemap);
+
+	/* The last extent may extend beyond the end of file, limit it to the actual end */
+	if ((*extents)[i-1].end > size)
+		(*extents)[i-1].end = size;
+
+	return 0;
+
+err_out:
+	ret = -errno;
+
+	free(fiemap);
+
+	/* If failure is due to no filesystem support, return a single extent */
+	if (ret == -EOPNOTSUPP)
+		return whole_file_exent(size, extents, extent_count);
+
+	image_error(image, "fiemap %s: %d %s\n", filename, errno, strerror(errno));
+	return ret;
+}
+
 int pad_file(struct image *image, const char *infile,
 		size_t size, unsigned char fillpattern, enum pad_mode mode)
 {
 	const char *outfile = imageoutfile(image);
 	int f = -1, outf = -1, flags = 0;
+	unsigned long f_offset = 0;
+	struct extent *extents;
+	size_t extent_count;
 	void *buf = NULL;
 	int now, r, w;
+	unsigned e;
 	struct stat s;
 	int ret = 0;
 
@@ -397,44 +468,71 @@ int pad_file(struct image *image, const char *infile,
 		goto fill;
 	}
 
-	while (size) {
-		now = min(size, 4096);
-
-		r = read(f, buf, now);
-		w = write(outf, buf, r);
-		if (w < r) {
-			ret = -errno;
-			image_error(image, "write %s: %s\n", outfile, strerror(errno));
+	if ((s.st_mode & S_IFMT) == S_IFREG) {
+		ret = map_file_extents(image, infile, f, size, &extents, &extent_count);
+		if (ret != 0)
 			goto err_out;
-		}
-		size -= r;
-
-		if (r < now)
-			goto fill;
+	}
+	else {
+		whole_file_exent(size, &extents, &extent_count);
 	}
 
-	now = read(f, buf, 1);
-	if (now == 1) {
-		image_error(image, "input file '%s' too large\n", infile);
-		ret = -EINVAL;
-		goto err_out;
+	for (e = 0; e < extent_count && size > 0; e++) {
+		/* Ship over any holes in the input file */
+		if (f_offset != extents[e].start) {
+			unsigned long skip = extents[e].start - f_offset;
+			lseek(f, skip, SEEK_CUR);
+			lseek(outf, skip, SEEK_CUR);
+			size -= skip;
+			f_offset += skip;
+		}
+
+		/* Copy the data in the extent */
+		while (f_offset < extents[e].end) {
+			now = min(extents[e].end - f_offset, 4096);
+
+			r = read(f, buf, now);
+			w = write(outf, buf, r);
+			if (w < r) {
+				ret = -errno;
+				image_error(image, "write %s: %s\n", outfile, strerror(errno));
+				goto err_out;
+			}
+			size -= r;
+			f_offset += r;
+
+			if (r < now)
+				goto fill;
+		}
 	}
 
 fill:
-	memset(buf, fillpattern, 4096);
-
-	while (size) {
-		now = min(size, 4096);
-
-		r = write(outf, buf, now);
-		if (r < now) {
-			ret = -errno;
-			image_error(image, "write %s: %s\n", outfile, strerror(errno));
-			goto err_out;
-		}
-		size -= now;
+	if (fillpattern == 0 && (s.st_mode & S_IFMT) == S_IFREG) {
+		/* Truncate output to desired size */
+		image_info(image, "f_offset=%lu filesize=%llu\n", f_offset, (unsigned long long)lseek(outf, 0, SEEK_CUR));
+		image->last_offset = lseek(outf, 0, SEEK_CUR) + size;
+		ret = ftruncate(outf, image->last_offset);
+		if (ret == -1) {
+			image_error(image, "ftruncate %s: %s\n", outfile, strerror(errno));
+                        goto err_out;
+                }
 	}
-	image->last_offset = lseek(outf, 0, SEEK_CUR);
+	else {
+		memset(buf, fillpattern, 4096);
+
+		while (size) {
+			now = min(size, 4096);
+
+			r = write(outf, buf, now);
+			if (r < now) {
+				ret = -errno;
+				image_error(image, "write %s: %s\n", outfile, strerror(errno));
+				goto err_out;
+			}
+			size -= now;
+		}
+		image->last_offset = lseek(outf, 0, SEEK_CUR);
+	}
 err_out:
 	free(buf);
 	if (f >= 0)
