@@ -514,8 +514,8 @@ fill:
 		ret = ftruncate(outf, image->last_offset);
 		if (ret == -1) {
 			image_error(image, "ftruncate %s: %s\n", outfile, strerror(errno));
-                        goto err_out;
-                }
+			goto err_out;
+		}
 	}
 	else {
 		memset(buf, fillpattern, 4096);
