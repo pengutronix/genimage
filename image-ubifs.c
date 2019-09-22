@@ -54,6 +54,11 @@ static int ubifs_setup(struct image *image, cfg_t *cfg)
 		image_error(image, "no flash type given\n");
 		return -EINVAL;
 	}
+	if (image->flash_type->lebsize <= 0) {
+		image_error(image, "invalid lebsize (%d) in %s\n",
+			image->flash_type->lebsize, image->flash_type->name);
+		return -EINVAL;
+	}
 
 	return 0;
 }
