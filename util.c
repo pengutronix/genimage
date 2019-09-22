@@ -477,7 +477,11 @@ int pad_file(struct image *image, const char *infile,
 		whole_file_exent(size, &extents, &extent_count);
 	}
 
+	image_debug(image, "copying %zu bytes from %s at offset %zd\n",
+			size, infile, image->last_offset);
+
 	for (e = 0; e < extent_count && size > 0; e++) {
+		image_debug(image, "copying [%lld,%lld]\n", extents[e].start, extents[e].end);
 		/* Ship over any holes in the input file */
 		if (f_offset != extents[e].start) {
 			unsigned long skip = extents[e].start - f_offset;
@@ -509,7 +513,6 @@ int pad_file(struct image *image, const char *infile,
 fill:
 	if (fillpattern == 0 && (s.st_mode & S_IFMT) == S_IFREG) {
 		/* Truncate output to desired size */
-		image_info(image, "f_offset=%lu filesize=%llu\n", f_offset, (unsigned long long)lseek(outf, 0, SEEK_CUR));
 		image->last_offset = lseek(outf, 0, SEEK_CUR) + size;
 		ret = ftruncate(outf, image->last_offset);
 		if (ret == -1) {
