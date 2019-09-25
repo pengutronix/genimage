@@ -363,8 +363,8 @@ static int map_file_extents(struct image *image, const char *filename, int f,
 		goto err_out;
 
 	/* Build extent array */
-	*extent_count = fiemap->fm_mapped_extents;
-	*extents = xzalloc(fiemap->fm_mapped_extents * sizeof(struct extent));
+	*extent_count = fiemap->fm_extent_count;
+	*extents = xzalloc(*extent_count * sizeof(struct extent));
 	for (i = 0; i < fiemap->fm_mapped_extents; i++) {
 		(*extents)[i].start = fiemap->fm_extents[i].fe_logical;
 		(*extents)[i].end = fiemap->fm_extents[i].fe_logical + fiemap->fm_extents[i].fe_length;
@@ -397,7 +397,7 @@ int pad_file(struct image *image, const char *infile,
 	int f = -1, outf = -1, flags = 0;
 	unsigned long f_offset = 0;
 	struct extent *extents;
-	size_t extent_count;
+	size_t extent_count = 0;
 	void *buf = NULL;
 	int now, r, w;
 	unsigned e;
@@ -477,7 +477,11 @@ int pad_file(struct image *image, const char *infile,
 		whole_file_exent(size, &extents, &extent_count);
 	}
 
+	image_debug(image, "copying %zu bytes from %s at offset %zd\n",
+			size, infile, image->last_offset);
+
 	for (e = 0; e < extent_count && size > 0; e++) {
+		image_debug(image, "copying [%lld,%lld]\n", extents[e].start, extents[e].end);
 		/* Ship over any holes in the input file */
 		if (f_offset != extents[e].start) {
 			unsigned long skip = extents[e].start - f_offset;
@@ -509,13 +513,13 @@ int pad_file(struct image *image, const char *infile,
 fill:
 	if (fillpattern == 0 && (s.st_mode & S_IFMT) == S_IFREG) {
 		/* Truncate output to desired size */
-		image_info(image, "f_offset=%lu filesize=%llu\n", f_offset, (unsigned long long)lseek(outf, 0, SEEK_CUR));
 		image->last_offset = lseek(outf, 0, SEEK_CUR) + size;
 		ret = ftruncate(outf, image->last_offset);
 		if (ret == -1) {
+			ret = -errno;
 			image_error(image, "ftruncate %s: %s\n", outfile, strerror(errno));
-                        goto err_out;
-                }
+			goto err_out;
+		}
 	}
 	else {
 		memset(buf, fillpattern, 4096);
@@ -580,7 +584,6 @@ err_out:
 int extend_file(struct image *image, size_t size)
 {
 	const char *outfile = imageoutfile(image);
-	char buf = '\0';
 	int f;
 	off_t offset;
 	int ret = 0;
@@ -603,15 +606,10 @@ int extend_file(struct image *image, size_t size)
 	if ((size_t)offset == size)
 		goto out;
 
-	if (lseek(f, size - 1, SEEK_SET) < 0) {
+	ret = ftruncate(f, size);
+	if (ret == -1) {
 		ret = -errno;
-		image_error(image, "seek %s: %s\n", outfile, strerror(errno));
-		goto out;
-	}
-	ret = write(f, &buf, 1);
-	if (ret < 1) {
-		ret = -errno;
-		image_error(image, "write %s: %s\n", outfile, strerror(errno));
+		image_error(image, "ftruncate %s: %s\n", outfile, strerror(errno));
 		goto out;
 	}
 	ret = 0;

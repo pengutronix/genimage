@@ -447,7 +447,7 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 			++partition_table_entries;
 	}
 	if (!hd->gpt && !hd->extended_partition && partition_table_entries > 4)
-	        hd->extended_partition = 4;
+		hd->extended_partition = 4;
 	has_extended = hd->extended_partition > 0;
 
 	if (hd->disk_uuid ) {
