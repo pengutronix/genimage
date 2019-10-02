@@ -729,6 +729,7 @@ static unsigned long long dir_size(struct image *image, int dirfd,
 	if (dir == NULL) {
 		image_error(image, "failed to opendir '%s': %s", subdir,
 				strerror(errno));
+		close(fd);
 		return 0;
 	}
 	while ((d = readdir(dir)) != NULL) {
@@ -748,6 +749,8 @@ static unsigned long long dir_size(struct image *image, int dirfd,
 		}
 		size += ROUND_UP(st.st_size, blocksize);
 	}
+	closedir(dir);
+	close(fd);
 	return size + blocksize;
 }
 
