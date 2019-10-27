@@ -27,14 +27,20 @@ static int vfat_generate(struct image *image)
 	int ret;
 	struct partition *part;
 	char *extraargs = cfg_getstr(image->imagesec, "extraargs");
+	char *label = cfg_getstr(image->imagesec, "label");
+
+	if (label && label[0] != '\0')
+		xasprintf(&label, "-n '%s'", label);
+	else
+		label = "";
 
 	ret = systemp(image, "%s if=/dev/zero of=\"%s\" seek=%lld count=0 bs=1 2>/dev/null",
 			get_opt("dd"), imageoutfile(image), image->size);
 	if (ret)
 		return ret;
 
-	ret = systemp(image, "%s %s '%s'", get_opt("mkdosfs"),
-			extraargs, imageoutfile(image));
+	ret = systemp(image, "%s %s %s '%s'", get_opt("mkdosfs"),
+			extraargs, label, imageoutfile(image));
 	if (ret)
 		return ret;
 
@@ -73,8 +79,15 @@ static int vfat_generate(struct image *image)
 
 static int vfat_setup(struct image *image, cfg_t *cfg)
 {
+	char *label = cfg_getstr(image->imagesec, "label");
+
 	if (!image->size) {
 		image_error(image, "no size given or must not be zero\n");
+		return -EINVAL;
+	}
+
+	if (label && strlen(label) > 11) {
+		image_error(image, "vfat volume name cannot be longer than 11 characters\n");
 		return -EINVAL;
 	}
 
@@ -113,6 +126,7 @@ static cfg_opt_t file_opts[] = {
 
 static cfg_opt_t vfat_opts[] = {
 	CFG_STR("extraargs", "", CFGF_NONE),
+	CFG_STR("label", "", CFGF_NONE),
 	CFG_STR_LIST("files", 0, CFGF_NONE),
 	CFG_SEC("file", file_opts, CFGF_MULTI | CFGF_TITLE),
 	CFG_END()
