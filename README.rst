@@ -303,6 +303,7 @@ Generates a VFAT image.
 Options:
 
 :extraargs:		Extra arguments passed to mkdosfs
+:label:		Specify the volume-label. Passed to the ``-n`` option of mkdosfs
 :file:			Specify a file to be added into the filesystem image. Usage is:
 			``file foo { image = "bar" }`` which adds a file "foo" in the
 			filesystem image from the input file "bar"
