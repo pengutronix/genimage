@@ -3,6 +3,7 @@ AM_MAKEFLAGS = --no-print-directory
 endif
 
 EXTRA_DIST = \
+	README.rst \
 	test.config \
 	flash.conf
 
