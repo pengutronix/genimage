@@ -155,16 +155,27 @@ Generates ext* images.
 
 Options:
 
-:extraargs:		Extra arguments passed to genext2fs
+:use-mke2fs:		If set to true, then mke2fs is used to create the
+			image. Otherwise, genext2fs is used. Defaults to false.
+:mke2fs-conf:		mke2fs.conf that should be used. If unspecified, the system
+			default is used.
+:extraargs:		Extra arguments passed to genext2fs or mke2fs.
 :features:		Filesystem features. Passed to the ``-O`` option of tune2fs. This
 			is a comma separated list of enabled or disabled features. See
-			``man tune2fs`` for features. Default for ext3 images is
+			``man ext4`` for features.
+			For genext2fs all feature are specified. Default for ext3 images is
 			``has_journal``. Default for ext4 images is
 			``extents,uninit_bg,dir_index,has_journal``.
+			For mke2fs these features are added in addition to the default
+			features of the ext type. Already enabled features can be disabled
+			by prefixing the feature with ``^``.
 :label:			Specify the volume-label. Passed to the ``-L`` option of tune2fs
 :fs-timestamp:		Sets different timestamps in the image. Sets the given timestamp
 			using the debugfs commands ``set_current_time``,
 			``set_super_value mkfs_time`` and ``set_super_value lastcheck``
+:root-owner:		User and group IDs for the root directory. Defaults to ``0:0``.
+:usage-type:		Specify the usage type for the filesystem. Only valid with mke2fs.
+			More details can be found in the mke2fs man-page.
 
 FIT
 ***
