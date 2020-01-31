@@ -32,8 +32,8 @@ static int rauc_generate(struct image *image)
 	struct partition *part;
 	char *extraargs = cfg_getstr(image->imagesec, "extraargs");
 	char *manifest = cfg_getstr(image->imagesec, "manifest");
-	char *cert = cfg_getstr(image->imagesec, "cert");
-	char *key = cfg_getstr(image->imagesec, "key");
+	const char *cert = cfg_getstr(image->imagesec, "cert");
+	const char *key = cfg_getstr(image->imagesec, "key");
 	char *manifest_file;
 
 	image_debug(image, "manifest = '%s'\n", manifest);
@@ -48,6 +48,12 @@ static int rauc_generate(struct image *image)
 		const char *file = imageoutfile(child);
 		const char *target = part->name;
 		char *path, *tmp;
+
+		if (part->partition_type == RAUC_CERT)
+			cert = file;
+
+		if (part->partition_type == RAUC_KEY)
+			key = file;
 
 		if (part->partition_type != RAUC_CONTENT)
 			continue;
