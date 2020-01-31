@@ -7,6 +7,7 @@ addons:
       - libconfuse-dev
       - cramfsprogs
       - dosfstools
+      - e2fsprogs
       - fakeroot
       - genext2fs
       - genisoimage
@@ -14,10 +15,8 @@ addons:
       - mtools
       - qemu-utils
       - squashfs-tools
-      - qemu-utils
-# FIXME: dtc on travis is too old
-#      - device-tree-compiler
-#      - u-boot-tools
+      - device-tree-compiler
+      - u-boot-tools
 script:
   - ./autogen.sh
   - ./configure
