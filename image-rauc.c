@@ -72,7 +72,7 @@ static int rauc_generate(struct image *image)
 		tmp = strrchr(path, '/');
 		if (tmp) {
 			*tmp = '\0';
-			ret = systemp(image, "mkdir -p %s/%s",
+			ret = systemp(image, "mkdir -p '%s/%s'",
 					mountpath(image), path);
 			if (ret)
 				return ret;
@@ -86,7 +86,7 @@ static int rauc_generate(struct image *image)
 			return ret;
 	}
 
-	systemp(image, "rm -f %s", imageoutfile(image));
+	systemp(image, "rm -f '%s'", imageoutfile(image));
 
 	ret = systemp(image, "%s bundle '%s' --cert='%s' --key='%s' %s '%s'",
 			get_opt("rauc"), mountpath(image), cert, key,
