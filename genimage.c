@@ -365,7 +365,7 @@ static struct mountpoint *get_mountpoint(const char *path)
 	return NULL;
 }
 
-static inline char *sanitize_path(const char *path)
+char *sanitize_path(const char *path)
 {
 	char *path_sanitized;
 	char *c;

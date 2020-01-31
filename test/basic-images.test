@@ -33,8 +33,10 @@ run_genimage() {
 	fi
 	rm -rf tmp images "${root_test}"
 	mkdir "${root_test}" images
-	# create a larger output image to make sure it is recreated properly
-	dd if=/dev/zero of="images/${2}" bs=1M seek=30 count=1
+	if [ -n "${2}" ]; then
+		# create a larger output image to make sure it is recreated properly
+		dd if=/dev/zero of="images/${2}" bs=1M seek=30 count=1
+	fi
 	"${genimage}" \
 		${vargs} \
 		--outputpath=images \
@@ -341,6 +343,32 @@ exec_test_set_prereq dtc
 test_expect_success mkimage,dtc "fit" "
 	setup_fit_its &&
 	run_genimage fit.config test.fit
+"
+
+setup_rauc() {
+	rm -rf input &&
+	mkdir input &&
+	cp -r "${testdir}"/rauc-openssl-ca input/ &&
+	echo "test" > input/rauc.content &&
+	echo "test2" > input/rauc2.content
+}
+
+exec_test_set_prereq rauc
+test_expect_success rauc "rauc" "
+	setup_rauc &&
+	run_genimage rauc.config test.raucb &&
+	rauc info \
+		--keyring input/rauc-openssl-ca/ca.cert.pem \
+		--cert input/rauc-openssl-ca/ca.cert.pem \
+		images/test.raucb \
+		> test.raucb.info &&
+	test_cmp '${testdir}/test.raucb.info' test.raucb.info &&
+	rauc info \
+		--keyring input/rauc-openssl-ca/ca.cert.pem \
+		--cert input/rauc-openssl-ca/ca.cert.pem \
+		images/test2.raucb \
+		> test2.raucb.info &&
+	test_cmp '${testdir}/test2.raucb.info' test2.raucb.info
 "
 
 test_done

@@ -32,13 +32,18 @@ static int rauc_generate(struct image *image)
 	struct partition *part;
 	char *extraargs = cfg_getstr(image->imagesec, "extraargs");
 	char *manifest = cfg_getstr(image->imagesec, "manifest");
-	char *cert = cfg_getstr(image->imagesec, "cert");
-	char *key = cfg_getstr(image->imagesec, "key");
-	char *manifest_file;
+	const char *cert = cfg_getstr(image->imagesec, "cert");
+	const char *key = cfg_getstr(image->imagesec, "key");
+	char *manifest_file, *tmpdir;
 
 	image_debug(image, "manifest = '%s'\n", manifest);
 
-	xasprintf(&manifest_file, "%s/manifest.raucm", mountpath(image));
+	xasprintf(&tmpdir, "%s/rauc-%s", tmppath(), sanitize_path(image->file));
+	ret = systemp(image, "mkdir -p '%s'", tmpdir);
+	if (ret)
+		return ret;
+
+	xasprintf(&manifest_file, "%s/manifest.raucm", tmpdir);
 	ret = insert_data(image, manifest, manifest_file, strlen(manifest), 0);
 	if (ret)
 		return ret;
@@ -48,6 +53,12 @@ static int rauc_generate(struct image *image)
 		const char *file = imageoutfile(child);
 		const char *target = part->name;
 		char *path, *tmp;
+
+		if (part->partition_type == RAUC_CERT)
+			cert = file;
+
+		if (part->partition_type == RAUC_KEY)
+			key = file;
 
 		if (part->partition_type != RAUC_CONTENT)
 			continue;
@@ -66,8 +77,8 @@ static int rauc_generate(struct image *image)
 		tmp = strrchr(path, '/');
 		if (tmp) {
 			*tmp = '\0';
-			ret = systemp(image, "mkdir -p %s/%s",
-					mountpath(image), path);
+			ret = systemp(image, "mkdir -p '%s/%s'",
+					tmpdir, path);
 			if (ret)
 				return ret;
 		}
@@ -75,15 +86,15 @@ static int rauc_generate(struct image *image)
 		image_info(image, "adding file '%s' as '%s' ...\n",
 				child->file, target);
 		ret = systemp(image, "cp --remove-destination '%s' '%s/%s'",
-				file, mountpath(image), target);
+				file, tmpdir, target);
 		if (ret)
 			return ret;
 	}
 
-	systemp(image, "rm -f %s", imageoutfile(image));
+	systemp(image, "rm -f '%s'", imageoutfile(image));
 
 	ret = systemp(image, "%s bundle '%s' --cert='%s' --key='%s' %s '%s'",
-			get_opt("rauc"), mountpath(image), cert, key,
+			get_opt("rauc"), tmpdir, cert, key,
 			extraargs, imageoutfile(image));
 
 	return ret;

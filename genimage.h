@@ -156,6 +156,8 @@ static inline const char *imageoutfile(const struct image *image)
 	return image->outfile;
 }
 
+char *sanitize_path(const char *path);
+
 int uuid_validate(const char *str);
 void uuid_parse(const char *str, unsigned char *uuid);
 char *uuid_random(void);
