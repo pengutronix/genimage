@@ -34,11 +34,16 @@ static int rauc_generate(struct image *image)
 	char *manifest = cfg_getstr(image->imagesec, "manifest");
 	const char *cert = cfg_getstr(image->imagesec, "cert");
 	const char *key = cfg_getstr(image->imagesec, "key");
-	char *manifest_file;
+	char *manifest_file, *tmpdir;
 
 	image_debug(image, "manifest = '%s'\n", manifest);
 
-	xasprintf(&manifest_file, "%s/manifest.raucm", mountpath(image));
+	xasprintf(&tmpdir, "%s/rauc-%s", tmppath(), sanitize_path(image->file));
+	ret = systemp(image, "mkdir -p '%s'", tmpdir);
+	if (ret)
+		return ret;
+
+	xasprintf(&manifest_file, "%s/manifest.raucm", tmpdir);
 	ret = insert_data(image, manifest, manifest_file, strlen(manifest), 0);
 	if (ret)
 		return ret;
@@ -73,7 +78,7 @@ static int rauc_generate(struct image *image)
 		if (tmp) {
 			*tmp = '\0';
 			ret = systemp(image, "mkdir -p '%s/%s'",
-					mountpath(image), path);
+					tmpdir, path);
 			if (ret)
 				return ret;
 		}
@@ -81,7 +86,7 @@ static int rauc_generate(struct image *image)
 		image_info(image, "adding file '%s' as '%s' ...\n",
 				child->file, target);
 		ret = systemp(image, "cp --remove-destination '%s' '%s/%s'",
-				file, mountpath(image), target);
+				file, tmpdir, target);
 		if (ret)
 			return ret;
 	}
@@ -89,7 +94,7 @@ static int rauc_generate(struct image *image)
 	systemp(image, "rm -f '%s'", imageoutfile(image));
 
 	ret = systemp(image, "%s bundle '%s' --cert='%s' --key='%s' %s '%s'",
-			get_opt("rauc"), mountpath(image), cert, key,
+			get_opt("rauc"), tmpdir, cert, key,
 			extraargs, imageoutfile(image));
 
 	return ret;
