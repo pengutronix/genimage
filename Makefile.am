@@ -77,12 +77,19 @@ EXTRA_DIST += \
 	test/mke2fs.dump \
 	test/qemu.config \
 	test/qemu.qcow.gz \
+	test/rauc-openssl-ca/ca.cert.pem \
+	test/rauc-openssl-ca/rauc.cert.pem \
+	test/rauc-openssl-ca/rauc.key.pem \
+	test/rauc.config \
 	test/sharness.sh \
 	test/squashfs.config \
 	test/tar.config \
+	test/test.raucb.info \
+	test/test2.raucb.info \
 	test/ubi.config \
 	test/ubifs.config \
 	test/vfat.config
+
 
 
 TEST_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
