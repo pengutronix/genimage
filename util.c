@@ -33,6 +33,10 @@
 
 #include "genimage.h"
 
+#ifndef AT_NO_AUTOMOUNT
+#define AT_NO_AUTOMOUNT 0x800
+#endif
+
 static int loglevel(void)
 {
 	static int level = -1;
