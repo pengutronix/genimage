@@ -208,7 +208,7 @@ Options:
 :disk-signature:	32 bit integer used as disk signature (offset 440 in the
                         MBR). Using a special value ``random`` will result in
                         using random 32 bit number.
-:gpt:			Boolean. If true, a GPT type partion table is written. If false
+:gpt:			Boolean. If true, a GPT type partition table is written. If false
 			a DOS type partition table is written. Defaults to false.
 :gpt-location:		Location of the GPT table. Occasionally useful for moving the GPT
 			table away from where a bootloader is placed due to hardware
