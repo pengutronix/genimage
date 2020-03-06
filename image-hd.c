@@ -34,6 +34,7 @@ struct hdimage {
 	const char *disk_uuid;
 	cfg_bool_t gpt;
 	unsigned long long gpt_location;
+	cfg_bool_t gpt_no_backup;
 	cfg_bool_t fill;
 };
 
@@ -298,6 +299,9 @@ static int hdimage_insert_gpt(struct image *image, struct list_head *partitions)
 		return ret;
 	}
 
+	if (hd->gpt_no_backup)
+		goto write_mbr;
+
 	ret = pad_file(image, NULL, image->size, 0x0, MODE_APPEND);
 	if (ret) {
 		image_error(image, "failed to pad image to size %lld\n",
@@ -323,6 +327,7 @@ static int hdimage_insert_gpt(struct image *image, struct list_head *partitions)
 		return ret;
 	}
 
+write_mbr:
 	ret = hdimage_insert_protective_mbr(image);
 	if (ret) {
 		return ret;
@@ -427,6 +432,7 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 	disk_signature = cfg_getstr(cfg, "disk-signature");
 	hd->gpt = cfg_getbool(cfg, "gpt");
 	hd->gpt_location = cfg_getint_suffix(cfg, "gpt-location");
+	hd->gpt_no_backup = cfg_getbool(cfg, "gpt-no-backup");
 	hd->fill = cfg_getbool(cfg, "fill");
 	hd->disk_uuid = cfg_getstr(cfg, "disk-uuid");
 
@@ -613,6 +619,7 @@ cfg_opt_t hdimage_opts[] = {
 	CFG_INT("extended-partition", 0, CFGF_NONE),
 	CFG_BOOL("gpt", cfg_false, CFGF_NONE),
 	CFG_STR("gpt-location", NULL, CFGF_NONE),
+	CFG_BOOL("gpt-no-backup", cfg_false, CFGF_NONE),
 	CFG_BOOL("fill", cfg_false, CFGF_NONE),
 	CFG_END()
 };
