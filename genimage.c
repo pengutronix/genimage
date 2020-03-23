@@ -93,6 +93,8 @@ static cfg_opt_t partition_opts[] = {
 	CFG_INT("partition-type", 0, CFGF_NONE),
 	CFG_BOOL("bootable", cfg_false, CFGF_NONE),
 	CFG_BOOL("read-only", cfg_false, CFGF_NONE),
+	CFG_BOOL("hidden", cfg_false, CFGF_NONE),
+	CFG_BOOL("no-automount", cfg_false, CFGF_NONE),
 	CFG_STR("image", NULL, CFGF_NONE),
 	CFG_BOOL("autoresize", 0, CFGF_NONE),
 	CFG_BOOL("in-partition-table", cfg_true, CFGF_NONE),
@@ -313,6 +315,8 @@ static int parse_partitions(struct image *image, cfg_t *imagesec)
 		part->partition_type = cfg_getint(partsec, "partition-type");
 		part->bootable = cfg_getbool(partsec, "bootable");
 		part->read_only = cfg_getbool(partsec, "read-only");
+		part->hidden = cfg_getbool(partsec, "hidden");
+		part->no_automount = cfg_getbool(partsec, "no-automount");
 		part->image = cfg_getstr(partsec, "image");
 		part->autoresize = cfg_getbool(partsec, "autoresize");
 		part->in_partition_table = cfg_getbool(partsec, "in-partition-table");

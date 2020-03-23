@@ -38,6 +38,8 @@ struct partition {
 	cfg_bool_t bootable;
 	cfg_bool_t extended;
 	cfg_bool_t read_only;
+	cfg_bool_t hidden;
+	cfg_bool_t no_automount;
 	const char *image;
 	struct list_head list;
 	int autoresize;
