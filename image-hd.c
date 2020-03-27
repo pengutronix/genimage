@@ -80,7 +80,10 @@ struct gpt_partition_entry {
 #define GPT_SECTORS		(1 + GPT_ENTRIES * sizeof(struct gpt_partition_entry) / 512)
 #define GPT_REVISION_1_0	0x00010000
 
-#define GPT_PE_FLAG_BOOTABLE	(1 << 2)
+#define GPT_PE_FLAG_BOOTABLE	(1ULL << 2)
+#define GPT_PE_FLAG_READ_ONLY	(1ULL << 60)
+#define GPT_PE_FLAG_HIDDEN	(1ULL << 62)
+#define GPT_PE_FLAG_NO_AUTO	(1ULL << 63)
 
 static void hdimage_setup_chs(unsigned int lba, unsigned char *chs)
 {
@@ -279,7 +282,11 @@ static int hdimage_insert_gpt(struct image *image, struct list_head *partitions)
 		uuid_parse(part->partition_uuid, table[i].uuid);
 		table[i].first_lba = htole64(part->offset/512);
 		table[i].last_lba = htole64((part->offset + part->size)/512 - 1);
-		table[i].flags = part->bootable ? GPT_PE_FLAG_BOOTABLE : 0;
+		table[i].flags =
+			(part->bootable ? GPT_PE_FLAG_BOOTABLE : 0) |
+			(part->read_only ? GPT_PE_FLAG_READ_ONLY : 0) |
+			(part->hidden ? GPT_PE_FLAG_HIDDEN : 0) |
+			(part->no_automount ? GPT_PE_FLAG_NO_AUTO : 0);
 		for (j = 0; j < strlen(part->name) && j < 36; j++)
 			table[i].name[j] = htole16(part->name[j]);
 		i++;
