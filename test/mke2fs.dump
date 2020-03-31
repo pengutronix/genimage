@@ -11,7 +11,7 @@ Filesystem OS type:       Linux
 Inode count:              8192
 Block count:              32768
 Reserved block count:     1638
-Free blocks:              27592
+Free blocks:              26568
 Free inodes:              8141
 First block:              1
 Block size:               1024
@@ -20,7 +20,7 @@ Group descriptor size:    64
 Blocks per group:         8192
 Fragments per group:      8192
 Inodes per group:         2048
-Inode blocks per group:   256
+Inode blocks per group:   512
 Flex block group size:    16
 Filesystem created:       Sat Jan  1 00:00:00 2000
 Last mount time:          n/a
@@ -29,11 +29,13 @@ Mount count:              0
 Maximum mount count:      -1
 Last checked:             Sat Jan  1 00:00:00 2000
 Check interval:           0 (<none>)
-Lifetime writes:          123 kB
+Lifetime writes:          141 kB
 Reserved blocks uid:      0 (user root)
 Reserved blocks gid:      0 (group root)
 First inode:              11
-Inode size:	          128
+Inode size:	          256
+Required extra isize:     32
+Desired extra isize:      32
 Journal inode:            8
 Default directory hash:   half_md4
 Journal backup:           inode blocks
@@ -47,34 +49,34 @@ Journal sequence:         0x00000001
 Journal start:            0
 
 
-Group 0: (Blocks 1-8192) csum 0x62cb [ITABLE_ZEROED]
+Group 0: (Blocks 1-8192) csum 0x74a0 [ITABLE_ZEROED]
   Primary superblock at 1, Group descriptors at 2-2
-  Block bitmap at 3 (+2), csum 0xb4967804
+  Block bitmap at 3 (+2), csum 0x16cec4db
   Inode bitmap at 7 (+6), csum 0xb1052088
-  Inode table at 11-266 (+10)
-  7117 free blocks, 1997 free inodes, 18 directories, 1997 unused inodes
-  Free blocks: 1076-8192
+  Inode table at 11-522 (+10)
+  6093 free blocks, 1997 free inodes, 18 directories, 1997 unused inodes
+  Free blocks: 2100-8192
   Free inodes: 52-2048
-Group 1: (Blocks 8193-16384) csum 0x7d4b [INODE_UNINIT, BLOCK_UNINIT, ITABLE_ZEROED]
+Group 1: (Blocks 8193-16384) csum 0x8fde [INODE_UNINIT, BLOCK_UNINIT, ITABLE_ZEROED]
   Backup superblock at 8193, Group descriptors at 8194-8194
   Block bitmap at 4 (bg #0 + 3), csum 0x00000000
   Inode bitmap at 8 (bg #0 + 7), csum 0x00000000
-  Inode table at 267-522 (bg #0 + 266)
+  Inode table at 523-1034 (bg #0 + 522)
   8190 free blocks, 2048 free inodes, 0 directories, 2048 unused inodes
   Free blocks: 8195-16384
   Free inodes: 2049-4096
-Group 2: (Blocks 16385-24576) csum 0x9725 [INODE_UNINIT, ITABLE_ZEROED]
+Group 2: (Blocks 16385-24576) csum 0x720f [INODE_UNINIT, ITABLE_ZEROED]
   Block bitmap at 5 (bg #0 + 4), csum 0x040008b2
   Inode bitmap at 9 (bg #0 + 8), csum 0x00000000
-  Inode table at 523-778 (bg #0 + 522)
+  Inode table at 1035-1546 (bg #0 + 1034)
   4096 free blocks, 2048 free inodes, 0 directories, 2048 unused inodes
   Free blocks: 20481-24576
   Free inodes: 4097-6144
-Group 3: (Blocks 24577-32767) csum 0xc701 [INODE_UNINIT, ITABLE_ZEROED]
+Group 3: (Blocks 24577-32767) csum 0xd0be [INODE_UNINIT, ITABLE_ZEROED]
   Backup superblock at 24577, Group descriptors at 24578-24578
   Block bitmap at 6 (bg #0 + 5), csum 0x4327ef1c
   Inode bitmap at 10 (bg #0 + 9), csum 0x00000000
-  Inode table at 779-1034 (bg #0 + 778)
+  Inode table at 1547-2058 (bg #0 + 1546)
   8189 free blocks, 2048 free inodes, 0 directories, 2048 unused inodes
   Free blocks: 24579-32767
   Free inodes: 6145-8192
