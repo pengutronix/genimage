@@ -98,14 +98,18 @@ static void hdimage_setup_chs(unsigned int lba, unsigned char *chs)
 	chs[2] = (c & 0xff);
 }
 
-static int hdimage_insert_mbr(struct image *image, struct list_head *partitions)
+static int hdimage_insert_mbr(struct image *image, struct list_head *partitions, int hybrid)
 {
 	struct hdimage *hd = image->handler_priv;
 	char mbr[6+4*sizeof(struct mbr_partition_entry)+2], *part_table;
 	struct partition *part;
 	int ret, i = 0;
 
-	image_info(image, "writing MBR\n");
+	if (hybrid) {
+		image_info(image, "writing hybrid MBR\n");
+	} else {
+		image_info(image, "writing MBR\n");
+	}
 
 	memset(mbr, 0, sizeof(mbr));
 	memcpy(mbr, &hd->disksig, sizeof(hd->disksig));
@@ -115,6 +119,12 @@ static int hdimage_insert_mbr(struct image *image, struct list_head *partitions)
 		struct mbr_partition_entry *entry;
 
 		if (!part->in_partition_table)
+			continue;
+
+		if (hybrid && !part->partition_type)
+			continue;
+
+		if (hybrid && part->extended)
 			continue;
 
 		entry = (struct mbr_partition_entry *)(part_table + i *
@@ -146,13 +156,35 @@ static int hdimage_insert_mbr(struct image *image, struct list_head *partitions)
 			break;
 		i++;
 	}
+
+	if (hybrid) {
+		struct mbr_partition_entry *entry;
+
+		entry = (struct mbr_partition_entry *)(part_table + i *
+			sizeof(struct mbr_partition_entry));
+
+		entry->boot = 0x00;
+
+		entry->partition_type = 0xee;
+		entry->relative_sectors = 1;
+		entry->total_sectors = hd->gpt_location / 512 + GPT_SECTORS - 2;
+
+		hdimage_setup_chs(entry->relative_sectors, entry->first_chs);
+		hdimage_setup_chs(entry->relative_sectors +
+		entry->total_sectors - 1, entry->last_chs);
+	}
+
 	part_table += 4 * sizeof(struct mbr_partition_entry);
 	part_table[0] = 0x55;
 	part_table[1] = 0xaa;
 
 	ret = insert_data(image, mbr, imageoutfile(image), sizeof(mbr), 440);
 	if (ret) {
-		image_error(image, "failed to write MBR\n");
+		if (hybrid) {
+			image_error(image, "failed to write hybrid MBR\n");
+		} else {
+			image_error(image, "failed to write MBR\n");
+		}
 		return ret;
 	}
 
@@ -236,7 +268,7 @@ static int hdimage_insert_protective_mbr(struct image *image)
 	mbr.in_partition_table = 1;
 	mbr.partition_type = 0xee;
 	list_add_tail(&mbr.list, &mbr_list);
-	ret = hdimage_insert_mbr(image, &mbr_list);
+	ret = hdimage_insert_mbr(image, &mbr_list, 0);
 	if (ret) {
 		image_error(image,"failed to write protective MBR\n");
 		return ret;
@@ -253,7 +285,7 @@ static int hdimage_insert_gpt(struct image *image, struct list_head *partitions)
 	struct gpt_partition_entry table[GPT_ENTRIES];
 	struct partition *part;
 	unsigned i, j;
-	int ret;
+	int hybrid, ret;
 
 	image_info(image, "writing GPT\n");
 
@@ -269,6 +301,7 @@ static int hdimage_insert_gpt(struct image *image, struct list_head *partitions)
 	header.number_entries = htole32(GPT_ENTRIES);
 	header.entry_size = htole32(sizeof(struct gpt_partition_entry));
 
+	hybrid = 0;
 	i = 0;
 	memset(&table, 0, sizeof(table));
 	list_for_each_entry(part, partitions, list) {
@@ -289,8 +322,19 @@ static int hdimage_insert_gpt(struct image *image, struct list_head *partitions)
 			(part->no_automount ? GPT_PE_FLAG_NO_AUTO : 0);
 		for (j = 0; j < strlen(part->name) && j < 36; j++)
 			table[i].name[j] = htole16(part->name[j]);
+
+		if (part->partition_type)
+			hybrid++;
+
 		i++;
 	}
+
+	if (hybrid > 3) {
+		image_error(image, "hybrid MBR partitions (%i) exceeds maximum of 3\n",
+			    hybrid);
+		return -EINVAL;
+	}
+
 	header.table_crc = htole32(crc32(table, sizeof(table)));
 
 	header.header_crc = htole32(crc32(&header, sizeof(header)));
@@ -330,7 +374,11 @@ static int hdimage_insert_gpt(struct image *image, struct list_head *partitions)
 		return ret;
 	}
 
-	ret = hdimage_insert_protective_mbr(image);
+	if (hybrid) {
+		ret = hdimage_insert_mbr(image, partitions, hybrid);
+	} else {
+		ret = hdimage_insert_protective_mbr(image);
+	}
 	if (ret) {
 		return ret;
 	}
@@ -404,7 +452,7 @@ static int hdimage_generate(struct image *image)
 				return ret;
 		}
 		else {
-			ret = hdimage_insert_mbr(image, &image->partitions);
+			ret = hdimage_insert_mbr(image, &image->partitions, 0);
 			if (ret)
 				return ret;
 		}

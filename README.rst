@@ -101,7 +101,10 @@ Partition options:
 :size:			The size of this partition in bytes. If the size and
 			autoresize are both not set then the size of the partition
 			image is used.
-:partition-type:	Used by dos partition tables to specify the partition type.
+:partition-type:	Used by dos partition tables to specify the partition type. Using
+			this option with a GPT partition table will create a hybrid MBR partition
+			table with a maximum of 3 partition entries(this limit does not effect the
+			maximum number of GPT partition entries in the same image).
 :image:			The image file this partition shall be filled with
 :autoresize:		Boolean specifying that the partition should be resized
 			automatically. For UBI volumes this means that the
