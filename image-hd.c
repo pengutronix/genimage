@@ -598,7 +598,7 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 			if (!now && hd->partition_table) {
 				now = 512;
 				if (hd->gpt)
-					now += GPT_SECTORS * 512;
+					now = hd->gpt_location + (GPT_SECTORS - 1) * 512;
 			}
 			part->offset = roundup(now, hd->align);
 		}
