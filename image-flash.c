@@ -50,15 +50,12 @@ static int flash_generate(struct image *image)
 		}
 		mode = MODE_APPEND;
 
-		if (!part->image)
-			continue;
-
-		child = image_get(part->image);
-		if (!child) {
-			image_error(image, "could not find %s\n", part->name);
-			return -EINVAL;
+		if (part->image) {
+			child = image_get(part->image);
+			infile = imageoutfile(child);
+		} else {
+			infile = NULL;
 		}
-		infile = imageoutfile(child);
 
 		ret = pad_file(image, infile, part->size, 0xFF, mode);
 		if (ret) {
