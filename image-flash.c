@@ -57,7 +57,7 @@ static int flash_generate(struct image *image)
 			infile = NULL;
 		}
 
-		ret = pad_file(image, infile, part->size, 0xFF, mode);
+		ret = pad_file(image, infile, part->offset + part->size, 0xFF, mode);
 		if (ret) {
 			image_error(image, "failed to write image partition '%s'\n",
 					part->name);
