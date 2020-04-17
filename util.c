@@ -462,15 +462,14 @@ int pad_file(struct image *image, const char *infile,
 
 	buf = xzalloc(4096);
 
-	if (!infile) {
-		if ((unsigned long long)s.st_size > size) {
-			image_error(image, "output file '%s' too large\n", outfile);
-			ret = -EINVAL;
-			goto err_out;
-		}
-		size = size - s.st_size;
-		goto fill;
+	if ((unsigned long long)s.st_size > size) {
+		image_error(image, "output file '%s' too large\n", outfile);
+		ret = -EINVAL;
+		goto err_out;
 	}
+	size = size - s.st_size;
+	if (!infile)
+		goto fill;
 
 	if ((s.st_mode & S_IFMT) == S_IFREG) {
 		ret = map_file_extents(image, infile, f, size, &extents, &extent_count);
