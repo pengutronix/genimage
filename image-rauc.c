@@ -25,6 +25,7 @@
 #define RAUC_CONTENT	0
 #define RAUC_KEY	1
 #define RAUC_CERT	2
+#define RAUC_KEYRING	3
 
 static int rauc_generate(struct image *image)
 {
@@ -34,6 +35,8 @@ static int rauc_generate(struct image *image)
 	char *manifest = cfg_getstr(image->imagesec, "manifest");
 	const char *cert = cfg_getstr(image->imagesec, "cert");
 	const char *key = cfg_getstr(image->imagesec, "key");
+	const char *keyring = cfg_getstr(image->imagesec, "keyring");
+	char *keyringarg = "";
 	char *manifest_file, *tmpdir;
 
 	image_debug(image, "manifest = '%s'\n", manifest);
@@ -59,6 +62,9 @@ static int rauc_generate(struct image *image)
 
 		if (part->partition_type == RAUC_KEY)
 			key = file;
+
+		if (part->partition_type == RAUC_KEYRING)
+			keyring = file;
 
 		if (part->partition_type != RAUC_CONTENT)
 			continue;
@@ -91,11 +97,14 @@ static int rauc_generate(struct image *image)
 			return ret;
 	}
 
+	if (keyring)
+		xasprintf(&keyringarg, "--keyring='%s'", keyring);
+
 	systemp(image, "rm -f '%s'", imageoutfile(image));
 
-	ret = systemp(image, "%s bundle '%s' --cert='%s' --key='%s' %s '%s'",
+	ret = systemp(image, "%s bundle '%s' --cert='%s' --key='%s' %s %s '%s'",
 			get_opt("rauc"), tmpdir, cert, key,
-			extraargs, imageoutfile(image));
+			keyringarg, extraargs, imageoutfile(image));
 
 	return ret;
 }
@@ -108,6 +117,7 @@ static int rauc_parse(struct image *image, cfg_t *cfg)
 	struct partition *part;
 	char *part_image_key;
 	char *part_image_cert;
+	char *part_image_keyring;
 
 	part_image_key = cfg_getstr(image->imagesec, "key");
 	if (!part_image_key) {
@@ -130,6 +140,14 @@ static int rauc_parse(struct image *image, cfg_t *cfg)
 		part = xzalloc(sizeof *part);
 		part->image = part_image_cert;
 		part->partition_type = RAUC_CERT;
+		list_add_tail(&part->list, &image->partitions);
+	}
+
+	part_image_keyring = cfg_getstr(image->imagesec, "keyring");
+	if (part_image_keyring) {
+		part = xzalloc(sizeof *part);
+		part->image = part_image_keyring;
+		part->partition_type = RAUC_KEYRING;
 		list_add_tail(&part->list, &image->partitions);
 	}
 
@@ -174,6 +192,7 @@ static cfg_opt_t rauc_opts[] = {
 	CFG_SEC("file", file_opts, CFGF_MULTI | CFGF_TITLE),
 	CFG_STR("key", NULL, CFGF_NONE),
 	CFG_STR("cert", NULL, CFGF_NONE),
+	CFG_STR("keyring", NULL, CFGF_NONE),
 	CFG_STR("manifest", NULL, CFGF_NONE),
 	CFG_END()
 };

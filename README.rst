@@ -285,6 +285,8 @@ Options:
 			RAUC
 :cert:			Path to the certificate file or PKCS#11 URI. Passed to the ``--cert``
 			option of RAUC
+:keyring:		Optional path to the keyring file. Passed to the ``--keyring``
+			option of RAUC
 :manifest:		content of the manifest file
 
 tar
