@@ -281,9 +281,10 @@ Options:
 :files:			A list of filenames added into the RAUC bundle. Like **file**
 			above, but without the ability to add the files under different
 			name.
-:key:			Path to the key file. Passed to the ``--key`` option of RAUC
-:cert:			Path to the certificate file. Passed to the ``--cert`` option
-			of RAUC
+:key:			Path to the key file or PKCS#11 URI. Passed to the ``--key`` option of
+			RAUC
+:cert:			Path to the certificate file or PKCS#11 URI. Passed to the ``--cert``
+			option of RAUC
 :manifest:		content of the manifest file
 
 tar
