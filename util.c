@@ -373,11 +373,12 @@ static int map_file_extents(struct image *image, const char *filename, int f,
 		(*extents)[i].start = fiemap->fm_extents[i].fe_logical;
 		(*extents)[i].end = fiemap->fm_extents[i].fe_logical + fiemap->fm_extents[i].fe_length;
 	}
-	free(fiemap);
 
 	/* The last extent may extend beyond the end of file, limit it to the actual end */
 	if (fiemap->fm_mapped_extents && (*extents)[i-1].end > size)
 		(*extents)[i-1].end = size;
+
+	free(fiemap);
 
 	return 0;
 
