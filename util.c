@@ -348,7 +348,7 @@ static int map_file_extents(struct image *image, const char *filename, int f,
 			    size_t size, struct extent **extents,
 			    size_t *extent_count)
 {
-	struct fiemap *fiemap;
+	struct fiemap *fiemap, *tmpfiemap;
 	unsigned i;
 	int ret;
 
@@ -366,7 +366,14 @@ static int map_file_extents(struct image *image, const char *filename, int f,
 		goto err_out;
 
 	/* Get extents */
-	fiemap = realloc(fiemap, sizeof(struct fiemap) + fiemap->fm_mapped_extents * sizeof(struct fiemap_extent));
+	tmpfiemap = realloc(fiemap, sizeof(struct fiemap) + fiemap->fm_mapped_extents * sizeof(struct fiemap_extent));
+	if (!tmpfiemap) {
+		ret = -errno;
+		free(fiemap);
+		image_error(image, "realloc: %d %s\n", errno, strerror(errno));
+		return ret;
+	}
+	fiemap = tmpfiemap;
 	fiemap->fm_extent_count = fiemap->fm_mapped_extents;
 	ret = ioctl(f, FS_IOC_FIEMAP, fiemap);
 	if (ret == -1)
