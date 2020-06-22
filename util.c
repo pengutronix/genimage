@@ -352,6 +352,12 @@ static int map_file_extents(struct image *image, const char *filename, int f,
 	unsigned i;
 	int ret;
 
+	if (size == 0) {
+		*extent_count = 0;
+		*extents = NULL;
+		return 0;
+	}
+
 	/* Get extent count */
 	fiemap = xzalloc(sizeof(struct fiemap));
 	fiemap->fm_length = size;
@@ -479,6 +485,9 @@ int pad_file(struct image *image, const char *infile,
 	else {
 		whole_file_exent(size, &extents, &extent_count);
 	}
+
+	if (!extent_count)
+		goto fill;
 
 	image_debug(image, "copying %zu bytes from %s at offset %zd\n",
 			size, infile, image->last_offset);
