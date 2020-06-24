@@ -414,7 +414,7 @@ int pad_file(struct image *image, const char *infile,
 	const char *outfile = imageoutfile(image);
 	int f = -1, outf = -1, flags = 0;
 	unsigned long f_offset = 0;
-	struct extent *extents;
+	struct extent *extents = NULL;
 	size_t extent_count = 0;
 	void *buf = NULL;
 	int now, r, w;
@@ -559,6 +559,7 @@ fill:
 	}
 err_out:
 	free(buf);
+	free(extents);
 	if (f >= 0)
 		close(f);
 	if (outf >= 0)
