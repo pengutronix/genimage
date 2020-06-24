@@ -380,15 +380,15 @@ static int map_file_extents(struct image *image, const char *filename, int f,
 		goto err_out;
 
 	/* Build extent array */
-	*extent_count = fiemap->fm_extent_count;
+	*extent_count = fiemap->fm_mapped_extents;
 	*extents = xzalloc(*extent_count * sizeof(struct extent));
-	for (i = 0; i < fiemap->fm_mapped_extents; i++) {
+	for (i = 0; i < *extent_count; i++) {
 		(*extents)[i].start = fiemap->fm_extents[i].fe_logical;
 		(*extents)[i].end = fiemap->fm_extents[i].fe_logical + fiemap->fm_extents[i].fe_length;
 	}
 
 	/* The last extent may extend beyond the end of file, limit it to the actual end */
-	if (fiemap->fm_mapped_extents && (*extents)[i-1].end > size)
+	if (*extent_count && (*extents)[i-1].end > size)
 		(*extents)[i-1].end = size;
 
 	free(fiemap);
