@@ -44,7 +44,8 @@ static void show_help(const char *cmd)
 	       "Generate filesystem, disk and flash images defined in the\n"
 	       "configuration file.\n\n"
 	       "Valid options:           [ default value ]    (environment variable)\n"
-	       "  -h, --help\n", cmd);
+	       "  -h, --help\n"
+	       "  -v, --version\n", cmd);
 	list_for_each_entry(c, &optlist, list) {
 		char opt[20], def[20];
 		snprintf(opt, 20, "%s <arg>", c->name);
@@ -52,6 +53,11 @@ static void show_help(const char *cmd)
 		printf("  --%-20s %-20s (%s)\n", opt, c->def ? def : "", c->env);
 	}
 	printf("\n");
+}
+
+static void show_version(void)
+{
+	printf(PACKAGE_VERSION "\n");
 }
 
 /*
@@ -218,7 +224,7 @@ int set_config_opts(int argc, char *argv[], cfg_t *cfg)
 
 	/* and last but not least from command line switches */
 
-	long_options = xzalloc(sizeof(struct option) * (num_opts + 2));
+	long_options = xzalloc(sizeof(struct option) * (num_opts + 3));
 
 	i = 0;
 
@@ -230,12 +236,14 @@ int set_config_opts(int argc, char *argv[], cfg_t *cfg)
 	}
 	long_options[i].name = "help";
 	long_options[i].val = 'h';
+	long_options[i+1].name = "version";
+	long_options[i+1].val = 'v';
 
 	optind = 1;
 	while (1) {
 		int option_index = 0;
 
-		n = getopt_long(argc, argv, "h",
+		n = getopt_long(argc, argv, "hv",
 			long_options, &option_index);
 		if (n == -1)
 			break;
@@ -247,6 +255,10 @@ int set_config_opts(int argc, char *argv[], cfg_t *cfg)
 			break;
 		case 'h':
 			show_help(argv[0]);
+			exit(0);
+			break;
+		case 'v':
+			show_version();
 			exit(0);
 			break;
 		default:
