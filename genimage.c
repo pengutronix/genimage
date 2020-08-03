@@ -147,7 +147,7 @@ struct image *image_get(const char *filename)
  */
 static int image_setup(struct image *image)
 {
-	int ret;
+	int ret = 0;
 	struct partition *part;
 
 	if (image->done < 0)
