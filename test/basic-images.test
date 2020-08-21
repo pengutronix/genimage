@@ -158,6 +158,8 @@ check_ext() {
 	# format change
 	csum2="Group 0: (Blocks 1-4095) \\[ITABLE_ZEROED\\]\|  Checksum .*, unused inodes 205"
 	dumpe2fs "${1}" | grep -v "^\($uuid\|$seed\|$csum1\|$csum2\)" > "dump" &&
+	# some architectures (including arm64) use unsigned char
+	sed -i 's/un\(signed_directory_hash\)/\1/' "dump" &&
 	# fixup for ext3 journal size with old tune2fs
 	sed -i 's/^\(Journal size:             \)1029k$/\11024k/' "dump" &&
 	# output format changed with some version
