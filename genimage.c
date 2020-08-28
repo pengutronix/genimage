@@ -465,7 +465,7 @@ static int collect_mountpoints(void)
 	return 0;
 }
 
-const char *mountpath(struct image *image)
+const char *mountpath(const struct image *image)
 {
 	struct mountpoint *mp;
 
