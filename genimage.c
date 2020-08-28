@@ -586,7 +586,7 @@ static int setenv_image(const struct image *image)
 	if (ret)
 		return ret;
 
-	ret = overwriteenv("IMAGEMOUNTPATH", image->mp ? image->mp->mountpath : NULL);
+	ret = overwriteenv("IMAGEMOUNTPATH", image->empty ? NULL : mountpath(image));
 	if (ret)
 		return ret;
 
