@@ -50,6 +50,9 @@ EXTRA_DIST += \
 	test/basic-images.test \
 	test/cpio.config \
 	test/cramfs.config \
+	test/exec-check.sh \
+	test/exec-fail.config \
+	test/exec.config \
 	test/ext2.config \
 	test/ext2test.dump \
 	test/ext2percent.config \

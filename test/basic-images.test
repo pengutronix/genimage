@@ -24,7 +24,7 @@ setup_data() {
 	find "${root_orig}" -print0 | xargs -0 touch -c -d "2011-11-11 UTC"
 	find "${root_orig}"/ -mindepth 1 -printf "%P\n" | sort  > "${filelist_orig}"
 
-	cp "${testdir}"/*.conf* .
+	cp "${testdir}"/*.conf* "${testdir}"/*.sh .
 }
 
 run_genimage() {
@@ -372,6 +372,23 @@ test_expect_success rauc "rauc" "
 		> test2.raucb.info &&
 	test_cmp '${testdir}/test2.raucb.info' test2.raucb.info
 "
+
+setup_exec_files() {
+	rm -rf input &&
+	mkdir input &&
+	dd if=/dev/zero of=input/file1.img bs=512 count=7 &&
+	dd if=/dev/zero of=input/file2.img bs=512 count=7 &&
+	dd if=/dev/zero of=input/file3.img bs=512 count=7 &&
+	dd if=/dev/zero of=input/file4.img bs=512 count=7
+}
+
+test_expect_success "exec" "
+	setup_exec_files &&
+	run_genimage exec.config"
+
+test_expect_success "exec-fail" "
+	setup_exec_files &&
+	test_must_fail run_genimage exec-fail.config"
 
 test_done
 

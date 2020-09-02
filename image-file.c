@@ -40,7 +40,7 @@ static int file_generate(struct image *image)
 	if (!strcmp(f->infile, imageoutfile(image)))
 		return 0;
 
-	ret = systemp(image, "cp %s %s",  f->infile, imageoutfile(image));
+	ret = systemp(image, "cp '%s' '%s'",  f->infile, imageoutfile(image));
 
 	return ret;
 }

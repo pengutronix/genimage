@@ -22,7 +22,7 @@ const char *imagepath(void);
 const char *inputpath(void);
 const char *rootpath(void);
 const char *tmppath(void);
-const char *mountpath(struct image *);
+const char *mountpath(const struct image *);
 struct flash_type;
 
 struct mountpoint {
