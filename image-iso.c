@@ -49,7 +49,7 @@ static int iso_generate(struct image *image)
 }
 
 static cfg_opt_t iso_opts[] = {
-	CFG_STR("boot-image", 0, CFGF_NONE),
+	CFG_STR("boot-image", NULL, CFGF_NONE),
 	CFG_STR("bootargs", "-no-emul-boot -boot-load-size 4 -boot-info-table -c boot.cat -hide boot.cat", CFGF_NONE),
 	CFG_STR("extraargs", "", CFGF_NONE),
 	CFG_STR("input-charset", "default", CFGF_NONE),

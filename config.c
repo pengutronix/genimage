@@ -194,7 +194,7 @@ int set_config_opts(int argc, char *argv[], cfg_t *cfg)
 	struct config *c;
 	cfg_t *cfgsec = NULL;
 	int num_opts = 0, n, i;
-	static struct option *long_options = 0;
+	static struct option *long_options = NULL;
 	int ret = 0;
 
 	if (cfg)
