@@ -387,7 +387,7 @@ err_out:
 	free(fiemap);
 
 	/* If failure is due to no filesystem support, return a single extent */
-	if (ret == -EOPNOTSUPP)
+	if ((ret == -EOPNOTSUPP) || (ret == -ENOTTY))
 		return whole_file_exent(size, extents, extent_count);
 
 	image_error(image, "fiemap %s: %d %s\n", filename, errno, strerror(errno));
