@@ -559,9 +559,10 @@ err_out:
 	return ret;
 }
 
-int insert_data(struct image *image, const char *data, const char *outfile,
+int insert_data(struct image *image, const void *_data, const char *outfile,
 		size_t size, long offset)
 {
+	const char *data = _data;
 	int outf = -1;
 	int now, r;
 	int ret = 0;

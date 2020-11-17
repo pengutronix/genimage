@@ -339,12 +339,12 @@ static int hdimage_insert_gpt(struct image *image, struct list_head *partitions)
 	header.table_crc = htole32(crc32(table, sizeof(table)));
 
 	header.header_crc = htole32(crc32(&header, sizeof(header)));
-	ret = insert_data(image, (char *)&header, outfile, sizeof(header), 512);
+	ret = insert_data(image, &header, outfile, sizeof(header), 512);
 	if (ret) {
 		image_error(image, "failed to write GPT\n");
 		return ret;
 	}
-	ret = insert_data(image, (char *)&table, outfile, sizeof(table), hd->gpt_location);
+	ret = insert_data(image, &table, outfile, sizeof(table), hd->gpt_location);
 	if (ret) {
 		image_error(image, "failed to write GPT table\n");
 		return ret;
@@ -363,13 +363,13 @@ static int hdimage_insert_gpt(struct image *image, struct list_head *partitions)
 		header.backup_lba = htole64(1);
 		header.starting_lba = htole64(image->size/512 - GPT_SECTORS);
 		header.header_crc = htole32(crc32(&header, sizeof(header)));
-		ret = insert_data(image, (char *)&table, outfile, sizeof(table),
+		ret = insert_data(image, &table, outfile, sizeof(table),
 				  image->size - GPT_SECTORS*512);
 		if (ret) {
 			image_error(image, "failed to write backup GPT table\n");
 			return ret;
 		}
-		ret = insert_data(image, (char *)&header, outfile, sizeof(header),
+		ret = insert_data(image, &header, outfile, sizeof(header),
 				  image->size - 512);
 		if (ret) {
 			image_error(image, "failed to write backup GPT\n");
