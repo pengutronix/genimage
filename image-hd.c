@@ -52,6 +52,14 @@ struct mbr_partition_entry {
 } __attribute__((packed));
 ct_assert(sizeof(struct mbr_partition_entry) == 16);
 
+struct mbr_tail {
+	uint32_t disk_signature;
+	uint16_t copy_protect;
+	struct mbr_partition_entry part_entry[4];
+	uint16_t boot_signature;
+} __attribute__((packed));
+ct_assert(sizeof(struct mbr_tail) == 72);
+
 struct gpt_header {
 	unsigned char signature[8];
 	uint32_t revision;
@@ -105,7 +113,7 @@ static void hdimage_setup_chs(unsigned int lba, unsigned char *chs)
 static int hdimage_insert_mbr(struct image *image, struct list_head *partitions, int hybrid)
 {
 	struct hdimage *hd = image->handler_priv;
-	char mbr[6+4*sizeof(struct mbr_partition_entry)+2], *part_table;
+	struct mbr_tail mbr;
 	struct partition *part;
 	int ret, i = 0;
 
@@ -115,9 +123,8 @@ static int hdimage_insert_mbr(struct image *image, struct list_head *partitions,
 		image_info(image, "writing MBR\n");
 	}
 
-	memset(mbr, 0, sizeof(mbr));
-	memcpy(mbr, &hd->disksig, sizeof(hd->disksig));
-	part_table = mbr + 6;
+	memset(&mbr, 0, sizeof(mbr));
+	memcpy(&mbr.disk_signature, &hd->disksig, sizeof(hd->disksig));
 
 	list_for_each_entry(part, partitions, list) {
 		struct mbr_partition_entry *entry;
@@ -131,8 +138,7 @@ static int hdimage_insert_mbr(struct image *image, struct list_head *partitions,
 		if (hybrid && part->extended)
 			continue;
 
-		entry = (struct mbr_partition_entry *)(part_table + i *
-				sizeof(struct mbr_partition_entry));
+		entry = &mbr.part_entry[i];
 
 		entry->boot = part->bootable ? 0x80 : 0x00;
 		if (!part->extended) {
@@ -164,8 +170,7 @@ static int hdimage_insert_mbr(struct image *image, struct list_head *partitions,
 	if (hybrid) {
 		struct mbr_partition_entry *entry;
 
-		entry = (struct mbr_partition_entry *)(part_table + i *
-			sizeof(struct mbr_partition_entry));
+		entry = &mbr.part_entry[i];
 
 		entry->boot = 0x00;
 
@@ -178,11 +183,9 @@ static int hdimage_insert_mbr(struct image *image, struct list_head *partitions,
 		entry->total_sectors - 1, entry->last_chs);
 	}
 
-	part_table += 4 * sizeof(struct mbr_partition_entry);
-	part_table[0] = 0x55;
-	part_table[1] = 0xaa;
+	mbr.boot_signature = htole16(0xaa55);
 
-	ret = insert_data(image, mbr, imageoutfile(image), sizeof(mbr), 440);
+	ret = insert_data(image, &mbr, imageoutfile(image), sizeof(mbr), 440);
 	if (ret) {
 		if (hybrid) {
 			image_error(image, "failed to write hybrid MBR\n");
