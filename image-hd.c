@@ -50,6 +50,7 @@ struct mbr_partition_entry {
 	uint32_t relative_sectors;
 	uint32_t total_sectors;
 } __attribute__((packed));
+ct_assert(sizeof(struct mbr_partition_entry) == 16);
 
 struct gpt_header {
 	unsigned char signature[8];
@@ -67,6 +68,7 @@ struct gpt_header {
 	uint32_t entry_size;
 	uint32_t table_crc;
 } __attribute__((packed));
+ct_assert(sizeof(struct gpt_header) == 92);
 
 struct gpt_partition_entry {
 	unsigned char type_uuid[16];
@@ -76,6 +78,7 @@ struct gpt_partition_entry {
 	uint64_t flags;
 	uint16_t name[36];
 } __attribute__((packed));
+ct_assert(sizeof(struct gpt_partition_entry) == 128);
 
 #define GPT_ENTRIES 		128
 #define GPT_SECTORS		(1 + GPT_ENTRIES * sizeof(struct gpt_partition_entry) / 512)
