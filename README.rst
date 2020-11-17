@@ -81,6 +81,12 @@ Here are all options for images:
 		filesystem is created. This option is only used for
 		writeable filesystem types, such as extX, vfat, ubifs and
 		jffs2. This defaults to false.
+:temporary:	If this is set to true, the image is created in
+		``tmppath`` rather than ``outputpath``. This can be
+		useful for intermediate images defined in the
+		configuration file which are not needed by themselves
+		after the main image is created. This defaults to
+		false.
 :exec-pre:	Custom command to run before generating the image.
 :exec-post:	Custom command to run after generating the image.
 :flashtype:	refers to a flash section. Optional for non flash like images

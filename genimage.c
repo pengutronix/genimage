@@ -108,6 +108,7 @@ static cfg_opt_t image_common_opts[] = {
 	CFG_STR("size", NULL, CFGF_NONE),
 	CFG_STR("mountpoint", NULL, CFGF_NONE),
 	CFG_BOOL("empty", cfg_false, CFGF_NONE),
+	CFG_BOOL("temporary", cfg_false, CFGF_NONE),
 	CFG_STR("exec-pre", NULL, CFGF_NONE),
 	CFG_STR("exec-post", NULL, CFGF_NONE),
 	CFG_STR("flashtype", NULL, CFGF_NONE),
@@ -678,12 +679,14 @@ int main(int argc, char *argv[])
 				&image->size_is_percent);
 		image->mountpoint = cfg_getstr(imagesec, "mountpoint");
 		image->empty = cfg_getbool(imagesec, "empty");
+		image->temporary = cfg_getbool(imagesec, "temporary");
 		image->exec_pre = cfg_getstr(imagesec, "exec-pre");
 		image->exec_post = cfg_getstr(imagesec, "exec-post");
 		if (image->file[0] == '/')
 			image->outfile = strdup(image->file);
 		else
-			xasprintf(&image->outfile, "%s/%s", imagepath(),
+			xasprintf(&image->outfile, "%s/%s",
+					image->temporary ? tmppath() : imagepath(),
 					image->file);
 		if (image->mountpoint && *image->mountpoint == '/')
 			image->mountpoint++;
