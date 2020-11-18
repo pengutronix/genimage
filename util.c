@@ -291,6 +291,11 @@ unsigned long long strtoul_suffix(const char *str, char **endp,
 	case 'K':
 		val *= 1024;
 		end++;
+		break;
+	case 's':
+		val *= 512;
+		end++;
+		break;
 	case '\0':
 		break;
 	case '%':
