@@ -97,7 +97,7 @@ ct_assert(sizeof(struct gpt_partition_entry) == 128);
 #define GPT_PE_FLAG_HIDDEN	(1ULL << 62)
 #define GPT_PE_FLAG_NO_AUTO	(1ULL << 63)
 
-static void hdimage_setup_chs(unsigned int lba, unsigned char *chs)
+static void lba_to_chs(unsigned int lba, unsigned char *chs)
 {
 	const unsigned int hpc = 255;
 	const unsigned int spt = 63;
@@ -108,6 +108,13 @@ static void hdimage_setup_chs(unsigned int lba, unsigned char *chs)
 	s = (lba > 0) ?(lba%spt + 1) : 0;
 	chs[1] = ((c & 0x300) >> 2) | (s & 0xff);
 	chs[2] = (c & 0xff);
+}
+
+static void hdimage_setup_chs(struct mbr_partition_entry *entry)
+{
+	lba_to_chs(entry->relative_sectors, entry->first_chs);
+	lba_to_chs(entry->relative_sectors + entry->total_sectors - 1,
+		   entry->last_chs);
 }
 
 static int hdimage_insert_mbr(struct image *image, struct list_head *partitions, int hybrid)
@@ -158,9 +165,7 @@ static int hdimage_insert_mbr(struct image *image, struct list_head *partitions,
 			entry->relative_sectors = (part->offset - hd->align)/512;
 			entry->total_sectors = size/512;
 		}
-		hdimage_setup_chs(entry->relative_sectors, entry->first_chs);
-		hdimage_setup_chs(entry->relative_sectors +
-				entry->total_sectors - 1, entry->last_chs);
+		hdimage_setup_chs(entry);
 
 		if (part->extended)
 			break;
@@ -178,9 +183,7 @@ static int hdimage_insert_mbr(struct image *image, struct list_head *partitions,
 		entry->relative_sectors = 1;
 		entry->total_sectors = hd->gpt_location / 512 + GPT_SECTORS - 2;
 
-		hdimage_setup_chs(entry->relative_sectors, entry->first_chs);
-		hdimage_setup_chs(entry->relative_sectors +
-		entry->total_sectors - 1, entry->last_chs);
+		hdimage_setup_chs(entry);
 	}
 
 	mbr.boot_signature = htole16(0xaa55);
@@ -215,9 +218,7 @@ static int hdimage_insert_ebr(struct image *image, struct partition *part)
 	entry->partition_type = part->partition_type;
 	entry->relative_sectors = hd->align/512;
 	entry->total_sectors = part->size/512;
-	hdimage_setup_chs(entry->relative_sectors, entry->first_chs);
-	hdimage_setup_chs(entry->relative_sectors +
-			entry->total_sectors - 1, entry->last_chs);
+	hdimage_setup_chs(entry);
 	struct partition *p = part;
 	list_for_each_entry_continue(p, &image->partitions, list) {
 		++entry;
@@ -225,9 +226,7 @@ static int hdimage_insert_ebr(struct image *image, struct partition *part)
 		entry->partition_type = 0x0F;
 		entry->relative_sectors = (p->offset - hd->align - hd->extended_lba)/512;
 		entry->total_sectors = (p->size + hd->align)/512;
-		hdimage_setup_chs(entry->relative_sectors, entry->first_chs);
-		hdimage_setup_chs(entry->relative_sectors +
-				entry->total_sectors - 1, entry->last_chs);
+		hdimage_setup_chs(entry);
 		break;
 	}
 
