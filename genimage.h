@@ -34,6 +34,7 @@ struct mountpoint {
 struct partition {
 	unsigned long long offset;
 	unsigned long long size;
+	unsigned long long align;
 	unsigned char partition_type;
 	cfg_bool_t bootable;
 	cfg_bool_t extended;

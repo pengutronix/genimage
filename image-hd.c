@@ -600,7 +600,7 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 				if (hd->gpt)
 					now = hd->gpt_location + (GPT_SECTORS - 1) * 512;
 			}
-			part->offset = roundup(now, hd->align);
+			part->offset = roundup(now, part->align ?: hd->align);
 		}
 		if (autoresize) {
 			long long partsize = image->size - now;

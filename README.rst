@@ -97,10 +97,14 @@ tar, ubi, ubifs, vfat.
 Partition options:
 
 :offset:		The offset of this partition as a total offset to the beginning
-			of the device.
+			of the device. If not given, the partition is placed at the end
+			of the previous partition, rounded up to the partition's
+			``align`` value
 :size:			The size of this partition in bytes. If the size and
 			autoresize are both not set then the size of the partition
 			image is used.
+:align:			Alignment value to use for automatic computation of ``offset``.
+			If not given, the image's ``align`` value is used.
 :partition-type:	Used by dos partition tables to specify the partition type. Using
 			this option with a GPT partition table will create a hybrid MBR partition
 			table with a maximum of 3 partition entries(this limit does not effect the
