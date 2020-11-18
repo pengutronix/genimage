@@ -602,6 +602,12 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 			}
 			part->offset = roundup(now, hd->align);
 		}
+		if (part->in_partition_table && hd->gpt) {
+			if (part->offset < hd->gpt_location + (GPT_SECTORS - 1) * 512) {
+				image_error(image, "part %s cannot be placed before GPT\n", part->name);
+				return -EINVAL;
+			}
+		}
 		if (autoresize) {
 			long long partsize = image->size - now;
 			if (hd->gpt)
