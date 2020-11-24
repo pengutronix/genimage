@@ -354,7 +354,7 @@ static int hdimage_insert_gpt(struct image *image, struct list_head *partitions)
 		ret = pad_file(image, NULL, image->size, 0x0, MODE_APPEND);
 		if (ret) {
 			image_error(image, "failed to pad image to size %lld\n",
-				    part->offset);
+				    image->size);
 			return ret;
 		}
 
