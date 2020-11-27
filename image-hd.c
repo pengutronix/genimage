@@ -426,6 +426,10 @@ static int hdimage_generate(struct image *image)
 			continue;
 
 		child = image_get(part->image);
+
+		if (child->size == 0)
+			continue;
+
 		infile = imageoutfile(child);
 
 		ret = pad_file(image, infile, part->offset + child->size, 0x0, MODE_APPEND);

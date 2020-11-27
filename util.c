@@ -253,6 +253,18 @@ void *xzalloc(size_t n)
 	return m;
 }
 
+void *xrealloc(void *ptr, size_t size)
+{
+	void *m = realloc(ptr, size);
+
+	if (!m) {
+		error("out of memory\n");
+		exit(1);
+	}
+
+	return m;
+}
+
 /*
  * Like simple_strtoul() but handles an optional G, M, K or k
  * suffix for Gigabyte, Megabyte or Kilobyte
@@ -360,24 +372,25 @@ static int map_file_extents(struct image *image, const char *filename, int f,
 		goto err_out;
 
 	/* Get extents */
-	fiemap = realloc(fiemap, sizeof(struct fiemap) + fiemap->fm_mapped_extents * sizeof(struct fiemap_extent));
+	fiemap = xrealloc(fiemap, sizeof(struct fiemap) + fiemap->fm_mapped_extents * sizeof(struct fiemap_extent));
 	fiemap->fm_extent_count = fiemap->fm_mapped_extents;
 	ret = ioctl(f, FS_IOC_FIEMAP, fiemap);
 	if (ret == -1)
 		goto err_out;
 
 	/* Build extent array */
-	*extent_count = fiemap->fm_extent_count;
+	*extent_count = fiemap->fm_mapped_extents;
 	*extents = xzalloc(*extent_count * sizeof(struct extent));
-	for (i = 0; i < fiemap->fm_mapped_extents; i++) {
+	for (i = 0; i < *extent_count; i++) {
 		(*extents)[i].start = fiemap->fm_extents[i].fe_logical;
 		(*extents)[i].end = fiemap->fm_extents[i].fe_logical + fiemap->fm_extents[i].fe_length;
 	}
-	free(fiemap);
 
 	/* The last extent may extend beyond the end of file, limit it to the actual end */
-	if (fiemap->fm_mapped_extents && (*extents)[i-1].end > size)
+	if (*extent_count && (*extents)[i-1].end > size)
 		(*extents)[i-1].end = size;
+
+	free(fiemap);
 
 	return 0;
 
@@ -400,7 +413,7 @@ int pad_file(struct image *image, const char *infile,
 	const char *outfile = imageoutfile(image);
 	int f = -1, outf = -1, flags = 0;
 	unsigned long f_offset = 0;
-	struct extent *extents;
+	struct extent *extents = NULL;
 	size_t extent_count = 0;
 	void *buf = NULL;
 	int now, r, w;
@@ -542,6 +555,7 @@ fill:
 	}
 err_out:
 	free(buf);
+	free(extents);
 	if (f >= 0)
 		close(f);
 	if (outf >= 0)
