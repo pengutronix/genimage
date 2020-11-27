@@ -253,6 +253,18 @@ void *xzalloc(size_t n)
 	return m;
 }
 
+void *xrealloc(void *ptr, size_t size)
+{
+	void *m = realloc(ptr, size);
+
+	if (!m) {
+		error("out of memory\n");
+		exit(1);
+	}
+
+	return m;
+}
+
 /*
  * Like simple_strtoul() but handles an optional G, M, K or k
  * suffix for Gigabyte, Megabyte or Kilobyte
@@ -360,7 +372,7 @@ static int map_file_extents(struct image *image, const char *filename, int f,
 		goto err_out;
 
 	/* Get extents */
-	fiemap = realloc(fiemap, sizeof(struct fiemap) + fiemap->fm_mapped_extents * sizeof(struct fiemap_extent));
+	fiemap = xrealloc(fiemap, sizeof(struct fiemap) + fiemap->fm_mapped_extents * sizeof(struct fiemap_extent));
 	fiemap->fm_extent_count = fiemap->fm_mapped_extents;
 	ret = ioctl(f, FS_IOC_FIEMAP, fiemap);
 	if (ret == -1)

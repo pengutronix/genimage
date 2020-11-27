@@ -129,6 +129,7 @@ extern struct image_handler fit_handler;
 	(type *)( (char *)__mptr - offsetof(type,member) );})
 
 void *xzalloc(size_t n);
+void *xrealloc(void *ptr, size_t size);
 unsigned long long strtoul_suffix(const char *str, char **endp,
 		cfg_bool_t *percent);
 
