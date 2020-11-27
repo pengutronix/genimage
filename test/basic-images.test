@@ -214,7 +214,8 @@ setup_test_images() {
 	rm -rf input &&
 	mkdir input &&
 	dd if=/dev/zero of=input/part1.img bs=512 count=7 &&
-	dd if=/dev/zero of=input/part2.img bs=512 count=11
+	dd if=/dev/zero of=input/part2.img bs=512 count=11 &&
+	touch input/part3.img
 }
 
 exec_test_set_prereq dd
