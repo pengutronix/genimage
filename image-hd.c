@@ -543,6 +543,12 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 				   "multiple of 1 sector (512 bytes)", hd->gpt_location);
 	}
 
+	if (hd->partition_table) {
+		now = 512;
+		if (hd->gpt)
+			now = hd->gpt_location + (GPT_SECTORS - 1) * 512;
+	}
+
 	partition_table_entries = 0;
 	list_for_each_entry(part, &image->partitions, list) {
 		if (autoresize) {
@@ -610,11 +616,6 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 				return -EINVAL;
 			}
 		} else if (!part->offset && part->in_partition_table) {
-			if (!now && hd->partition_table) {
-				now = 512;
-				if (hd->gpt)
-					now = hd->gpt_location + (GPT_SECTORS - 1) * 512;
-			}
 			part->offset = roundup(now, hd->align);
 		}
 		if (autoresize) {
