@@ -205,12 +205,12 @@ static cfg_opt_t ext_opts[] = {
 	CFG_STR("root-owner", "0:0", CFGF_NONE),
 	CFG_STR("extraargs", "", CFGF_NONE),
 	CFG_STR("features", NULL, CFGF_NONE),
-	CFG_STR("label", 0, CFGF_NONE),
+	CFG_STR("label", NULL, CFGF_NONE),
 	CFG_STR("fs-timestamp", NULL, CFGF_NONE),
 	CFG_BOOL("use-mke2fs", cfg_false, CFGF_NONE),
 	CFG_STR("usage-type", NULL, CFGF_NONE),
-	CFG_STR("mke2fs-conf", 0, CFGF_NONE),
-	CFG_STR("mke2fs_conf", 0, CFGF_NONE),
+	CFG_STR("mke2fs-conf", NULL, CFGF_NONE),
+	CFG_STR("mke2fs_conf", NULL, CFGF_NONE),
 	CFG_END()
 };
 

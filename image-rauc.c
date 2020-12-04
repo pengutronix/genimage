@@ -188,7 +188,7 @@ static cfg_opt_t file_opts[] = {
 
 static cfg_opt_t rauc_opts[] = {
 	CFG_STR("extraargs", "", CFGF_NONE),
-	CFG_STR_LIST("files", 0, CFGF_NONE),
+	CFG_STR_LIST("files", NULL, CFGF_NONE),
 	CFG_SEC("file", file_opts, CFGF_MULTI | CFGF_TITLE),
 	CFG_STR("key", NULL, CFGF_NONE),
 	CFG_STR("cert", NULL, CFGF_NONE),

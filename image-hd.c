@@ -664,7 +664,7 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 	return 0;
 }
 
-cfg_opt_t hdimage_opts[] = {
+static cfg_opt_t hdimage_opts[] = {
 	CFG_STR("align", "512", CFGF_NONE),
 	CFG_STR("disk-signature", "", CFGF_NONE),
 	CFG_STR("disk-uuid", NULL, CFGF_NONE),
