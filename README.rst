@@ -224,6 +224,8 @@ Options:
 			requirements.  All partitions in the table must begin after this
 			table.  Regardless of this setting, the GPT header will still be
 			placed at 512 bytes (sector 1).  Defaults to 1024 bytes (sector 2).
+:gpt-no-backup:         Boolean. If true, then the backup partition table at the end of
+                        the image is not written.
 :disk-uuid:		UUID string used as disk id in GPT partitioning. Defaults to a
 			random value.
 

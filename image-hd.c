@@ -34,6 +34,7 @@ struct hdimage {
 	const char *disk_uuid;
 	cfg_bool_t gpt;
 	unsigned long long gpt_location;
+	cfg_bool_t gpt_no_backup;
 	cfg_bool_t fill;
 };
 
@@ -294,7 +295,7 @@ static int hdimage_insert_gpt(struct image *image, struct list_head *partitions)
 	header.revision = htole32(GPT_REVISION_1_0);
 	header.header_size = htole32(sizeof(struct gpt_header));
 	header.current_lba = htole64(1);
-	header.backup_lba = htole64(image->size/512 - 1);
+	header.backup_lba = htole64(hd->gpt_no_backup ? 1 :image->size/512 - 1);
 	header.last_usable_lba = htole64(image->size/512 - 1 - GPT_SECTORS);
 	uuid_parse(hd->disk_uuid, header.disk_uuid);
 	header.starting_lba = htole64(hd->gpt_location/512);
@@ -349,29 +350,31 @@ static int hdimage_insert_gpt(struct image *image, struct list_head *partitions)
 		return ret;
 	}
 
-	ret = pad_file(image, NULL, image->size, 0x0, MODE_APPEND);
-	if (ret) {
-		image_error(image, "failed to pad image to size %lld\n",
-			    part->offset);
-		return ret;
-	}
+	if (!hd->gpt_no_backup) {
+		ret = pad_file(image, NULL, image->size, 0x0, MODE_APPEND);
+		if (ret) {
+			image_error(image, "failed to pad image to size %lld\n",
+				    part->offset);
+			return ret;
+		}
 
-	header.header_crc = 0;
-	header.current_lba = htole64(image->size/512 - 1);
-	header.backup_lba = htole64(1);
-	header.starting_lba = htole64(image->size/512 - GPT_SECTORS);
-	header.header_crc = htole32(crc32(&header, sizeof(header)));
-	ret = insert_data(image, (char *)&table, outfile, sizeof(table),
-			  image->size - GPT_SECTORS*512);
-	if (ret) {
-		image_error(image, "failed to write backup GPT table\n");
-		return ret;
-	}
-	ret = insert_data(image, (char *)&header, outfile, sizeof(header),
-			  image->size - 512);
-	if (ret) {
-		image_error(image, "failed to write backup GPT\n");
-		return ret;
+		header.header_crc = 0;
+		header.current_lba = htole64(image->size/512 - 1);
+		header.backup_lba = htole64(1);
+		header.starting_lba = htole64(image->size/512 - GPT_SECTORS);
+		header.header_crc = htole32(crc32(&header, sizeof(header)));
+		ret = insert_data(image, (char *)&table, outfile, sizeof(table),
+				  image->size - GPT_SECTORS*512);
+		if (ret) {
+			image_error(image, "failed to write backup GPT table\n");
+			return ret;
+		}
+		ret = insert_data(image, (char *)&header, outfile, sizeof(header),
+				  image->size - 512);
+		if (ret) {
+			image_error(image, "failed to write backup GPT\n");
+			return ret;
+		}
 	}
 
 	if (hybrid) {
@@ -441,14 +444,6 @@ static int hdimage_generate(struct image *image)
 		}
 	}
 
-	if (hd->fill) {
-		ret = extend_file(image, image->size);
-		if (ret) {
-			image_error(image, "failed to fill the image.\n");
-			return ret;
-		}
-	}
-
 	if (hd->partition_table) {
 		if (hd->gpt) {
 			ret = hdimage_insert_gpt(image, &image->partitions);
@@ -460,8 +455,18 @@ static int hdimage_generate(struct image *image)
 			if (ret)
 				return ret;
 		}
-		return reload_partitions(image);
 	}
+
+	if (hd->fill) {
+		ret = extend_file(image, image->size);
+		if (ret) {
+			image_error(image, "failed to fill the image.\n");
+			return ret;
+		}
+	}
+
+	if (hd->partition_table)
+		return reload_partitions(image);
 
 	return 0;
 }
@@ -486,6 +491,7 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 	disk_signature = cfg_getstr(cfg, "disk-signature");
 	hd->gpt = cfg_getbool(cfg, "gpt");
 	hd->gpt_location = cfg_getint_suffix(cfg, "gpt-location");
+	hd->gpt_no_backup = cfg_getbool(cfg, "gpt-no-backup");
 	hd->fill = cfg_getbool(cfg, "fill");
 	hd->disk_uuid = cfg_getstr(cfg, "disk-uuid");
 
@@ -672,6 +678,7 @@ static cfg_opt_t hdimage_opts[] = {
 	CFG_INT("extended-partition", 0, CFGF_NONE),
 	CFG_BOOL("gpt", cfg_false, CFGF_NONE),
 	CFG_STR("gpt-location", NULL, CFGF_NONE),
+	CFG_BOOL("gpt-no-backup", cfg_false, CFGF_NONE),
 	CFG_BOOL("fill", cfg_false, CFGF_NONE),
 	CFG_END()
 };
