@@ -444,14 +444,6 @@ static int hdimage_generate(struct image *image)
 		}
 	}
 
-	if (hd->fill) {
-		ret = extend_file(image, image->size);
-		if (ret) {
-			image_error(image, "failed to fill the image.\n");
-			return ret;
-		}
-	}
-
 	if (hd->partition_table) {
 		if (hd->gpt) {
 			ret = hdimage_insert_gpt(image, &image->partitions);
@@ -463,8 +455,18 @@ static int hdimage_generate(struct image *image)
 			if (ret)
 				return ret;
 		}
-		return reload_partitions(image);
 	}
+
+	if (hd->fill) {
+		ret = extend_file(image, image->size);
+		if (ret) {
+			image_error(image, "failed to fill the image.\n");
+			return ret;
+		}
+	}
+
+	if (hd->partition_table)
+		return reload_partitions(image);
 
 	return 0;
 }
