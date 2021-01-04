@@ -228,6 +228,10 @@ Options:
                         the image is not written.
 :disk-uuid:		UUID string used as disk id in GPT partitioning. Defaults to a
 			random value.
+:fill:			If this is set to true, then the image file will be filled
+			up to the end of the last partition. This might make the file
+			bigger. This is necessary if the image will be processed by
+			such tools as libvirt, libguestfs or parted.
 
 iso
 ***
