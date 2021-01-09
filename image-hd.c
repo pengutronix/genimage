@@ -485,7 +485,8 @@ static unsigned long long roundup(unsigned long long value, unsigned long long a
 static int hdimage_setup(struct image *image, cfg_t *cfg)
 {
 	struct partition *part;
-	int has_extended, autoresize = 0;
+	struct partition *autoresize_part = NULL;
+	int has_extended;
 	unsigned int partition_table_entries = 0;
 	unsigned long long now = 0;
 	const char *disk_signature;
@@ -561,16 +562,18 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 
 	partition_table_entries = 0;
 	list_for_each_entry(part, &image->partitions, list) {
-		if (autoresize) {
-			image_error(image, "'autoresize' is only supported "
-					"for the last partition\n");
-			return -EINVAL;
-		}
-		autoresize = part->autoresize;
-		if (autoresize && image->size == 0) {
-			image_error(image, "the images size must be specified "
-					"when using a 'autoresize' partition\n");
-			return -EINVAL;
+		if (part->autoresize) {
+			if (autoresize_part) {
+				image_error(image, "'autoresize' is only supported "
+					    "for one partition\n");
+				return -EINVAL;
+			}
+			autoresize_part = part;
+			if (image->size == 0) {
+				image_error(image, "the image size must be specified "
+					    "when using an 'autoresize' partition\n");
+				return -EINVAL;
+			}
 		}
 		if (hd->gpt) {
 			if (strlen(part->partition_type_uuid) == 1) {
@@ -629,7 +632,7 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 				return -EINVAL;
 			}
 		}
-		if (autoresize) {
+		if (part->autoresize) {
 			long long partsize = image->size - part->offset;
 			if (hd->gpt)
 				partsize -= GPT_SECTORS * 512;
