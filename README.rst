@@ -123,7 +123,7 @@ Partition options:
 			the partition will fill the remaining space of the image.
 :bootable:		Boolean specifying whether to set the bootable flag.
 :in-partition-table:	Boolean specifying whether to include this partition in
-			the partition table.
+			the partition table. Defaults to true.
 :partition-uuid:	UUID string used by GPT partition tables to specify the partition
 			id. Defaults to a random value.
 :partition-type-uuid:	String used by GPT partition tables to specify the partition type.
