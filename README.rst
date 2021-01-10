@@ -111,6 +111,9 @@ Partition options:
 :size:			The size of this partition in bytes. If the size and
 			autoresize are both not set then the size of the partition
 			image is used.
+:align:			Alignment value to use for automatic computation of ``offset``
+			and ``size``.  Defaults to 1 for partitions not in the partition
+			table, otherwise to the image's ``align`` value.
 :partition-type:	Used by dos partition tables to specify the partition type. Using
 			this option with a GPT partition table will create a hybrid MBR partition
 			table with a maximum of 3 partition entries(this limit does not effect the

@@ -515,6 +515,13 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 	list_for_each_entry(part, &image->partitions, list) {
 		if (part->in_partition_table)
 			++partition_table_entries;
+		if (!part->align)
+			part->align = part->in_partition_table ? hd->align : 1;
+		if (part->in_partition_table && part->align % hd->align) {
+			image_error(image, "partition alignment (%lld) of partition %s "
+				    "must be multiple of image alignment (%lld)",
+				    part->align, part->name, hd->align);
+		}
 	}
 	if (!hd->gpt && !hd->extended_partition && partition_table_entries > 4)
 		hd->extended_partition = 4;
@@ -600,13 +607,13 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 		if (part->extended) {
 			if (!hd->extended_lba)
 				hd->extended_lba = now;
-			now = roundup(now, hd->align);
 			now += hd->align;
+			now = roundup(now, part->align);
 		}
-		if (part->in_partition_table && (part->offset % hd->align)) {
+		if (part->in_partition_table && (part->offset % part->align)) {
 			image_error(image, "part %s offset (%lld) must be a"
 					"multiple of %lld bytes\n",
-					part->name, part->offset, hd->align);
+					part->name, part->offset, part->align);
 			return -EINVAL;
 		}
 		if (part->offset && part->in_partition_table) {
@@ -616,7 +623,7 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 				return -EINVAL;
 			}
 		} else if (!part->offset && part->in_partition_table) {
-			part->offset = roundup(now, hd->align);
+			part->offset = roundup(now, part->align);
 		}
 		if (autoresize) {
 			long long partsize = image->size - part->offset;
@@ -637,7 +644,7 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 			}
 			if (!part->size) {
 				if (part->in_partition_table)
-					part->size = roundup(child->size, hd->align);
+					part->size = roundup(child->size, part->align);
 				else
 					part->size = child->size;
 			} else if (child->size > part->size) {
