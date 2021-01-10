@@ -140,6 +140,51 @@ Partition options:
 			 * F: FAT32 / Basic Data Partition (ebd0a0a2-b9e5-4433-87c0-68b6b72699c7)
 			Defaults to L.
 
+For each partition, its final alignment, offset and size are determined as follows:
+
+* If the ``align`` option is not present, it defaults to the value of
+  the image's ``align`` option if the partition is in the partition
+  table, otherwise to 1.
+
+* If the ``offset`` option is absent or zero, and
+  ``in-partition-table`` is true, the partition is placed after the
+  end of all previously defined partitions, with the final offset
+  rounded up to the partition's ``align`` value.
+
+* Otherwise, the ``offset`` option is used as-is. Note that if absent,
+  that option defaults to 0, so in practice one must specify an
+  ``offset`` for any partition that is not in the partition table
+  (with at most one exception, e.g. a bootloader).
+
+* If the partition has the ``autoresize`` flag set, its size is
+  computed as the space remaining in the image from its offset (for a
+  GPT image, space is reserved at the end for the backup GPT table),
+  rounded down to the partition's ``align`` value. If the partition
+  also has a ``size`` option, it is ensured that the computed value is
+  not less than that size.
+
+* Otherwise, if the ``size`` option is present and non-zero, its value
+  is used as-is.
+
+* Otherwise, if the partition has an ``image`` option, the size of
+  that image, rounded up to the partition's ``align`` value, is used
+  to determine the size of the partition.
+
+The following sanity checks are done on these final values (in many
+cases, these will automatically be satisfied when the value has been
+determined via one of the above rules rather than given explicitly):
+
+* For a partition in the partition table, the partition's ``align``
+  value must be greater than or equal to the image's ``align`` value.
+
+* The partition's ``offset`` and ``size`` must both be multiples of
+  its ``align``.
+
+* The size must not be 0.
+
+* The partition must not overlap any other partition, or the areas
+  occupied by the partition table.
+
 The image configuration options
 -------------------------------
 
