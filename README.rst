@@ -136,6 +136,24 @@ Partition options:
 The image configuration options
 -------------------------------
 
+android-sparse
+**************
+Generate android sparse images. The are typically used by fastboot. Sparse
+images encode "don't care" areas and areas that are filled with a single
+32 bit value. As a result, they are often much smaller than raw disk
+images.
+Genimage assumes that all 'holes' in the input file are "don't care" areas.
+This is a reasonable assumption: Tools to generate filesystems typically
+operate on devices. So they only create holes in areas they don't care
+about. Genimage itself operates the same way when generating HD images.
+
+Options:
+
+:image:			The source image that will be converted.
+:block-size:		The granularity that the sparse image uses to
+			find "don't care" or "fill" blocks. The supported
+			block sizes depend on the user. The default is 4k.
+
 cpio
 ****
 Generates cpio images.

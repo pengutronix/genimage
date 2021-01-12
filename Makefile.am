@@ -18,6 +18,7 @@ genimage_SOURCES = \
 	config.c \
 	util.c \
 	crc32.c \
+	image-android-sparse.c \
 	image-cpio.c \
 	image-cramfs.c \
 	image-ext2.c \
@@ -87,6 +88,7 @@ EXTRA_DIST += \
 	test/rauc-openssl-ca/rauc.key.pem \
 	test/rauc.config \
 	test/sharness.sh \
+	test/sparse.config \
 	test/squashfs.config \
 	test/tar.config \
 	test/test.raucb.info \
