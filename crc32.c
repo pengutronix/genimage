@@ -48,13 +48,18 @@ static const uint32_t crc32_tab[] = {
         0xb40bbe37, 0xc30c8ea1, 0x5a05df1b, 0x2d02ef8d
 };
 
-uint32_t crc32(const void *data, size_t len)
+uint32_t crc32_next(const void *data, size_t len, uint32_t last_crc)
 {
-	uint32_t crc = ~0;
+	uint32_t crc = ~last_crc;
 	const char *p = data;
 
 	while(len--)
 		crc = crc32_tab[(crc ^ *p++) & 0xff] ^ (crc >> 8);
 
 	return ~crc;
+}
+
+uint32_t crc32(const void *data, size_t len)
+{
+	return crc32_next(data, len, 0);
 }
