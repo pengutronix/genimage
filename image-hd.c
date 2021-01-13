@@ -662,8 +662,12 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 		return -EINVAL;
 	}
 
-	if (image->size == 0)
-		image->size = now;
+	if (image->size == 0) {
+		if (hd->gpt)
+			image->size = (now + 4095)/4096 * 4096;
+		else
+			image->size = now;
+	}
 
 	image->handler_priv = hd;
 
