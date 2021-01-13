@@ -258,7 +258,7 @@ fdisk -h | grep -q gpt && test_set_prereq fdisk-gpt
 test_expect_success fdisk-gpt,sfdisk-gpt "hdimage4" "
 	setup_test_images &&
 	run_genimage hdimage4.config test.hdimage &&
-	check_size images/test.hdimage 7356928 &&
+	check_size images/test.hdimage 7360512 &&
 	sfdisk_validate images/test.hdimage &&
 	# check the this identifier
 	fdisk -l images/test.hdimage | grep identifier: > hdimage4.fdisk &&
@@ -271,7 +271,7 @@ test_expect_success fdisk-gpt,sfdisk-gpt "hdimage4" "
 test_expect_success fdisk-gpt,sfdisk-gpt "hdimage5" "
 	setup_test_images &&
 	run_genimage hdimage5.config test.hdimage &&
-	check_size images/test.hdimage 7356928 &&
+	check_size images/test.hdimage 7360512 &&
 	# check the this identifier
 	fdisk -l images/test.hdimage | grep identifier: > hdimage5.fdisk &&
 	# check partitions; filter output to handle different sfdisk versions
