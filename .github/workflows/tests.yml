@@ -4,7 +4,14 @@ on: [push, pull_request]
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+        - os: ubuntu-20.04
+          pkgs: device-tree-compiler rauc simg2img u-boot-tools
+        - os: ubuntu-16.04
+          pkgs: cramfsprogs
 
     steps:
     - name: Inspect environment
@@ -17,7 +24,7 @@ jobs:
 
     - name: Install required packages
       run: |
-        sudo apt-get install device-tree-compiler dosfstools fakeroot genext2fs genisoimage libconfuse-dev mtd-utils mtools qemu-utils qemu-utils rauc simg2img squashfs-tools u-boot-tools
+        sudo apt-get install dosfstools fakeroot genext2fs genisoimage libconfuse-dev mtd-utils mtools qemu-utils qemu-utils squashfs-tools ${{ matrix.pkgs }}
 
     - name: Build & Test (with ${{ matrix.options }})
       run: |
