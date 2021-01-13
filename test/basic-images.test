@@ -395,7 +395,7 @@ test_expect_success simg2img "android-sparse" "
 	run_genimage sparse.config &&
 	md5sum images/test.hdimage input/interleaved > md5sum &&
 	rm images/test.hdimage input/interleaved &&
-	check_size images/interleaved.sparse 9732608 &&
+	check_size_range images/interleaved.sparse 9732464 9732608 &&
 	simg2img images/test.sparse images/test.hdimage &&
 	simg2img images/interleaved.sparse input/interleaved &&
 	md5sum -c md5sum
