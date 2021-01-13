@@ -94,6 +94,7 @@ struct flash_type {
 
 struct flash_type *flash_type_get(const char *name);
 
+extern struct image_handler android_sparse_handler;
 extern struct image_handler cpio_handler;
 extern struct image_handler cramfs_handler;
 extern struct image_handler ext2_handler;
@@ -138,11 +139,23 @@ cfg_opt_t *get_confuse_opts(void);
 const char *get_opt(const char *name);
 int set_config_opts(int argc, char *argv[], cfg_t *cfg);
 
+static inline size_t min(size_t a, size_t b)
+{
+	return a < b ? a : b;
+}
+
 enum pad_mode {
 	MODE_APPEND,
 	MODE_OVERWRITE,
 };
 
+struct extent {
+	unsigned long long start, end;
+};
+
+int open_file(struct image *image, const char *filename, int extra_flags);
+int map_file_extents(struct image *image, const char *filename, int fd,
+		     size_t size, struct extent **extents, size_t *extent_count);
 int is_block_device(const char *filename);
 int pad_file(struct image *image, const char *infile,
 		size_t size, unsigned char fillpattern, enum pad_mode mode);
@@ -169,5 +182,6 @@ char *uuid_random(void);
 unsigned long long image_dir_size(struct image *image);
 
 uint32_t crc32(const void *data, size_t len);
+uint32_t crc32_next(const void *data, size_t len, uint32_t last_crc);
 
 #endif /* __PTX_IMAGE_H */

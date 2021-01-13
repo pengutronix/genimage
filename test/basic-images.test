@@ -386,6 +386,21 @@ test_expect_success rauc "rauc" "
 	test_cmp '${testdir}/test2.raucb.info' test2.raucb.info
 "
 
+exec_test_set_prereq simg2img
+test_expect_success simg2img "android-sparse" "
+	setup_test_images &&
+	for i in \`seq 16\`; do
+		dd if=/dev/urandom of=input/interleaved conv=notrunc seek=\$[i*i] count=\$[i] bs=\$[i*i*512] || break
+	done &&
+	run_genimage sparse.config &&
+	md5sum images/test.hdimage input/interleaved > md5sum &&
+	rm images/test.hdimage input/interleaved &&
+	check_size images/interleaved.sparse 9732608 &&
+	simg2img images/test.sparse images/test.hdimage &&
+	simg2img images/interleaved.sparse input/interleaved &&
+	md5sum -c md5sum
+"
+
 setup_exec_files() {
 	rm -rf input &&
 	mkdir input &&

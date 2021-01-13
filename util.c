@@ -310,17 +310,12 @@ unsigned long long strtoul_suffix(const char *str, char **endp,
 	return val;
 }
 
-static size_t min(size_t a, size_t b)
-{
-	return a < b ? a : b;
-}
-
 int is_block_device(const char *filename) {
 	struct stat s;
 	return stat(filename, &s) == 0 && ((s.st_mode & S_IFMT) == S_IFBLK);
 }
 
-static int open_file(struct image *image, const char *filename, int extra_flags)
+int open_file(struct image *image, const char *filename, int extra_flags)
 {
 	int flags = O_WRONLY | extra_flags;
 	int ret, fd;
@@ -340,10 +335,6 @@ static int open_file(struct image *image, const char *filename, int extra_flags)
 	return fd;
 }
 
-struct extent {
-	unsigned long long start, end;
-};
-
 /* Build a file extent covering the whole file */
 static int whole_file_exent(size_t size, struct extent **extents,
 			    size_t *extent_count)
@@ -356,9 +347,8 @@ static int whole_file_exent(size_t size, struct extent **extents,
 }
 
 /* Build an file extent array for the file */
-static int map_file_extents(struct image *image, const char *filename, int f,
-			    size_t size, struct extent **extents,
-			    size_t *extent_count)
+int map_file_extents(struct image *image, const char *filename, int f,
+		     size_t size, struct extent **extents, size_t *extent_count)
 {
 	struct fiemap *fiemap;
 	unsigned i;
