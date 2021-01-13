@@ -1,0 +1,32 @@
+name: tests
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+
+    steps:
+    - name: Inspect environment
+      run: |
+        whoami
+        lsb_release -a
+        gcc --version
+
+    - uses: actions/checkout@v2
+
+    - name: Install required packages
+      run: |
+        sudo apt-get install device-tree-compiler dosfstools fakeroot genext2fs genisoimage libconfuse-dev mtd-utils mtools qemu-utils qemu-utils rauc simg2img squashfs-tools u-boot-tools
+
+    - name: Build & Test (with ${{ matrix.options }})
+      run: |
+        ./autogen.sh
+        ./configure
+        AM_COLOR_TESTS=always make distcheck
+
+    - name: Dump test log
+      if: ${{ failure() }}
+      run: |
+        find -name test-suite.log -print0 | xargs -0 cat
+
