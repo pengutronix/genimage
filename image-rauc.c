@@ -26,6 +26,9 @@
 #define RAUC_KEY	1
 #define RAUC_CERT	2
 #define RAUC_KEYRING	3
+#define RAUC_INTERMEDIATE 4
+
+static const char *pkcs11_prefix = "pkcs11:";
 
 static int rauc_generate(struct image *image)
 {
@@ -39,6 +42,8 @@ static int rauc_generate(struct image *image)
 	char *keyringarg = NULL;
 	char *manifest_file = NULL;
 	char *tmpdir = NULL;
+	char *intermediatearg = NULL;
+	unsigned int i;
 
 	image_debug(image, "manifest = '%s'\n", manifest);
 
@@ -52,6 +57,13 @@ static int rauc_generate(struct image *image)
 	if (ret)
 		goto out;
 
+	for (i = 0; i < cfg_size(image->imagesec, "intermediate"); i++) {
+		const char *uri;
+
+		uri = cfg_getnstr(image->imagesec, "intermediate", i);
+		if (!strncmp(pkcs11_prefix, uri, strlen(pkcs11_prefix)))
+			xstrcatf(&intermediatearg, " --intermediate='%s'", uri);
+	}
 	list_for_each_entry(part, &image->partitions, list) {
 		struct image *child = image_get(part->image);
 		const char *file = imageoutfile(child);
@@ -66,6 +78,9 @@ static int rauc_generate(struct image *image)
 
 		if (part->partition_type == RAUC_KEYRING)
 			keyring = file;
+
+		if (part->partition_type == RAUC_INTERMEDIATE)
+			xstrcatf(&intermediatearg, " --intermediate='%s'", file);
 
 		if (part->partition_type != RAUC_CONTENT)
 			continue;
@@ -103,22 +118,23 @@ static int rauc_generate(struct image *image)
 
 	systemp(image, "rm -f '%s'", imageoutfile(image));
 
-	ret = systemp(image, "%s bundle '%s' --cert='%s' --key='%s' %s %s '%s'",
+	ret = systemp(image, "%s bundle '%s' --cert='%s' --key='%s' %s %s %s '%s'",
 			get_opt("rauc"), tmpdir, cert, key,
 			(keyringarg ? keyringarg : ""),
+			(intermediatearg ? intermediatearg : ""),
 			extraargs, imageoutfile(image));
 
 out:
 	free(keyringarg);
 	free(tmpdir);
 	free(manifest_file);
+	free(intermediatearg);
 
 	return ret;
 }
 
 static int rauc_parse(struct image *image, cfg_t *cfg)
 {
-	const char *pkcs11_prefix = "pkcs11:";
 	unsigned int i;
 	unsigned int num_files;
 	struct partition *part;
@@ -156,6 +172,19 @@ static int rauc_parse(struct image *image, cfg_t *cfg)
 		part->image = part_image_keyring;
 		part->partition_type = RAUC_KEYRING;
 		list_add_tail(&part->list, &image->partitions);
+	}
+
+	for (i = 0; i < cfg_size(cfg, "intermediate"); i++) {
+		char *part_image_intermediate;
+
+		part_image_intermediate = cfg_getnstr(cfg, "intermediate", i);
+		if (strncmp(pkcs11_prefix, part_image_intermediate,
+						strlen(pkcs11_prefix))) {
+			part = xzalloc(sizeof *part);
+			part->image = part_image_intermediate;
+			part->partition_type = RAUC_INTERMEDIATE;
+			list_add_tail(&part->list, &image->partitions);
+		}
 	}
 
 	num_files = cfg_size(cfg, "file");
@@ -200,6 +229,7 @@ static cfg_opt_t rauc_opts[] = {
 	CFG_STR("key", NULL, CFGF_NONE),
 	CFG_STR("cert", NULL, CFGF_NONE),
 	CFG_STR("keyring", NULL, CFGF_NONE),
+	CFG_STR_LIST("intermediate", 0, CFGF_NONE),
 	CFG_STR("manifest", NULL, CFGF_NONE),
 	CFG_END()
 };
