@@ -114,10 +114,7 @@ Partition options:
 :align:			Alignment value to use for automatic computation of ``offset``
 			and ``size``.  Defaults to 1 for partitions not in the partition
 			table, otherwise to the image's ``align`` value.
-:partition-type:	Used by dos partition tables to specify the partition type. Using
-			this option with a GPT partition table will create a hybrid MBR partition
-			table with a maximum of 3 partition entries(this limit does not effect the
-			maximum number of GPT partition entries in the same image).
+:partition-type:	Used by dos partition tables to specify the partition type.
 :image:			The image file this partition shall be filled with
 :autoresize:		Boolean specifying that the partition should be resized
 			automatically. For UBI volumes this means that the
@@ -331,8 +328,19 @@ Options:
 
 :align:			Partition alignment. Defaults to 512 bytes
 :partition-table:	Boolean. If true, writes a partition table. If false, no
-			partition table is generated, and the ``in-partition-table`` option
-			for each partition is ignored. Defaults to true.
+			partition table is generated. Defaults to true.
+			Deprecated: use ``partition-table-type`` instead.
+:partition-table-type:	Define what kind of partition table should be used.
+			Valid options are:
+			 * ``none``: No partition table at all. In this case, the
+			   ``in-partition-table`` option for each partition is ignored.
+			 * ``mbr``: Legacy DOS/MBR partition table
+			 * ``gpt``: GUID Partition Table
+			 * ``hybrid``: A hybrid MBR/GPT partition table. Partitions with
+			   an explicit `partition-type` will be placed in in the MBR
+			   table. At most 3 such partitions are allowed. This limit does
+			   not effect the maximum number of GPT partition entries in the
+			   same image.
 :extended-partition:	Number of the extended partition. Contains the number of the
 			extended partition between 1 and 4 or 0 for automatic. Defaults
 			to 0.
@@ -341,6 +349,7 @@ Options:
                         using random 32 bit number.
 :gpt:			Boolean. If true, a GPT type partition table is written. If false
 			a DOS type partition table is written. Defaults to false.
+			Deprecated: use ``partition-table-type`` instead.
 :gpt-location:		Location of the GPT table. Occasionally useful for moving the GPT
 			table away from where a bootloader is placed due to hardware
 			requirements.  All partitions in the table must begin after this

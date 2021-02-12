@@ -28,14 +28,18 @@
 
 #include "genimage.h"
 
+#define TYPE_NONE   0
+#define TYPE_MBR    1
+#define TYPE_GPT    2
+#define TYPE_HYBRID (TYPE_MBR|TYPE_GPT)
+
 struct hdimage {
-	cfg_bool_t partition_table;
 	unsigned int extended_partition;
 	unsigned long long align;
 	unsigned long long extended_lba;
 	uint32_t disksig;
 	const char *disk_uuid;
-	cfg_bool_t gpt;
+	int table_type;
 	unsigned long long gpt_location;
 	cfg_bool_t gpt_no_backup;
 	cfg_bool_t fill;
@@ -125,14 +129,14 @@ static void hdimage_setup_chs(struct mbr_partition_entry *entry)
 		   entry->last_chs);
 }
 
-static int hdimage_insert_mbr(struct image *image, struct list_head *partitions, int hybrid)
+static int hdimage_insert_mbr(struct image *image, struct list_head *partitions)
 {
 	struct hdimage *hd = image->handler_priv;
 	struct mbr_tail mbr;
 	struct partition *part;
 	int ret, i = 0;
 
-	if (hybrid) {
+	if (hd->table_type == TYPE_HYBRID) {
 		image_info(image, "writing hybrid MBR\n");
 	} else {
 		image_info(image, "writing MBR\n");
@@ -147,10 +151,10 @@ static int hdimage_insert_mbr(struct image *image, struct list_head *partitions,
 		if (!part->in_partition_table)
 			continue;
 
-		if (hybrid && !part->partition_type)
+		if (hd->table_type == TYPE_HYBRID && !part->partition_type)
 			continue;
 
-		if (hybrid && part->extended)
+		if (hd->table_type == TYPE_HYBRID && part->extended)
 			continue;
 
 		entry = &mbr.part_entry[i];
@@ -173,7 +177,7 @@ static int hdimage_insert_mbr(struct image *image, struct list_head *partitions,
 		i++;
 	}
 
-	if (hybrid) {
+	if (hd->table_type == TYPE_HYBRID) {
 		struct mbr_partition_entry *entry;
 
 		entry = &mbr.part_entry[i];
@@ -191,7 +195,7 @@ static int hdimage_insert_mbr(struct image *image, struct list_head *partitions,
 
 	ret = insert_data(image, &mbr, imageoutfile(image), sizeof(mbr), 440);
 	if (ret) {
-		if (hybrid) {
+		if (hd->table_type == TYPE_HYBRID) {
 			image_error(image, "failed to write hybrid MBR\n");
 		} else {
 			image_error(image, "failed to write MBR\n");
@@ -277,7 +281,7 @@ static int hdimage_insert_protective_mbr(struct image *image)
 	mbr.in_partition_table = 1;
 	mbr.partition_type = 0xee;
 	list_add_tail(&mbr.list, &mbr_list);
-	ret = hdimage_insert_mbr(image, &mbr_list, 0);
+	ret = hdimage_insert_mbr(image, &mbr_list);
 	if (ret) {
 		image_error(image,"failed to write protective MBR\n");
 		return ret;
@@ -295,7 +299,7 @@ static int hdimage_insert_gpt(struct image *image, struct list_head *partitions)
 	unsigned long long smallest_offset = ~0ULL;
 	struct partition *part;
 	unsigned i, j;
-	int hybrid, ret;
+	int ret;
 
 	image_info(image, "writing GPT\n");
 
@@ -312,7 +316,6 @@ static int hdimage_insert_gpt(struct image *image, struct list_head *partitions)
 	header.number_entries = htole32(GPT_ENTRIES);
 	header.entry_size = htole32(sizeof(struct gpt_partition_entry));
 
-	hybrid = 0;
 	i = 0;
 	memset(&table, 0, sizeof(table));
 	list_for_each_entry(part, partitions, list) {
@@ -334,21 +337,12 @@ static int hdimage_insert_gpt(struct image *image, struct list_head *partitions)
 		for (j = 0; j < strlen(part->name) && j < 36; j++)
 			table[i].name[j] = htole16(part->name[j]);
 
-		if (part->partition_type)
-			hybrid++;
-
 		i++;
 	}
 	if (smallest_offset == ~0ULL)
 		smallest_offset = hd->gpt_location + (GPT_SECTORS - 1)*512;
 	header.first_usable_lba = htole64(smallest_offset / 512);
 
-
-	if (hybrid > 3) {
-		image_error(image, "hybrid MBR partitions (%i) exceeds maximum of 3\n",
-			    hybrid);
-		return -EINVAL;
-	}
 
 	header.table_crc = htole32(crc32(table, sizeof(table)));
 
@@ -391,8 +385,8 @@ static int hdimage_insert_gpt(struct image *image, struct list_head *partitions)
 		}
 	}
 
-	if (hybrid) {
-		ret = hdimage_insert_mbr(image, partitions, hybrid);
+	if (hd->table_type == TYPE_HYBRID) {
+		ret = hdimage_insert_mbr(image, partitions);
 	} else {
 		ret = hdimage_insert_protective_mbr(image);
 	}
@@ -451,14 +445,14 @@ static int hdimage_generate(struct image *image)
 		}
 	}
 
-	if (hd->partition_table) {
-		if (hd->gpt) {
+	if (hd->table_type != TYPE_NONE) {
+		if (hd->table_type & TYPE_GPT) {
 			ret = hdimage_insert_gpt(image, &image->partitions);
 			if (ret)
 				return ret;
 		}
 		else {
-			ret = hdimage_insert_mbr(image, &image->partitions, 0);
+			ret = hdimage_insert_mbr(image, &image->partitions);
 			if (ret)
 				return ret;
 		}
@@ -472,7 +466,7 @@ static int hdimage_generate(struct image *image)
 		}
 	}
 
-	if (hd->partition_table)
+	if (hd->table_type != TYPE_NONE)
 		return reload_partitions(image);
 
 	return 0;
@@ -573,21 +567,42 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 	struct partition *part;
 	struct partition *autoresize_part = NULL;
 	int has_extended;
-	unsigned int partition_table_entries = 0;
+	unsigned int partition_table_entries = 0, hybrid_entries = 0;
 	unsigned long long now = 0;
-	const char *disk_signature;
+	const char *disk_signature, *table_type;
 	struct hdimage *hd = xzalloc(sizeof(*hd));
 	struct partition *gpt_backup = NULL;
 
 	hd->align = cfg_getint_suffix(cfg, "align");
-	hd->partition_table = cfg_getbool(cfg, "partition-table");
 	hd->extended_partition = cfg_getint(cfg, "extended-partition");
 	disk_signature = cfg_getstr(cfg, "disk-signature");
-	hd->gpt = cfg_getbool(cfg, "gpt");
+	table_type = cfg_getstr(cfg, "partition-table-type");
 	hd->gpt_location = cfg_getint_suffix(cfg, "gpt-location");
 	hd->gpt_no_backup = cfg_getbool(cfg, "gpt-no-backup");
 	hd->fill = cfg_getbool(cfg, "fill");
 	hd->disk_uuid = cfg_getstr(cfg, "disk-uuid");
+
+	if (!strcmp(table_type, "none"))
+		hd->table_type = TYPE_NONE;
+	else if (!strcmp(table_type, "mbr") || !strcmp(table_type, "dos"))
+		hd->table_type = TYPE_MBR;
+	else if (!strcmp(table_type, "gpt"))
+		hd->table_type = TYPE_GPT;
+	else if (!strcmp(table_type, "hybrid"))
+		hd->table_type = TYPE_HYBRID;
+	else {
+		image_error(image, "'%s' is not a valid partition-table-type\n",
+				table_type);
+		return -EINVAL;
+	}
+	if (cfg_size(cfg, "partition-table") > 0) {
+		hd->table_type = cfg_getbool(cfg, "partition-table") ? TYPE_MBR : TYPE_NONE;
+		image_info(image, "The option 'partition-table' is deprecated. Use 'partition-table-type' instead\n");
+	}
+	if (cfg_size(cfg, "gpt") > 0) {
+		hd->table_type = cfg_getbool(cfg, "gpt") ? TYPE_GPT : TYPE_MBR;
+		image_info(image, "The option 'gpt' is deprecated. Use 'partition-table-type' instead\n");
+	}
 
 	if (hd->extended_partition > 4) {
 		image_error(image, "invalid extended partition index (%i). must be "
@@ -602,7 +617,7 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 		return -EINVAL;
 	}
 	list_for_each_entry(part, &image->partitions, list) {
-		if (!hd->partition_table)
+		if (hd->table_type == TYPE_NONE)
 			part->in_partition_table = false;
 		if (part->in_partition_table)
 			++partition_table_entries;
@@ -614,11 +629,16 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 				    part->align, part->name, hd->align);
 		}
 	}
-	if (!hd->gpt && !hd->extended_partition && partition_table_entries > 4)
+	if (hd->table_type == TYPE_MBR && !hd->extended_partition &&
+			partition_table_entries > 4)
 		hd->extended_partition = 4;
 	has_extended = hd->extended_partition > 0;
 
-	if (hd->disk_uuid ) {
+	if (hd->disk_uuid) {
+		if (!(hd->table_type & TYPE_GPT)) {
+			image_error(image, "'disk-uuid' is only valid for gpt and hybrid partition-table-type\n");
+			return -EINVAL;
+		}
 		if (uuid_validate(hd->disk_uuid) == -1) {
 			image_error(image, "invalid disk UUID: %s\n", hd->disk_uuid);
 			return -EINVAL;
@@ -628,26 +648,33 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 		hd->disk_uuid = uuid_random();
 	}
 
-	if (!strcmp(disk_signature, "random"))
+	if (!disk_signature)
+		hd->disksig = 0;
+	else if (!strcmp(disk_signature, "random"))
 		hd->disksig = random();
-	else
+	else {
+		if (!(hd->table_type & TYPE_MBR)) {
+			image_error(image, "'disk-signature' is only valid for mbr and hybrid partition-table-type\n");
+			return -EINVAL;
+		}
 		hd->disksig = strtoul(disk_signature, NULL, 0);
+	}
 
 	if (hd->gpt_location == 0) {
 		hd->gpt_location = 2*512;
 	}
 	else if (hd->gpt_location % 512) {
 		image_error(image, "GPT table location (%lld) must be a "
-				   "multiple of 1 sector (512 bytes)", hd->gpt_location);
+				   "multiple of 1 sector (512 bytes)\n", hd->gpt_location);
 	}
 
-	if (hd->partition_table) {
+	if (hd->table_type != TYPE_NONE) {
 		struct partition *mbr = fake_partition("[MBR]", 512 - sizeof(struct mbr_tail),
 						       sizeof(struct mbr_tail));
 
 		list_add_tail(&mbr->list, &image->partitions);
 		now = partition_end(mbr);
-		if (hd->gpt) {
+		if (hd->table_type & TYPE_GPT) {
 			struct partition *gpt_header, *gpt_array;
 			unsigned long long backup_offset, backup_size;
 
@@ -680,7 +707,20 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 				return -EINVAL;
 			}
 		}
-		if (hd->gpt && part->in_partition_table) {
+		if (part->partition_type_uuid && !(hd->table_type & TYPE_GPT)) {
+			image_error(image, "part %s: 'partition-type-uuid' is only valid for gpt and hybrid partition-table-type\n",
+					part->name);
+			return -EINVAL;
+		}
+		if (part->partition_type && !(hd->table_type & TYPE_MBR)) {
+			image_error(image, "part %s: 'partition-type' is only valid for mbr and hybrid partition-table-type\n",
+					part->name);
+			return -EINVAL;
+		}
+
+		if ((hd->table_type & TYPE_GPT) && part->in_partition_table) {
+			if (!part->partition_type_uuid)
+				part->partition_type_uuid = "L";
 			if (strlen(part->partition_type_uuid) == 1) {
 				const char *uuid;
 				uuid = gpt_partition_type_lookup(part->partition_type_uuid[0]);
@@ -709,6 +749,8 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 			else {
 				part->partition_uuid = uuid_random();
 			}
+			if (part->partition_type)
+				++hybrid_entries;
 		}
 		/* reserve space for extended boot record if necessary */
 		if (part->in_partition_table)
@@ -798,6 +840,16 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 			now = part->offset + part->size;
 	}
 
+	if (hybrid_entries > 3) {
+		image_error(image, "hybrid MBR partitions (%i) exceeds maximum of 3\n",
+			    hybrid_entries);
+		return -EINVAL;
+	}
+	if (hd->table_type == TYPE_HYBRID && hybrid_entries == 0) {
+		image_error(image, "no partition with partition-type but hybrid partition-table-type selected\n");
+		return -EINVAL;
+	}
+
 	if (image->size > 0 && now > image->size) {
 		image_error(image, "partitions exceed device size\n");
 		return -EINVAL;
@@ -814,11 +866,12 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 
 static cfg_opt_t hdimage_opts[] = {
 	CFG_STR("align", "512", CFGF_NONE),
-	CFG_STR("disk-signature", "", CFGF_NONE),
+	CFG_STR("disk-signature", NULL, CFGF_NONE),
 	CFG_STR("disk-uuid", NULL, CFGF_NONE),
-	CFG_BOOL("partition-table", cfg_true, CFGF_NONE),
+	CFG_BOOL("partition-table", cfg_false, CFGF_NODEFAULT),
 	CFG_INT("extended-partition", 0, CFGF_NONE),
-	CFG_BOOL("gpt", cfg_false, CFGF_NONE),
+	CFG_STR("partition-table-type", "mbr", CFGF_NONE),
+	CFG_BOOL("gpt", cfg_false, CFGF_NODEFAULT),
 	CFG_STR("gpt-location", NULL, CFGF_NONE),
 	CFG_BOOL("gpt-no-backup", cfg_false, CFGF_NONE),
 	CFG_BOOL("fill", cfg_false, CFGF_NONE),

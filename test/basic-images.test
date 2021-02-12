@@ -288,6 +288,28 @@ test_expect_success fdisk-gpt,sfdisk-gpt "hdimage7" "
 	test_cmp '${testdir}/hdimage7.fdisk' hdimage7.fdisk
 "
 
+test_expect_success fdisk-gpt,sfdisk-gpt "hdimage-hybrid" "
+	setup_test_images &&
+	run_genimage hdimage-hybrid.config &&
+	sfdisk_validate images/hybrid.hdimage &&
+	sanitized_fdisk_sfdisk images/hybrid.hdimage > hdimage-hybrid.fdisk &&
+	test_cmp '${testdir}/hdimage-hybrid.fdisk' hdimage-hybrid.fdisk &&
+	dd if=images/hybrid.hdimage count=1 | hexdump -C > hybrid.sector0 &&
+	dd if=images/mbr.hdimage count=1 | hexdump -C > mbr.sector0 &&
+	test_cmp hybrid.sector0 mbr.sector0
+"
+
+test_expect_success "hdimage syntax" "
+	setup_test_images &&
+	test_must_fail run_genimage hdimage-fail1.config &&
+	test_must_fail run_genimage hdimage-fail2.config &&
+	test_must_fail run_genimage hdimage-fail3.config &&
+	test_must_fail run_genimage hdimage-fail4.config &&
+	test_must_fail run_genimage hdimage-fail5.config &&
+	test_must_fail run_genimage hdimage-fail6.config &&
+	test_must_fail run_genimage hdimage-fail7.config
+"
+
 exec_test_set_prereq genisoimage
 test_expect_success genisoimage "iso" "
 	run_genimage iso.config test.iso &&

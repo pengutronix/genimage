@@ -101,7 +101,7 @@ static cfg_opt_t partition_opts[] = {
 	CFG_BOOL("autoresize", 0, CFGF_NONE),
 	CFG_BOOL("in-partition-table", cfg_true, CFGF_NONE),
 	CFG_STR("partition-uuid", NULL, CFGF_NONE),
-	CFG_STR("partition-type-uuid", "L", CFGF_NONE),
+	CFG_STR("partition-type-uuid", NULL, CFGF_NONE),
 	CFG_END()
 };
 
