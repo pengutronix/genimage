@@ -31,25 +31,26 @@ static int rauc_generate(struct image *image)
 {
 	int ret;
 	struct partition *part;
-	char *extraargs = cfg_getstr(image->imagesec, "extraargs");
-	char *manifest = cfg_getstr(image->imagesec, "manifest");
+	const char *extraargs = cfg_getstr(image->imagesec, "extraargs");
+	const char *manifest = cfg_getstr(image->imagesec, "manifest");
 	const char *cert = cfg_getstr(image->imagesec, "cert");
 	const char *key = cfg_getstr(image->imagesec, "key");
 	const char *keyring = cfg_getstr(image->imagesec, "keyring");
 	char *keyringarg = NULL;
-	char *manifest_file, *tmpdir;
+	char *manifest_file = NULL;
+	char *tmpdir = NULL;
 
 	image_debug(image, "manifest = '%s'\n", manifest);
 
 	xasprintf(&tmpdir, "%s/rauc-%s", tmppath(), sanitize_path(image->file));
 	ret = systemp(image, "mkdir -p '%s'", tmpdir);
 	if (ret)
-		return ret;
+		goto out;
 
 	xasprintf(&manifest_file, "%s/manifest.raucm", tmpdir);
 	ret = insert_data(image, manifest, manifest_file, strlen(manifest), 0);
 	if (ret)
-		return ret;
+		goto out;
 
 	list_for_each_entry(part, &image->partitions, list) {
 		struct image *child = image_get(part->image);
@@ -86,7 +87,7 @@ static int rauc_generate(struct image *image)
 			ret = systemp(image, "mkdir -p '%s/%s'",
 					tmpdir, path);
 			if (ret)
-				return ret;
+				goto out;
 		}
 
 		image_info(image, "adding file '%s' as '%s' ...\n",
@@ -94,7 +95,7 @@ static int rauc_generate(struct image *image)
 		ret = systemp(image, "cp --remove-destination '%s' '%s/%s'",
 				file, tmpdir, target);
 		if (ret)
-			return ret;
+			goto out;
 	}
 
 	if (keyring)
@@ -107,7 +108,10 @@ static int rauc_generate(struct image *image)
 			(keyringarg ? keyringarg : ""),
 			extraargs, imageoutfile(image));
 
+out:
 	free(keyringarg);
+	free(tmpdir);
+	free(manifest_file);
 
 	return ret;
 }
