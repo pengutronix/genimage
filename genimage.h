@@ -17,6 +17,7 @@ void image_error(struct image *image, const char *fmt, ...) __attribute__ ((form
 void image_info(struct image *image, const char *fmt, ...) __attribute__ ((format(printf, 2, 3)));
 void image_debug(struct image *image, const char *fmt, ...) __attribute__ ((format(printf, 2, 3)));
 void xasprintf(char **strp, const char *fmt, ...) __attribute__ ((format(printf, 2, 3)));
+void xstrcatf(char **strp, const char *fmt, ...) __attribute__ ((format(printf, 2, 3)));
 
 const char *imagepath(void);
 const char *inputpath(void);
