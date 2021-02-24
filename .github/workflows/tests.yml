@@ -24,6 +24,7 @@ jobs:
 
     - name: Install required packages
       run: |
+        sudo apt-get update
         sudo apt-get install dosfstools fakeroot genext2fs genisoimage libconfuse-dev mtd-utils mtools qemu-utils qemu-utils squashfs-tools ${{ matrix.pkgs }}
 
     - name: Build & Test (with ${{ matrix.options }})
