@@ -36,7 +36,7 @@ static int rauc_generate(struct image *image)
 	const char *cert = cfg_getstr(image->imagesec, "cert");
 	const char *key = cfg_getstr(image->imagesec, "key");
 	const char *keyring = cfg_getstr(image->imagesec, "keyring");
-	char *keyringarg = "";
+	char *keyringarg = NULL;
 	char *manifest_file, *tmpdir;
 
 	image_debug(image, "manifest = '%s'\n", manifest);
@@ -104,7 +104,10 @@ static int rauc_generate(struct image *image)
 
 	ret = systemp(image, "%s bundle '%s' --cert='%s' --key='%s' %s %s '%s'",
 			get_opt("rauc"), tmpdir, cert, key,
-			keyringarg, extraargs, imageoutfile(image));
+			(keyringarg ? keyringarg : ""),
+			extraargs, imageoutfile(image));
+
+	free(keyringarg);
 
 	return ret;
 }
