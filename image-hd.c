@@ -640,6 +640,11 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 				image_error(image, "partitions exceed device size\n");
 				return -EINVAL;
 			}
+			if (partsize < (long long)part->size) {
+				image_error(image, "auto-resize partition %s ends up with a size %lld"
+					    " smaller than minimum %lld\n", part->name, partsize, part->size);
+				return -EINVAL;
+			}
 			part->size = partsize;
 		}
 		if (part->image) {
