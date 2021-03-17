@@ -616,7 +616,7 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 		if (!part->offset && part->in_partition_table) {
 			part->offset = roundup(now, part->align);
 		}
-		if (part->in_partition_table && (part->offset % part->align)) {
+		if (part->offset % part->align) {
 			image_error(image, "part %s offset (%lld) must be a"
 					"multiple of %lld bytes\n",
 					part->name, part->offset, part->align);
