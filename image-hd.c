@@ -648,7 +648,8 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 					part->size = roundup(child->size, part->align);
 				else
 					part->size = child->size;
-			} else if (child->size > part->size) {
+			}
+			if (child->size > part->size) {
 				image_error(image, "part %s size (%lld) too small for %s (%lld)\n",
 						part->name, part->size, child->file, child->size);
 				return -EINVAL;
