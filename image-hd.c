@@ -693,16 +693,14 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 					part->name);
 			return -EINVAL;
 		}
-		if (part->offset && part->in_partition_table) {
-			if (!part->extended) {
-				int ret = check_overlap(image, part);
-				if (ret)
-					return ret;
-			} else if (now > part->offset) {
-				image_error(image, "part %s overlaps with previous partition\n",
-						part->name);
-				return -EINVAL;
-			}
+		if (!part->extended) {
+			int ret = check_overlap(image, part);
+			if (ret)
+				return ret;
+		} else if (now > part->offset) {
+			image_error(image, "part %s overlaps with previous partition\n",
+					part->name);
+			return -EINVAL;
 		}
 		if (part->in_partition_table && (part->size % 512)) {
 			image_error(image, "part %s size (%lld) must be a "
