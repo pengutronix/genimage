@@ -625,13 +625,6 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 					part->name, part->offset, part->align);
 			return -EINVAL;
 		}
-		if (part->offset && part->in_partition_table) {
-			if (now > part->offset) {
-				image_error(image, "part %s overlaps with previous partition\n",
-						part->name);
-				return -EINVAL;
-			}
-		}
 		if (part->autoresize) {
 			long long partsize = image->size - part->offset;
 			if (hd->gpt)
@@ -670,6 +663,13 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 			image_error(image, "part %s size must not be zero\n",
 					part->name);
 			return -EINVAL;
+		}
+		if (part->offset && part->in_partition_table) {
+			if (now > part->offset) {
+				image_error(image, "part %s overlaps with previous partition\n",
+						part->name);
+				return -EINVAL;
+			}
 		}
 		if (part->in_partition_table && (part->size % 512)) {
 			image_error(image, "part %s size (%lld) must be a "
