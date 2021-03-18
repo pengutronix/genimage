@@ -477,6 +477,11 @@ static unsigned long long roundup(unsigned long long value, unsigned long long a
 	return ((value - 1)/align + 1) * align;
 }
 
+static unsigned long long rounddown(unsigned long long value, unsigned long long align)
+{
+	return value - (value % align);
+}
+
 static int hdimage_setup(struct image *image, cfg_t *cfg)
 {
 	struct partition *part;
@@ -625,7 +630,8 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 			long long partsize = image->size - part->offset;
 			if (hd->gpt)
 				partsize -= GPT_SECTORS * 512;
-			if (partsize < 0) {
+			partsize = rounddown(partsize, part->align);
+			if (partsize <= 0) {
 				image_error(image, "partitions exceed device size\n");
 				return -EINVAL;
 			}
