@@ -427,7 +427,7 @@ setup_gpt_files() {
 	truncate -s 70k input/70K.img
 }
 
-test_expect_failure "gpt-overlap1" "
+test_expect_success "gpt-overlap1" "
 	setup_gpt_files &&
 	test_must_fail run_genimage gpt-overlap1.config"
 
@@ -435,7 +435,7 @@ test_expect_success "gpt-overlap2" "
 	setup_gpt_files &&
 	run_genimage gpt-overlap2.config"
 
-test_expect_failure "gpt-overlap3" "
+test_expect_success "gpt-overlap3" "
 	setup_gpt_files &&
 	test_must_fail run_genimage gpt-overlap3.config"
 

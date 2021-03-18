@@ -98,6 +98,11 @@ ct_assert(sizeof(struct gpt_partition_entry) == 128);
 #define GPT_PE_FLAG_HIDDEN	(1ULL << 62)
 #define GPT_PE_FLAG_NO_AUTO	(1ULL << 63)
 
+static unsigned long long partition_end(const struct partition *part)
+{
+	return part->offset + part->size;
+}
+
 static void lba_to_chs(unsigned int lba, unsigned char *chs)
 {
 	const unsigned int hpc = 255;
@@ -509,6 +514,18 @@ static int check_overlap(struct image *image, struct partition *p)
 	return -EIO;
 }
 
+static struct partition *
+fake_partition(const char *name, unsigned long long offset, unsigned long long size)
+{
+	struct partition *p = xzalloc(sizeof(*p));
+
+	p->name = name;
+	p->offset = offset;
+	p->size = size;
+	p->align = 1;
+	return p;
+}
+
 static int hdimage_setup(struct image *image, cfg_t *cfg)
 {
 	struct partition *part;
@@ -582,9 +599,29 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 	}
 
 	if (hd->partition_table) {
-		now = 512;
-		if (hd->gpt)
-			now = hd->gpt_location + (GPT_SECTORS - 1) * 512;
+		struct partition *mbr = fake_partition("[MBR]", 512 - sizeof(struct mbr_tail),
+						       sizeof(struct mbr_tail));
+
+		list_add_tail(&mbr->list, &image->partitions);
+		now = partition_end(mbr);
+		if (hd->gpt) {
+			struct partition *gpt_header, *gpt_array;
+
+			gpt_header = fake_partition("[GPT header]", 512, 512);
+			gpt_array = fake_partition("[GPT array]", hd->gpt_location, (GPT_SECTORS - 1) * 512);
+			list_add_tail(&gpt_header->list, &image->partitions);
+			list_add_tail(&gpt_array->list, &image->partitions);
+			now = partition_end(gpt_array);
+
+			if (image->size) {
+				struct partition *gpt_backup;
+				unsigned long long size = GPT_SECTORS * 512;
+
+				/* Includes both the backup header and array */
+				gpt_backup = fake_partition("[GPT backup]", image->size - size, size);
+				list_add_tail(&gpt_backup->list, &image->partitions);
+			}
+		}
 	}
 
 	partition_table_entries = 0;
@@ -712,19 +749,18 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 			now = part->offset + part->size;
 	}
 
-	if (hd->gpt)
-		now += GPT_SECTORS * 512;
-
 	if (image->size > 0 && now > image->size) {
 		image_error(image, "partitions exceed device size\n");
 		return -EINVAL;
 	}
 
 	if (image->size == 0) {
-		if (hd->gpt)
+		if (hd->gpt) {
+			now += GPT_SECTORS * 512;
 			image->size = (now + 4095)/4096 * 4096;
-		else
+		} else {
 			image->size = now;
+		}
 	}
 
 	image->handler_priv = hd;
