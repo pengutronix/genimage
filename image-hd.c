@@ -575,7 +575,7 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 				return -EINVAL;
 			}
 		}
-		if (hd->gpt) {
+		if (hd->gpt && part->in_partition_table) {
 			if (strlen(part->partition_type_uuid) == 1) {
 				const char *uuid;
 				uuid = gpt_partition_type_lookup(part->partition_type_uuid[0]);
