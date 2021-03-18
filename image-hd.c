@@ -482,6 +482,33 @@ static unsigned long long rounddown(unsigned long long value, unsigned long long
 	return value - (value % align);
 }
 
+static int check_overlap(struct image *image, struct partition *p)
+{
+	struct partition *q;
+
+	list_for_each_entry(q, &image->partitions, list) {
+		/* Stop iterating when we reach p. */
+		if (p == q)
+			return 0;
+		/* We must have that p starts beyond where q ends... */
+		if (p->offset >= q->offset + q->size)
+			continue;
+		/* ...or vice versa. */
+		if (q->offset >= p->offset + p->size)
+			continue;
+
+		image_error(image,
+			    "partition %s (offset 0x%llx, size 0x%llx) overlaps previous "
+			    "partition %s (offset 0x%llx, size 0x%llx)\n",
+			    p->name, p->offset, p->size,
+			    q->name, q->offset, q->size);
+		return -EINVAL;
+	}
+	/* This should not be reached. */
+	image_error(image, "linked list corruption???");
+	return -EIO;
+}
+
 static int hdimage_setup(struct image *image, cfg_t *cfg)
 {
 	struct partition *part;
@@ -667,7 +694,11 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 			return -EINVAL;
 		}
 		if (part->offset && part->in_partition_table) {
-			if (now > part->offset) {
+			if (!part->extended) {
+				int ret = check_overlap(image, part);
+				if (ret)
+					return ret;
+			} else if (now > part->offset) {
 				image_error(image, "part %s overlaps with previous partition\n",
 						part->name);
 				return -EINVAL;
@@ -679,7 +710,8 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 					part->name, part->size);
 			return -EINVAL;
 		}
-		now = part->offset + part->size;
+		if (part->offset + part->size > now)
+			now = part->offset + part->size;
 	}
 
 	if (hd->gpt)
