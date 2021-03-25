@@ -222,6 +222,8 @@ static int hdimage_insert_ebr(struct image *image, struct partition *part)
 	hdimage_setup_chs(entry);
 	struct partition *p = part;
 	list_for_each_entry_continue(p, &image->partitions, list) {
+		if (!p->extended)
+			continue;
 		++entry;
 		entry->boot = 0x00;
 		entry->partition_type = 0x0F;
@@ -608,7 +610,7 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 		/* reserve space for extended boot record if necessary */
 		if (part->in_partition_table)
 			++partition_table_entries;
-		part->extended = has_extended &&
+		part->extended = has_extended && part->in_partition_table &&
 			(partition_table_entries >= hd->extended_partition);
 		if (part->extended) {
 			if (!hd->extended_lba)
