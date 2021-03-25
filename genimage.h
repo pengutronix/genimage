@@ -55,6 +55,8 @@ struct image {
 	const char *name;
 	const char *file;
 	unsigned long long size;
+	struct extent *holes;
+	int n_holes;
 	cfg_bool_t size_is_percent;
 	const char *mountpoint;
 	cfg_bool_t empty;
