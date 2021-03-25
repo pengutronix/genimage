@@ -487,8 +487,36 @@ static unsigned long long rounddown(unsigned long long value, unsigned long long
 	return value - (value % align);
 }
 
+static unsigned long long min_ull(unsigned long long x, unsigned long long y)
+{
+	return x < y ? x : y;
+}
+
+static unsigned long long max_ull(unsigned long long x, unsigned long long y)
+{
+	return x > y ? x : y;
+}
+
+static bool image_has_hole_covering(const char *image,
+				    unsigned long long start, unsigned long long end)
+{
+	struct image *child;
+	int i;
+
+	if (!image)
+		return false;
+	child = image_get(image);
+	for (i = 0; i < child->n_holes; ++i) {
+		const struct extent *e = &child->holes[i];
+		if (e->start <= start && end <= e->end)
+			return true;
+	}
+	return false;
+}
+
 static int check_overlap(struct image *image, struct partition *p)
 {
+	unsigned long long start, end;
 	struct partition *q;
 
 	list_for_each_entry(q, &image->partitions, list) {
@@ -500,6 +528,19 @@ static int check_overlap(struct image *image, struct partition *p)
 			continue;
 		/* ...or vice versa. */
 		if (q->offset >= p->offset + p->size)
+			continue;
+
+		/*
+		 * Or maybe the image occupying the q partition has an
+		 * area which it is ok to overwrite. We do not do the
+		 * "vice versa" check, since images are written to the
+		 * output file in the order the partitions are
+		 * specified.
+		 */
+		start = max_ull(p->offset, q->offset);
+		end = min_ull(p->offset + p->size, q->offset + q->size);
+
+		if (image_has_hole_covering(q->image, start - q->offset, end - q->offset))
 			continue;
 
 		image_error(image,
