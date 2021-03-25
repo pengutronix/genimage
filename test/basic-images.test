@@ -439,6 +439,35 @@ test_expect_success "gpt-overlap3" "
 	setup_gpt_files &&
 	test_must_fail run_genimage gpt-overlap3.config"
 
+# A bootloader image with a don't-care region extending over MBR
+# table, GPT header and (usual) placement of GPT array.
+test_expect_success "bootloader-hole1" "
+	setup_gpt_files &&
+	run_genimage hole.config"
+
+# Oops, if we move the GPT array we're no longer covered by the hole.
+test_expect_success "bootloader-hole2" "
+	setup_gpt_files &&
+	GPT_LOCATION=64K test_must_fail run_genimage hole.config"
+
+# But it's ok if the array is moved beyond the bootloader.
+test_expect_success "bootloader-hole3" "
+	setup_gpt_files &&
+	GPT_LOCATION=70K run_genimage hole.config"
+
+# If the 70K bootloader starts at 64K, it will overlap a partition at 129K.
+test_expect_success "bootloader-hole4" "
+	setup_gpt_files &&
+	OFFSET=64K test_must_fail run_genimage hole.config"
+
+# But if it starts at 128K, its hole will cover the small 3K partition.
+# While the overlap checking does let this pass, the image generation
+# currently fails due to pad_file() not being able to cope with an
+# output image that is already extended beyond where the next image is
+# to be placed.
+test_expect_failure "bootloader-hole5" "
+	setup_gpt_files &&
+	OFFSET=128K run_genimage hole.config"
 
 test_done
 
