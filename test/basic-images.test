@@ -461,11 +461,7 @@ test_expect_success "bootloader-hole4" "
 	OFFSET=64K test_must_fail run_genimage hole.config"
 
 # But if it starts at 128K, its hole will cover the small 3K partition.
-# While the overlap checking does let this pass, the image generation
-# currently fails due to pad_file() not being able to cope with an
-# output image that is already extended beyond where the next image is
-# to be placed.
-test_expect_failure "bootloader-hole5" "
+test_expect_success "bootloader-hole5" "
 	setup_gpt_files &&
 	OFFSET=128K run_genimage hole.config"
 

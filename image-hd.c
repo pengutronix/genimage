@@ -402,7 +402,6 @@ static int hdimage_generate(struct image *image)
 {
 	struct partition *part;
 	struct hdimage *hd = image->handler_priv;
-	enum pad_mode mode = MODE_OVERWRITE;
 	int ret;
 
 	/*
@@ -415,23 +414,12 @@ static int hdimage_generate(struct image *image)
 
 	list_for_each_entry(part, &image->partitions, list) {
 		struct image *child;
-		const char *infile;
 
 		image_info(image, "adding partition '%s'%s%s%s%s ...\n", part->name,
 			part->in_partition_table ? " (in MBR)" : "",
 			part->image ? " from '": "",
 			part->image ? part->image : "",
 			part->image ? "'" : "");
-
-		if (part->image || part->extended) {
-			ret = pad_file(image, NULL, part->offset, 0x0, mode);
-			if (ret) {
-				image_error(image, "failed to pad image to size %lld\n",
-						part->offset);
-				return ret;
-			}
-			mode = MODE_APPEND;
-		}
 
 		if (part->extended) {
 			ret = hdimage_insert_ebr(image, part);
@@ -449,10 +437,7 @@ static int hdimage_generate(struct image *image)
 		if (child->size == 0)
 			continue;
 
-		infile = imageoutfile(child);
-
-		ret = pad_file(image, infile, part->offset + child->size, 0x0, MODE_APPEND);
-
+		ret = insert_image(image, child, child->size, part->offset);
 		if (ret) {
 			image_error(image, "failed to write image partition '%s'\n",
 					part->name);
