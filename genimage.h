@@ -163,6 +163,8 @@ int map_file_extents(struct image *image, const char *filename, int fd,
 int is_block_device(const char *filename);
 int pad_file(struct image *image, const char *infile,
 		size_t size, unsigned char fillpattern, enum pad_mode mode);
+int insert_image(struct image *image, struct image *sub,
+		 unsigned long long size, unsigned long long offset);
 int insert_data(struct image *image, const void *data, const char *outfile,
 		size_t size, long offset);
 int extend_file(struct image *image, size_t size);
