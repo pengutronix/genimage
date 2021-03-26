@@ -23,6 +23,8 @@
 #include <inttypes.h>
 #include <endian.h>
 #include <stdbool.h>
+#include <unistd.h>
+#include <sys/types.h>
 
 #include "genimage.h"
 
@@ -402,6 +404,14 @@ static int hdimage_generate(struct image *image)
 	struct hdimage *hd = image->handler_priv;
 	enum pad_mode mode = MODE_OVERWRITE;
 	int ret;
+
+	/*
+	 * If the output file doesn't exist, that's perfectly ok. If
+	 * it does, calling truncate() here is equivalent to passing
+	 * O_TRUNC on the first open(). The assignment to ret is
+	 * merely to silence a warn_unused_result warning.
+	 */
+	ret = truncate(imageoutfile(image), 0);
 
 	list_for_each_entry(part, &image->partitions, list) {
 		struct image *child;
