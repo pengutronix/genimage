@@ -280,6 +280,14 @@ test_expect_success fdisk,sfdisk "hdimage6" "
 	test_cmp '${testdir}/hdimage6.fdisk' hdimage6.fdisk
 "
 
+test_expect_success fdisk-gpt,sfdisk-gpt "hdimage7" "
+	setup_test_images &&
+	run_genimage hdimage7.config &&
+	sfdisk_validate images/test.hdimage &&
+	sanitized_fdisk_sfdisk images/test.hdimage > hdimage7.fdisk &&
+	test_cmp '${testdir}/hdimage7.fdisk' hdimage7.fdisk
+"
+
 exec_test_set_prereq genisoimage
 test_expect_success genisoimage "iso" "
 	run_genimage iso.config test.iso &&
