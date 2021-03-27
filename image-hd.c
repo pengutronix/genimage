@@ -292,6 +292,7 @@ static int hdimage_insert_gpt(struct image *image, struct list_head *partitions)
 	const char *outfile = imageoutfile(image);
 	struct gpt_header header;
 	struct gpt_partition_entry table[GPT_ENTRIES];
+	unsigned long long smallest_offset = ~0ULL;
 	struct partition *part;
 	unsigned i, j;
 	int hybrid, ret;
@@ -304,6 +305,7 @@ static int hdimage_insert_gpt(struct image *image, struct list_head *partitions)
 	header.header_size = htole32(sizeof(struct gpt_header));
 	header.current_lba = htole64(1);
 	header.backup_lba = htole64(hd->gpt_no_backup ? 1 :image->size/512 - 1);
+	header.first_usable_lba = htole64(~0ULL);
 	header.last_usable_lba = htole64(image->size/512 - 1 - GPT_SECTORS);
 	uuid_parse(hd->disk_uuid, header.disk_uuid);
 	header.starting_lba = htole64(hd->gpt_location/512);
@@ -314,11 +316,11 @@ static int hdimage_insert_gpt(struct image *image, struct list_head *partitions)
 	i = 0;
 	memset(&table, 0, sizeof(table));
 	list_for_each_entry(part, partitions, list) {
-		if (header.first_usable_lba == 0 && part->in_partition_table)
-			header.first_usable_lba = htole64(part->offset / 512);
-
 		if (!part->in_partition_table)
 			continue;
+
+		if (part->offset < smallest_offset)
+			smallest_offset = part->offset;
 
 		uuid_parse(part->partition_type_uuid, table[i].type_uuid);
 		uuid_parse(part->partition_uuid, table[i].uuid);
@@ -337,6 +339,10 @@ static int hdimage_insert_gpt(struct image *image, struct list_head *partitions)
 
 		i++;
 	}
+	if (smallest_offset == ~0ULL)
+		smallest_offset = hd->gpt_location + (GPT_SECTORS - 1)*512;
+	header.first_usable_lba = htole64(smallest_offset / 512);
+
 
 	if (hybrid > 3) {
 		image_error(image, "hybrid MBR partitions (%i) exceeds maximum of 3\n",
