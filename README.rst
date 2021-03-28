@@ -256,6 +256,57 @@ Options:
 :usage-type:		Specify the usage type for the filesystem. Only valid with mke2fs.
 			More details can be found in the mke2fs man-page.
 
+file
+****
+
+This represents a pre-existing image which will be used as-is. When a
+partition section references an image that is not defined elsewhere in
+the configuration file, a ``file`` rule is implicitly generated. It is
+up to the user to ensure that the image exists in the input directory,
+or to use an absolute path to the image.
+
+It is possible to add a ``file`` image explicitly, which allows one to
+provide ``genimage`` with some information about the image which can
+not be deduced automatically. Currently, one such option exists:
+
+:holes:			A list of ``"(<start>;<end>)"`` pairs specifying ranges of the
+			file that do not contain meaningful data, and which can therefore
+			be allowed to overlap other partitions or image metadata.
+
+For example::
+
+  image foo {
+	  hdimage {
+		  gpt = true
+		  gpt-location = 64K
+	  }
+
+	  partition bootloader {
+		  in-partition-table = false
+		  offset = 0
+		  image = "/path/to/bootloader.img"
+	  }
+
+	  partition rootfs {
+		  offset = 1M
+		  image = "rootfs.ext4"
+	  }
+  }
+
+  image /path/to/bootloader.img {
+	  file {
+		  holes = {"(440; 1K)", "(64K; 80K)"}
+	  }
+  }
+
+This tells ``genimage`` that despite the ``bootloader`` partition
+overlapping both the last 72 bytes of the MBR (where the DOS partition
+table is located) and the GPT header occupying the sector starting at
+offset 512, this is all OK because ``bootloader.img`` does not contain
+useful data in that range. Further, in this example, the bootloader
+image has been carefully crafted to also allow placing the GPT array
+at offset 64K (the GPT header is always at offset 512).
+
 FIT
 ***
 Generates U-Boot FIT images.
