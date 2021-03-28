@@ -577,6 +577,7 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 	unsigned long long now = 0;
 	const char *disk_signature;
 	struct hdimage *hd = xzalloc(sizeof(*hd));
+	struct partition *gpt_backup = NULL;
 
 	hd->align = cfg_getint_suffix(cfg, "align");
 	hd->partition_table = cfg_getbool(cfg, "partition-table");
@@ -648,6 +649,7 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 		now = partition_end(mbr);
 		if (hd->gpt) {
 			struct partition *gpt_header, *gpt_array;
+			unsigned long long backup_offset, backup_size;
 
 			gpt_header = fake_partition("[GPT header]", 512, 512);
 			gpt_array = fake_partition("[GPT array]", hd->gpt_location, (GPT_SECTORS - 1) * 512);
@@ -655,14 +657,11 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 			list_add_tail(&gpt_array->list, &image->partitions);
 			now = partition_end(gpt_array);
 
-			if (image->size) {
-				struct partition *gpt_backup;
-				unsigned long long size = GPT_SECTORS * 512;
-
-				/* Includes both the backup header and array */
-				gpt_backup = fake_partition("[GPT backup]", image->size - size, size);
-				list_add_tail(&gpt_backup->list, &image->partitions);
-			}
+			/* Includes both the backup header and array. */
+			backup_size = GPT_SECTORS * 512;
+			backup_offset = image->size ? image->size - backup_size : 0;
+			gpt_backup = fake_partition("[GPT backup]", backup_offset, backup_size);
+			list_add_tail(&gpt_backup->list, &image->partitions);
 		}
 	}
 
@@ -720,6 +719,14 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 			now += hd->align;
 			now = roundup(now, part->align);
 		}
+		if (part == gpt_backup && !part->offset) {
+			/*
+			 * Make sure the backup, and hence the whole
+			 * image, ends at a 4K boundary.
+			 */
+			now += part->size;
+			part->offset = roundup(now, 4096) - part->size;
+		}
 		if (!part->offset && part->in_partition_table) {
 			part->offset = roundup(now, part->align);
 		}
@@ -734,8 +741,8 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 		}
 		if (part->autoresize) {
 			long long partsize = image->size - part->offset;
-			if (hd->gpt)
-				partsize -= GPT_SECTORS * 512;
+			if (gpt_backup)
+				partsize -= gpt_backup->size;
 			partsize = rounddown(partsize, part->align);
 			if (partsize <= 0) {
 				image_error(image, "partitions exceed device size\n");
@@ -797,12 +804,7 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 	}
 
 	if (image->size == 0) {
-		if (hd->gpt) {
-			now += GPT_SECTORS * 512;
-			image->size = (now + 4095)/4096 * 4096;
-		} else {
-			image->size = now;
-		}
+		image->size = now;
 	}
 
 	image->handler_priv = hd;
