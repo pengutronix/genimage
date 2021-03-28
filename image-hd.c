@@ -50,6 +50,15 @@ struct mbr_partition_entry {
 	uint32_t relative_sectors;
 	uint32_t total_sectors;
 } __attribute__((packed));
+ct_assert(sizeof(struct mbr_partition_entry) == 16);
+
+struct mbr_tail {
+	uint32_t disk_signature;
+	uint16_t copy_protect;
+	struct mbr_partition_entry part_entry[4];
+	uint16_t boot_signature;
+} __attribute__((packed));
+ct_assert(sizeof(struct mbr_tail) == 72);
 
 struct gpt_header {
 	unsigned char signature[8];
@@ -67,6 +76,7 @@ struct gpt_header {
 	uint32_t entry_size;
 	uint32_t table_crc;
 } __attribute__((packed));
+ct_assert(sizeof(struct gpt_header) == 92);
 
 struct gpt_partition_entry {
 	unsigned char type_uuid[16];
@@ -76,6 +86,7 @@ struct gpt_partition_entry {
 	uint64_t flags;
 	uint16_t name[36];
 } __attribute__((packed));
+ct_assert(sizeof(struct gpt_partition_entry) == 128);
 
 #define GPT_ENTRIES 		128
 #define GPT_SECTORS		(1 + GPT_ENTRIES * sizeof(struct gpt_partition_entry) / 512)
@@ -86,7 +97,7 @@ struct gpt_partition_entry {
 #define GPT_PE_FLAG_HIDDEN	(1ULL << 62)
 #define GPT_PE_FLAG_NO_AUTO	(1ULL << 63)
 
-static void hdimage_setup_chs(unsigned int lba, unsigned char *chs)
+static void lba_to_chs(unsigned int lba, unsigned char *chs)
 {
 	const unsigned int hpc = 255;
 	const unsigned int spt = 63;
@@ -99,10 +110,17 @@ static void hdimage_setup_chs(unsigned int lba, unsigned char *chs)
 	chs[2] = (c & 0xff);
 }
 
+static void hdimage_setup_chs(struct mbr_partition_entry *entry)
+{
+	lba_to_chs(entry->relative_sectors, entry->first_chs);
+	lba_to_chs(entry->relative_sectors + entry->total_sectors - 1,
+		   entry->last_chs);
+}
+
 static int hdimage_insert_mbr(struct image *image, struct list_head *partitions, int hybrid)
 {
 	struct hdimage *hd = image->handler_priv;
-	char mbr[6+4*sizeof(struct mbr_partition_entry)+2], *part_table;
+	struct mbr_tail mbr;
 	struct partition *part;
 	int ret, i = 0;
 
@@ -112,9 +130,8 @@ static int hdimage_insert_mbr(struct image *image, struct list_head *partitions,
 		image_info(image, "writing MBR\n");
 	}
 
-	memset(mbr, 0, sizeof(mbr));
-	memcpy(mbr, &hd->disksig, sizeof(hd->disksig));
-	part_table = mbr + 6;
+	memset(&mbr, 0, sizeof(mbr));
+	memcpy(&mbr.disk_signature, &hd->disksig, sizeof(hd->disksig));
 
 	list_for_each_entry(part, partitions, list) {
 		struct mbr_partition_entry *entry;
@@ -128,8 +145,7 @@ static int hdimage_insert_mbr(struct image *image, struct list_head *partitions,
 		if (hybrid && part->extended)
 			continue;
 
-		entry = (struct mbr_partition_entry *)(part_table + i *
-				sizeof(struct mbr_partition_entry));
+		entry = &mbr.part_entry[i];
 
 		entry->boot = part->bootable ? 0x80 : 0x00;
 		if (!part->extended) {
@@ -149,9 +165,7 @@ static int hdimage_insert_mbr(struct image *image, struct list_head *partitions,
 			entry->relative_sectors = (part->offset - hd->align)/512;
 			entry->total_sectors = size/512;
 		}
-		hdimage_setup_chs(entry->relative_sectors, entry->first_chs);
-		hdimage_setup_chs(entry->relative_sectors +
-				entry->total_sectors - 1, entry->last_chs);
+		hdimage_setup_chs(entry);
 
 		if (part->extended)
 			break;
@@ -161,8 +175,7 @@ static int hdimage_insert_mbr(struct image *image, struct list_head *partitions,
 	if (hybrid) {
 		struct mbr_partition_entry *entry;
 
-		entry = (struct mbr_partition_entry *)(part_table + i *
-			sizeof(struct mbr_partition_entry));
+		entry = &mbr.part_entry[i];
 
 		entry->boot = 0x00;
 
@@ -170,16 +183,12 @@ static int hdimage_insert_mbr(struct image *image, struct list_head *partitions,
 		entry->relative_sectors = 1;
 		entry->total_sectors = hd->gpt_location / 512 + GPT_SECTORS - 2;
 
-		hdimage_setup_chs(entry->relative_sectors, entry->first_chs);
-		hdimage_setup_chs(entry->relative_sectors +
-		entry->total_sectors - 1, entry->last_chs);
+		hdimage_setup_chs(entry);
 	}
 
-	part_table += 4 * sizeof(struct mbr_partition_entry);
-	part_table[0] = 0x55;
-	part_table[1] = 0xaa;
+	mbr.boot_signature = htole16(0xaa55);
 
-	ret = insert_data(image, mbr, imageoutfile(image), sizeof(mbr), 440);
+	ret = insert_data(image, &mbr, imageoutfile(image), sizeof(mbr), 440);
 	if (ret) {
 		if (hybrid) {
 			image_error(image, "failed to write hybrid MBR\n");
@@ -209,9 +218,7 @@ static int hdimage_insert_ebr(struct image *image, struct partition *part)
 	entry->partition_type = part->partition_type;
 	entry->relative_sectors = hd->align/512;
 	entry->total_sectors = part->size/512;
-	hdimage_setup_chs(entry->relative_sectors, entry->first_chs);
-	hdimage_setup_chs(entry->relative_sectors +
-			entry->total_sectors - 1, entry->last_chs);
+	hdimage_setup_chs(entry);
 	struct partition *p = part;
 	list_for_each_entry_continue(p, &image->partitions, list) {
 		++entry;
@@ -219,9 +226,7 @@ static int hdimage_insert_ebr(struct image *image, struct partition *part)
 		entry->partition_type = 0x0F;
 		entry->relative_sectors = (p->offset - hd->align - hd->extended_lba)/512;
 		entry->total_sectors = (p->size + hd->align)/512;
-		hdimage_setup_chs(entry->relative_sectors, entry->first_chs);
-		hdimage_setup_chs(entry->relative_sectors +
-				entry->total_sectors - 1, entry->last_chs);
+		hdimage_setup_chs(entry);
 		break;
 	}
 
@@ -339,12 +344,12 @@ static int hdimage_insert_gpt(struct image *image, struct list_head *partitions)
 	header.table_crc = htole32(crc32(table, sizeof(table)));
 
 	header.header_crc = htole32(crc32(&header, sizeof(header)));
-	ret = insert_data(image, (char *)&header, outfile, sizeof(header), 512);
+	ret = insert_data(image, &header, outfile, sizeof(header), 512);
 	if (ret) {
 		image_error(image, "failed to write GPT\n");
 		return ret;
 	}
-	ret = insert_data(image, (char *)&table, outfile, sizeof(table), hd->gpt_location);
+	ret = insert_data(image, &table, outfile, sizeof(table), hd->gpt_location);
 	if (ret) {
 		image_error(image, "failed to write GPT table\n");
 		return ret;
@@ -354,7 +359,7 @@ static int hdimage_insert_gpt(struct image *image, struct list_head *partitions)
 		ret = pad_file(image, NULL, image->size, 0x0, MODE_APPEND);
 		if (ret) {
 			image_error(image, "failed to pad image to size %lld\n",
-				    part->offset);
+				    image->size);
 			return ret;
 		}
 
@@ -363,13 +368,13 @@ static int hdimage_insert_gpt(struct image *image, struct list_head *partitions)
 		header.backup_lba = htole64(1);
 		header.starting_lba = htole64(image->size/512 - GPT_SECTORS);
 		header.header_crc = htole32(crc32(&header, sizeof(header)));
-		ret = insert_data(image, (char *)&table, outfile, sizeof(table),
+		ret = insert_data(image, &table, outfile, sizeof(table),
 				  image->size - GPT_SECTORS*512);
 		if (ret) {
 			image_error(image, "failed to write backup GPT table\n");
 			return ret;
 		}
-		ret = insert_data(image, (char *)&header, outfile, sizeof(header),
+		ret = insert_data(image, &header, outfile, sizeof(header),
 				  image->size - 512);
 		if (ret) {
 			image_error(image, "failed to write backup GPT\n");
@@ -510,6 +515,13 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 	list_for_each_entry(part, &image->partitions, list) {
 		if (part->in_partition_table)
 			++partition_table_entries;
+		if (!part->align)
+			part->align = part->in_partition_table ? hd->align : 1;
+		if (part->in_partition_table && part->align % hd->align) {
+			image_error(image, "partition alignment (%lld) of partition %s "
+				    "must be multiple of image alignment (%lld)",
+				    part->align, part->name, hd->align);
+		}
 	}
 	if (!hd->gpt && !hd->extended_partition && partition_table_entries > 4)
 		hd->extended_partition = 4;
@@ -536,6 +548,12 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 	else if (hd->gpt_location % 512) {
 		image_error(image, "GPT table location (%lld) must be a "
 				   "multiple of 1 sector (512 bytes)", hd->gpt_location);
+	}
+
+	if (hd->partition_table) {
+		now = 512;
+		if (hd->gpt)
+			now = hd->gpt_location + (GPT_SECTORS - 1) * 512;
 	}
 
 	partition_table_entries = 0;
@@ -589,13 +607,16 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 		if (part->extended) {
 			if (!hd->extended_lba)
 				hd->extended_lba = now;
-			now = roundup(now, hd->align);
 			now += hd->align;
+			now = roundup(now, part->align);
 		}
-		if (part->in_partition_table && (part->offset % hd->align)) {
+		if (!part->offset && part->in_partition_table) {
+			part->offset = roundup(now, part->align);
+		}
+		if (part->in_partition_table && (part->offset % part->align)) {
 			image_error(image, "part %s offset (%lld) must be a"
 					"multiple of %lld bytes\n",
-					part->name, part->offset, hd->align);
+					part->name, part->offset, part->align);
 			return -EINVAL;
 		}
 		if (part->offset && part->in_partition_table) {
@@ -604,16 +625,9 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 						part->name);
 				return -EINVAL;
 			}
-		} else if (!part->offset && part->in_partition_table) {
-			if (!now && hd->partition_table) {
-				now = 512;
-				if (hd->gpt)
-					now = hd->gpt_location + (GPT_SECTORS - 1) * 512;
-			}
-			part->offset = roundup(now, hd->align);
 		}
 		if (autoresize) {
-			long long partsize = image->size - now;
+			long long partsize = image->size - part->offset;
 			if (hd->gpt)
 				partsize -= GPT_SECTORS * 512;
 			if (partsize < 0) {
@@ -631,10 +645,11 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 			}
 			if (!part->size) {
 				if (part->in_partition_table)
-					part->size = roundup(child->size, hd->align);
+					part->size = roundup(child->size, part->align);
 				else
 					part->size = child->size;
-			} else if (child->size > part->size) {
+			}
+			if (child->size > part->size) {
 				image_error(image, "part %s size (%lld) too small for %s (%lld)\n",
 						part->name, part->size, child->file, child->size);
 				return -EINVAL;

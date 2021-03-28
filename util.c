@@ -291,6 +291,11 @@ unsigned long long strtoul_suffix(const char *str, char **endp,
 	case 'K':
 		val *= 1024;
 		end++;
+		break;
+	case 's':
+		val *= 512;
+		end++;
+		break;
 	case '\0':
 		break;
 	case '%':
@@ -554,9 +559,10 @@ err_out:
 	return ret;
 }
 
-int insert_data(struct image *image, const char *data, const char *outfile,
+int insert_data(struct image *image, const void *_data, const char *outfile,
 		size_t size, long offset)
 {
+	const char *data = _data;
 	int outf = -1;
 	int now, r;
 	int ret = 0;

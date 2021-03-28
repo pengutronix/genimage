@@ -68,11 +68,15 @@ Here are all options for images:
 
 :name:		The name of this image. This is used for some image types
 		to set the name of the image.
-:size:		Size of this image in bytes. 'k', 'M' or 'G' can be used as suffix to
-		specify the size in multiple of 1024 etc. If the image if filled from
-		a mountpoint then '%' as suffix indicates a percentage. '200%' means
-		the resulting filesystem should be about 50% filled. Note that is is
-		only a rough estimate based on the original size of the content.
+:size:		Size of this image in bytes. 'k', 'M' or 'G' can be used as
+		suffix to specify the size in multiple of 1024
+		etc. The suffix 's' specifies a multiple of the
+		(traditional) sector size of 512. If the image if
+		filled from a mountpoint then '%' as suffix indicates
+		a percentage. '200%' means the resulting filesystem
+		should be about 50% filled. Note that is is only a
+		rough estimate based on the original size of the
+		content.
 :mountpoint:	mountpoint if image refers to a filesystem image. The
 		default is "/". The content of "${rootpath}${mountpoint}"
 		will be used used fill the filesystem.
@@ -107,6 +111,9 @@ Partition options:
 :size:			The size of this partition in bytes. If the size and
 			autoresize are both not set then the size of the partition
 			image is used.
+:align:			Alignment value to use for automatic computation of ``offset``
+			and ``size``.  Defaults to 1 for partitions not in the partition
+			table, otherwise to the image's ``align`` value.
 :partition-type:	Used by dos partition tables to specify the partition type. Using
 			this option with a GPT partition table will create a hybrid MBR partition
 			table with a maximum of 3 partition entries(this limit does not effect the
@@ -119,7 +126,7 @@ Partition options:
 			the partition will fill the remaining space of the image.
 :bootable:		Boolean specifying whether to set the bootable flag.
 :in-partition-table:	Boolean specifying whether to include this partition in
-			the partition table.
+			the partition table. Defaults to true.
 :partition-uuid:	UUID string used by GPT partition tables to specify the partition
 			id. Defaults to a random value.
 :partition-type-uuid:	String used by GPT partition tables to specify the partition type.
