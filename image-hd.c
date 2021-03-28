@@ -22,6 +22,7 @@
 #include <errno.h>
 #include <inttypes.h>
 #include <endian.h>
+#include <stdbool.h>
 
 #include "genimage.h"
 
@@ -513,6 +514,8 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 		return -EINVAL;
 	}
 	list_for_each_entry(part, &image->partitions, list) {
+		if (!hd->partition_table)
+			part->in_partition_table = false;
 		if (part->in_partition_table)
 			++partition_table_entries;
 		if (!part->align)
