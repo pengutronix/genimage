@@ -224,7 +224,7 @@ static int hdimage_insert_ebr(struct image *image, struct partition *part)
 		++entry;
 		entry->boot = 0x00;
 		entry->partition_type = 0x0F;
-		entry->relative_sectors = (p->offset - hd->align - hd->extended_lba)/512;
+		entry->relative_sectors = (p->offset - hd->extended_lba)/512;
 		entry->total_sectors = (p->size + hd->align)/512;
 		hdimage_setup_chs(entry);
 		break;
@@ -605,10 +605,16 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 		part->extended = has_extended &&
 			(partition_table_entries >= hd->extended_partition);
 		if (part->extended) {
-			if (!hd->extended_lba)
-				hd->extended_lba = now;
 			now += hd->align;
 			now = roundup(now, part->align);
+			if (!hd->extended_lba) {
+				if(part->offset) {
+					hd->extended_lba = part->offset;
+				}
+				else {
+					hd->extended_lba = now;
+				}
+			}
 		}
 		if (!part->offset && part->in_partition_table) {
 			part->offset = roundup(now, part->align);

@@ -280,6 +280,16 @@ test_expect_success fdisk-gpt,sfdisk-gpt "hdimage5" "
 	test_cmp '${testdir}/hdimage5.fdisk' hdimage5.fdisk
 "
 
+test_expect_success fdisk,sfdisk "hdimage6" "
+	setup_test_images &&
+	run_genimage hdimage6.config test.hdimage &&
+	check_size images/test.hdimage 28082176 &&
+	# check partitions; filter output to handle different sfdisk versions
+	sfdisk -d images/test.hdimage 2>/dev/null | grep '^images/' | \
+		sed -e 's/  *//g' -e 's;Id=;type=;' > hdimage6.fdisk &&
+	test_cmp '${testdir}/hdimage6.fdisk' hdimage6.fdisk
+"
+
 exec_test_set_prereq genisoimage
 test_expect_success genisoimage "iso" "
 	run_genimage iso.config test.iso &&
