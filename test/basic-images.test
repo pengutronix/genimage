@@ -225,6 +225,14 @@ test_expect_success "flash" "
 	md5sum -c '${testdir}/flash.md5'
 "
 
+sanitized_fdisk_sfdisk() {
+	# check the this identifier
+	fdisk -l images/test.hdimage | grep identifier: &&
+	# check partitions; filter output to handle different sfdisk versions
+	sfdisk -d "${1}" 2>/dev/null | grep '^images/' | \
+		sed -e 's/  *//g' -e 's;Id=;type=;'
+}
+
 exec_test_set_prereq fdisk
 exec_test_set_prereq sfdisk
 test_expect_success fdisk,sfdisk "hdimage" "
@@ -233,18 +241,10 @@ test_expect_success fdisk,sfdisk "hdimage" "
 	check_size images/test.hdimage 10485760 &&
 	sfdisk_validate images/test.hdimage &&
 	check_disk_usage_range images/test.hdimage 40960 57344 &&
-	# check the this identifier
-	fdisk -l images/test.hdimage | grep identifier: > hdimage.fdisk &&
-	# check partitions; filter output to handle different sfdisk versions
-	sfdisk -d images/test.hdimage 2>/dev/null | grep '^images/' | \
-		sed -e 's/  *//g' -e 's;Id=;type=;' >> hdimage.fdisk &&
+	sanitized_fdisk_sfdisk images/test.hdimage > hdimage.fdisk &&
 	test_cmp '${testdir}/hdimage.fdisk' hdimage.fdisk &&
 	check_size images/test.hdimage-2 11539968 &&
-	# check the this identifier
-	fdisk -l images/test.hdimage-2 | grep identifier: > hdimage.fdisk-2 &&
-	# check partitions; filter output to handle different sfdisk versions
-	sfdisk -d images/test.hdimage-2 2>/dev/null | grep '^images/' | \
-		sed -e 's/  *//g' -e 's;Id=;type=;' -e '/start=0,size=0,type=0/d' >> hdimage.fdisk-2 &&
+	sanitized_fdisk_sfdisk images/test.hdimage-2 > hdimage.fdisk-2 &&
 	test_cmp '${testdir}/hdimage.fdisk-2' hdimage.fdisk-2
 "
 
@@ -260,11 +260,7 @@ test_expect_success fdisk-gpt,sfdisk-gpt "hdimage4" "
 	run_genimage hdimage4.config test.hdimage &&
 	check_size images/test.hdimage 7360512 &&
 	sfdisk_validate images/test.hdimage &&
-	# check the this identifier
-	fdisk -l images/test.hdimage | grep identifier: > hdimage4.fdisk &&
-	# check partitions; filter output to handle different sfdisk versions
-	sfdisk -d images/test.hdimage 2>/dev/null | grep '^images/' | \
-		sed -e 's/  *//g' -e 's;Id=;type=;' >> hdimage4.fdisk &&
+	sanitized_fdisk_sfdisk images/test.hdimage > hdimage4.fdisk &&
 	test_cmp '${testdir}/hdimage4.fdisk' hdimage4.fdisk
 "
 
@@ -272,12 +268,16 @@ test_expect_success fdisk-gpt,sfdisk-gpt "hdimage5" "
 	setup_test_images &&
 	run_genimage hdimage5.config test.hdimage &&
 	check_size images/test.hdimage 7360512 &&
-	# check the this identifier
-	fdisk -l images/test.hdimage | grep identifier: > hdimage5.fdisk &&
-	# check partitions; filter output to handle different sfdisk versions
-	sfdisk -d images/test.hdimage 2>/dev/null | grep '^images/' | \
-		sed -e 's/  *//g' -e 's;Id=;type=;' >> hdimage5.fdisk &&
+	sanitized_fdisk_sfdisk images/test.hdimage > hdimage5.fdisk &&
 	test_cmp '${testdir}/hdimage5.fdisk' hdimage5.fdisk
+"
+
+test_expect_success fdisk,sfdisk "hdimage6" "
+	setup_test_images &&
+	run_genimage hdimage6.config test.hdimage &&
+	check_size images/test.hdimage 28082176 &&
+	sanitized_fdisk_sfdisk images/test.hdimage > hdimage6.fdisk &&
+	test_cmp '${testdir}/hdimage6.fdisk' hdimage6.fdisk
 "
 
 exec_test_set_prereq genisoimage

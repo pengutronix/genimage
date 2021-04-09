@@ -155,16 +155,9 @@ static int hdimage_insert_mbr(struct image *image, struct list_head *partitions,
 			entry->total_sectors = part->size/512;
 		}
 		else {
-			unsigned long long size = 0;
-			struct partition *p = part;
-			list_for_each_entry_from(p, partitions, list) {
-				if (!p->extended)
-					break;
-				size += hd->align + p->size;
-			}
 			entry->partition_type = 0x0F;
-			entry->relative_sectors = (part->offset - hd->align)/512;
-			entry->total_sectors = size/512;
+			entry->relative_sectors = (hd->extended_lba)/512;
+			entry->total_sectors = (image->size - hd->extended_lba)/512;
 		}
 		hdimage_setup_chs(entry);
 
@@ -613,14 +606,15 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 		part->extended = has_extended && part->in_partition_table &&
 			(partition_table_entries >= hd->extended_partition);
 		if (part->extended) {
-			if (!hd->extended_lba)
-				hd->extended_lba = now;
 			now += hd->align;
 			now = roundup(now, part->align);
 		}
 		if (!part->offset && part->in_partition_table) {
 			part->offset = roundup(now, part->align);
 		}
+		if (part->extended && !hd->extended_lba)
+			hd->extended_lba = part->offset - hd->align;
+
 		if (part->offset % part->align) {
 			image_error(image, "part %s offset (%lld) must be a"
 					"multiple of %lld bytes\n",
