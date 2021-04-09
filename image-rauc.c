@@ -26,31 +26,44 @@
 #define RAUC_KEY	1
 #define RAUC_CERT	2
 #define RAUC_KEYRING	3
+#define RAUC_INTERMEDIATE 4
+
+static const char *pkcs11_prefix = "pkcs11:";
 
 static int rauc_generate(struct image *image)
 {
 	int ret;
 	struct partition *part;
-	char *extraargs = cfg_getstr(image->imagesec, "extraargs");
-	char *manifest = cfg_getstr(image->imagesec, "manifest");
+	const char *extraargs = cfg_getstr(image->imagesec, "extraargs");
+	const char *manifest = cfg_getstr(image->imagesec, "manifest");
 	const char *cert = cfg_getstr(image->imagesec, "cert");
 	const char *key = cfg_getstr(image->imagesec, "key");
 	const char *keyring = cfg_getstr(image->imagesec, "keyring");
-	char *keyringarg = "";
-	char *manifest_file, *tmpdir;
+	char *keyringarg = NULL;
+	char *manifest_file = NULL;
+	char *tmpdir = NULL;
+	char *intermediatearg = NULL;
+	unsigned int i;
 
 	image_debug(image, "manifest = '%s'\n", manifest);
 
 	xasprintf(&tmpdir, "%s/rauc-%s", tmppath(), sanitize_path(image->file));
 	ret = systemp(image, "mkdir -p '%s'", tmpdir);
 	if (ret)
-		return ret;
+		goto out;
 
 	xasprintf(&manifest_file, "%s/manifest.raucm", tmpdir);
 	ret = insert_data(image, manifest, manifest_file, strlen(manifest), 0);
 	if (ret)
-		return ret;
+		goto out;
 
+	for (i = 0; i < cfg_size(image->imagesec, "intermediate"); i++) {
+		const char *uri;
+
+		uri = cfg_getnstr(image->imagesec, "intermediate", i);
+		if (!strncmp(pkcs11_prefix, uri, strlen(pkcs11_prefix)))
+			xstrcatf(&intermediatearg, " --intermediate='%s'", uri);
+	}
 	list_for_each_entry(part, &image->partitions, list) {
 		struct image *child = image_get(part->image);
 		const char *file = imageoutfile(child);
@@ -65,6 +78,9 @@ static int rauc_generate(struct image *image)
 
 		if (part->partition_type == RAUC_KEYRING)
 			keyring = file;
+
+		if (part->partition_type == RAUC_INTERMEDIATE)
+			xstrcatf(&intermediatearg, " --intermediate='%s'", file);
 
 		if (part->partition_type != RAUC_CONTENT)
 			continue;
@@ -86,7 +102,7 @@ static int rauc_generate(struct image *image)
 			ret = systemp(image, "mkdir -p '%s/%s'",
 					tmpdir, path);
 			if (ret)
-				return ret;
+				goto out;
 		}
 
 		image_info(image, "adding file '%s' as '%s' ...\n",
@@ -94,7 +110,7 @@ static int rauc_generate(struct image *image)
 		ret = systemp(image, "cp --remove-destination '%s' '%s/%s'",
 				file, tmpdir, target);
 		if (ret)
-			return ret;
+			goto out;
 	}
 
 	if (keyring)
@@ -102,16 +118,23 @@ static int rauc_generate(struct image *image)
 
 	systemp(image, "rm -f '%s'", imageoutfile(image));
 
-	ret = systemp(image, "%s bundle '%s' --cert='%s' --key='%s' %s %s '%s'",
+	ret = systemp(image, "%s bundle '%s' --cert='%s' --key='%s' %s %s %s '%s'",
 			get_opt("rauc"), tmpdir, cert, key,
-			keyringarg, extraargs, imageoutfile(image));
+			(keyringarg ? keyringarg : ""),
+			(intermediatearg ? intermediatearg : ""),
+			extraargs, imageoutfile(image));
+
+out:
+	free(keyringarg);
+	free(tmpdir);
+	free(manifest_file);
+	free(intermediatearg);
 
 	return ret;
 }
 
 static int rauc_parse(struct image *image, cfg_t *cfg)
 {
-	const char *pkcs11_prefix = "pkcs11:";
 	unsigned int i;
 	unsigned int num_files;
 	struct partition *part;
@@ -149,6 +172,19 @@ static int rauc_parse(struct image *image, cfg_t *cfg)
 		part->image = part_image_keyring;
 		part->partition_type = RAUC_KEYRING;
 		list_add_tail(&part->list, &image->partitions);
+	}
+
+	for (i = 0; i < cfg_size(cfg, "intermediate"); i++) {
+		char *part_image_intermediate;
+
+		part_image_intermediate = cfg_getnstr(cfg, "intermediate", i);
+		if (strncmp(pkcs11_prefix, part_image_intermediate,
+						strlen(pkcs11_prefix))) {
+			part = xzalloc(sizeof *part);
+			part->image = part_image_intermediate;
+			part->partition_type = RAUC_INTERMEDIATE;
+			list_add_tail(&part->list, &image->partitions);
+		}
 	}
 
 	num_files = cfg_size(cfg, "file");
@@ -193,6 +229,7 @@ static cfg_opt_t rauc_opts[] = {
 	CFG_STR("key", NULL, CFGF_NONE),
 	CFG_STR("cert", NULL, CFGF_NONE),
 	CFG_STR("keyring", NULL, CFGF_NONE),
+	CFG_STR_LIST("intermediate", 0, CFGF_NONE),
 	CFG_STR("manifest", NULL, CFGF_NONE),
 	CFG_END()
 };

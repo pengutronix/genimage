@@ -76,6 +76,23 @@ void xasprintf(char **strp, const char *fmt, ...)
 	va_end (args);
 }
 
+void xstrcatf(char **strp, const char *fmt, ...)
+{
+	char *tmp;
+	va_list list;
+
+	va_start(list, fmt);
+	xvasprintf(&tmp, fmt, list);
+	va_end(list);
+	if (*strp) {
+	        *strp = xrealloc(*strp, strlen(*strp) + strlen(tmp) + 1);
+	        strcat(*strp, tmp);
+	        free(tmp);
+	} else {
+	        *strp = tmp;
+	}
+}
+
 static void image_log(struct image *image, int level, const char *fmt,
 		      va_list args)
 {
