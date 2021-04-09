@@ -78,6 +78,8 @@ EXTRA_DIST += \
 	test/hdimage4.fdisk \
 	test/hdimage5.config \
 	test/hdimage5.fdisk \
+	test/hdimage6.config \
+	test/hdimage6.fdisk \
 	test/iso.config \
 	test/jffs2.config \
 	test/jffs2.md5 \
