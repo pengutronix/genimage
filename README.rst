@@ -235,7 +235,8 @@ Options:
 
 :align:			Partition alignment. Defaults to 512 bytes
 :partition-table:	Boolean. If true, writes a partition table. If false, no
-			partition table is generated. Defaults to true.
+			partition table is generated, and the ``in-partition-table`` option
+			for each partition is ignored. Defaults to true.
 :extended-partition:	Number of the extended partition. Contains the number of the
 			extended partition between 1 and 4 or 0 for automatic. Defaults
 			to 0.

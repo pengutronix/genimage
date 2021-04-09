@@ -22,6 +22,7 @@
 #include <errno.h>
 #include <inttypes.h>
 #include <endian.h>
+#include <stdbool.h>
 
 #include "genimage.h"
 
@@ -221,6 +222,8 @@ static int hdimage_insert_ebr(struct image *image, struct partition *part)
 	hdimage_setup_chs(entry);
 	struct partition *p = part;
 	list_for_each_entry_continue(p, &image->partitions, list) {
+		if (!p->extended)
+			continue;
 		++entry;
 		entry->boot = 0x00;
 		entry->partition_type = 0x0F;
@@ -484,7 +487,8 @@ static unsigned long long roundup(unsigned long long value, unsigned long long a
 static int hdimage_setup(struct image *image, cfg_t *cfg)
 {
 	struct partition *part;
-	int has_extended, autoresize = 0;
+	struct partition *autoresize_part = NULL;
+	int has_extended;
 	unsigned int partition_table_entries = 0;
 	unsigned long long now = 0;
 	const char *disk_signature;
@@ -513,6 +517,8 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 		return -EINVAL;
 	}
 	list_for_each_entry(part, &image->partitions, list) {
+		if (!hd->partition_table)
+			part->in_partition_table = false;
 		if (part->in_partition_table)
 			++partition_table_entries;
 		if (!part->align)
@@ -558,18 +564,20 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 
 	partition_table_entries = 0;
 	list_for_each_entry(part, &image->partitions, list) {
-		if (autoresize) {
-			image_error(image, "'autoresize' is only supported "
-					"for the last partition\n");
-			return -EINVAL;
+		if (part->autoresize) {
+			if (autoresize_part) {
+				image_error(image, "'autoresize' is only supported "
+					    "for one partition\n");
+				return -EINVAL;
+			}
+			autoresize_part = part;
+			if (image->size == 0) {
+				image_error(image, "the image size must be specified "
+					    "when using an 'autoresize' partition\n");
+				return -EINVAL;
+			}
 		}
-		autoresize = part->autoresize;
-		if (autoresize && image->size == 0) {
-			image_error(image, "the images size must be specified "
-					"when using a 'autoresize' partition\n");
-			return -EINVAL;
-		}
-		if (hd->gpt) {
+		if (hd->gpt && part->in_partition_table) {
 			if (strlen(part->partition_type_uuid) == 1) {
 				const char *uuid;
 				uuid = gpt_partition_type_lookup(part->partition_type_uuid[0]);
@@ -602,7 +610,7 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 		/* reserve space for extended boot record if necessary */
 		if (part->in_partition_table)
 			++partition_table_entries;
-		part->extended = has_extended &&
+		part->extended = has_extended && part->in_partition_table &&
 			(partition_table_entries >= hd->extended_partition);
 		if (part->extended) {
 			if (!hd->extended_lba)
@@ -613,25 +621,23 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 		if (!part->offset && part->in_partition_table) {
 			part->offset = roundup(now, part->align);
 		}
-		if (part->in_partition_table && (part->offset % part->align)) {
+		if (part->offset % part->align) {
 			image_error(image, "part %s offset (%lld) must be a"
 					"multiple of %lld bytes\n",
 					part->name, part->offset, part->align);
 			return -EINVAL;
 		}
-		if (part->offset && part->in_partition_table) {
-			if (now > part->offset) {
-				image_error(image, "part %s overlaps with previous partition\n",
-						part->name);
-				return -EINVAL;
-			}
-		}
-		if (autoresize) {
+		if (part->autoresize) {
 			long long partsize = image->size - part->offset;
 			if (hd->gpt)
 				partsize -= GPT_SECTORS * 512;
 			if (partsize < 0) {
 				image_error(image, "partitions exceed device size\n");
+				return -EINVAL;
+			}
+			if (partsize < (long long)part->size) {
+				image_error(image, "auto-resize partition %s ends up with a size %lld"
+					    " smaller than minimum %lld\n", part->name, partsize, part->size);
 				return -EINVAL;
 			}
 			part->size = partsize;
@@ -659,6 +665,13 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 			image_error(image, "part %s size must not be zero\n",
 					part->name);
 			return -EINVAL;
+		}
+		if (part->offset && part->in_partition_table) {
+			if (now > part->offset) {
+				image_error(image, "part %s overlaps with previous partition\n",
+						part->name);
+				return -EINVAL;
+			}
 		}
 		if (part->in_partition_table && (part->size % 512)) {
 			image_error(image, "part %s size (%lld) must be a "
