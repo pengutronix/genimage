@@ -1,3 +1,4 @@
+Disk identifier: 0x00000000
 images/test.hdimage1:start=256,size=512,type=83
 images/test.hdimage2:start=768,size=6144,type=83
 images/test.hdimage3:start=7199,size=79393,type=f
