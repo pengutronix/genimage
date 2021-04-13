@@ -197,7 +197,7 @@ int set_config_opts(int argc, char *argv[], cfg_t *cfg)
 	static struct option *long_options = NULL;
 	int ret = 0;
 
-	if (cfg)
+	if (cfg && (cfg_size(cfg, "config") > 0))
 		cfgsec = cfg_getsec(cfg, "config");
 
 	list_for_each_entry(c, &optlist, list) {
