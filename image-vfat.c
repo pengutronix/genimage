@@ -62,7 +62,7 @@ static int vfat_generate(struct image *image)
 
 		image_info(image, "adding file '%s' as '%s' ...\n",
 				child->file, *target ? target : child->file);
-		ret = systemp(image, "MTOOLS_SKIP_CHECK=1 %s -bsp -i '%s' '%s' '::%s'",
+		ret = systemp(image, "MTOOLS_SKIP_CHECK=1 %s -sp -i '%s' '%s' '::%s'",
 				get_opt("mcopy"), imageoutfile(image),
 				file, target);
 		if (ret)
@@ -72,7 +72,7 @@ static int vfat_generate(struct image *image)
 		return 0;
 
 	if (!image->empty)
-		ret = systemp(image, "MTOOLS_SKIP_CHECK=1 %s -bsp -i '%s' '%s'/* ::",
+		ret = systemp(image, "MTOOLS_SKIP_CHECK=1 %s -sp -i '%s' '%s'/* ::",
 				get_opt("mcopy"), imageoutfile(image), mountpath(image));
 	return ret;
 }
