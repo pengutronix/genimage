@@ -227,7 +227,7 @@ test_expect_success "flash" "
 
 sanitized_fdisk_sfdisk() {
 	# check the this identifier
-	fdisk -l images/test.hdimage | grep identifier: &&
+	fdisk -l "${1}" | grep identifier: &&
 	# check partitions; filter output to handle different sfdisk versions
 	sfdisk -d "${1}" 2>/dev/null | grep '^images/' | \
 		sed -e 's/  *//g' -e 's;Id=;type=;'
