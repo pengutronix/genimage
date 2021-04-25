@@ -140,6 +140,51 @@ Partition options:
 			 * F: FAT32 / Basic Data Partition (ebd0a0a2-b9e5-4433-87c0-68b6b72699c7)
 			Defaults to L.
 
+For each partition, its final alignment, offset and size are determined as follows:
+
+* If the ``align`` option is not present, it defaults to the value of
+  the image's ``align`` option if the partition is in the partition
+  table, otherwise to 1.
+
+* If the ``offset`` option is absent or zero, and
+  ``in-partition-table`` is true, the partition is placed after the
+  end of all previously defined partitions, with the final offset
+  rounded up to the partition's ``align`` value.
+
+* Otherwise, the ``offset`` option is used as-is. Note that if absent,
+  that option defaults to 0, so in practice one must specify an
+  ``offset`` for any partition that is not in the partition table
+  (with at most one exception, e.g. a bootloader).
+
+* If the partition has the ``autoresize`` flag set, its size is
+  computed as the space remaining in the image from its offset (for a
+  GPT image, space is reserved at the end for the backup GPT table),
+  rounded down to the partition's ``align`` value. If the partition
+  also has a ``size`` option, it is ensured that the computed value is
+  not less than that size.
+
+* Otherwise, if the ``size`` option is present and non-zero, its value
+  is used as-is.
+
+* Otherwise, if the partition has an ``image`` option, the size of
+  that image, rounded up to the partition's ``align`` value, is used
+  to determine the size of the partition.
+
+The following sanity checks are done on these final values (in many
+cases, these will automatically be satisfied when the value has been
+determined via one of the above rules rather than given explicitly):
+
+* For a partition in the partition table, the partition's ``align``
+  value must be greater than or equal to the image's ``align`` value.
+
+* The partition's ``offset`` and ``size`` must both be multiples of
+  its ``align``.
+
+* The size must not be 0.
+
+* The partition must not overlap any other partition, or the areas
+  occupied by the partition table.
+
 The image configuration options
 -------------------------------
 
@@ -210,6 +255,57 @@ Options:
 :root-owner:		User and group IDs for the root directory. Defaults to ``0:0``.
 :usage-type:		Specify the usage type for the filesystem. Only valid with mke2fs.
 			More details can be found in the mke2fs man-page.
+
+file
+****
+
+This represents a pre-existing image which will be used as-is. When a
+partition section references an image that is not defined elsewhere in
+the configuration file, a ``file`` rule is implicitly generated. It is
+up to the user to ensure that the image exists in the input directory,
+or to use an absolute path to the image.
+
+It is possible to add a ``file`` image explicitly, which allows one to
+provide ``genimage`` with some information about the image which can
+not be deduced automatically. Currently, one such option exists:
+
+:holes:			A list of ``"(<start>;<end>)"`` pairs specifying ranges of the
+			file that do not contain meaningful data, and which can therefore
+			be allowed to overlap other partitions or image metadata.
+
+For example::
+
+  image foo {
+	  hdimage {
+		  gpt = true
+		  gpt-location = 64K
+	  }
+
+	  partition bootloader {
+		  in-partition-table = false
+		  offset = 0
+		  image = "/path/to/bootloader.img"
+	  }
+
+	  partition rootfs {
+		  offset = 1M
+		  image = "rootfs.ext4"
+	  }
+  }
+
+  image /path/to/bootloader.img {
+	  file {
+		  holes = {"(440; 1K)", "(64K; 80K)"}
+	  }
+  }
+
+This tells ``genimage`` that despite the ``bootloader`` partition
+overlapping both the last 72 bytes of the MBR (where the DOS partition
+table is located) and the GPT header occupying the sector starting at
+offset 512, this is all OK because ``bootloader.img`` does not contain
+useful data in that range. Further, in this example, the bootloader
+image has been carefully crafted to also allow placing the GPT array
+at offset 64K (the GPT header is always at offset 512).
 
 FIT
 ***

@@ -23,6 +23,8 @@
 #include <inttypes.h>
 #include <endian.h>
 #include <stdbool.h>
+#include <unistd.h>
+#include <sys/types.h>
 
 #include "genimage.h"
 
@@ -97,6 +99,11 @@ ct_assert(sizeof(struct gpt_partition_entry) == 128);
 #define GPT_PE_FLAG_READ_ONLY	(1ULL << 60)
 #define GPT_PE_FLAG_HIDDEN	(1ULL << 62)
 #define GPT_PE_FLAG_NO_AUTO	(1ULL << 63)
+
+static unsigned long long partition_end(const struct partition *part)
+{
+	return part->offset + part->size;
+}
 
 static void lba_to_chs(unsigned int lba, unsigned char *chs)
 {
@@ -285,6 +292,7 @@ static int hdimage_insert_gpt(struct image *image, struct list_head *partitions)
 	const char *outfile = imageoutfile(image);
 	struct gpt_header header;
 	struct gpt_partition_entry table[GPT_ENTRIES];
+	unsigned long long smallest_offset = ~0ULL;
 	struct partition *part;
 	unsigned i, j;
 	int hybrid, ret;
@@ -297,6 +305,7 @@ static int hdimage_insert_gpt(struct image *image, struct list_head *partitions)
 	header.header_size = htole32(sizeof(struct gpt_header));
 	header.current_lba = htole64(1);
 	header.backup_lba = htole64(hd->gpt_no_backup ? 1 :image->size/512 - 1);
+	header.first_usable_lba = htole64(~0ULL);
 	header.last_usable_lba = htole64(image->size/512 - 1 - GPT_SECTORS);
 	uuid_parse(hd->disk_uuid, header.disk_uuid);
 	header.starting_lba = htole64(hd->gpt_location/512);
@@ -307,11 +316,11 @@ static int hdimage_insert_gpt(struct image *image, struct list_head *partitions)
 	i = 0;
 	memset(&table, 0, sizeof(table));
 	list_for_each_entry(part, partitions, list) {
-		if (header.first_usable_lba == 0 && part->in_partition_table)
-			header.first_usable_lba = htole64(part->offset / 512);
-
 		if (!part->in_partition_table)
 			continue;
+
+		if (part->offset < smallest_offset)
+			smallest_offset = part->offset;
 
 		uuid_parse(part->partition_type_uuid, table[i].type_uuid);
 		uuid_parse(part->partition_uuid, table[i].uuid);
@@ -330,6 +339,10 @@ static int hdimage_insert_gpt(struct image *image, struct list_head *partitions)
 
 		i++;
 	}
+	if (smallest_offset == ~0ULL)
+		smallest_offset = hd->gpt_location + (GPT_SECTORS - 1)*512;
+	header.first_usable_lba = htole64(smallest_offset / 512);
+
 
 	if (hybrid > 3) {
 		image_error(image, "hybrid MBR partitions (%i) exceeds maximum of 3\n",
@@ -352,7 +365,7 @@ static int hdimage_insert_gpt(struct image *image, struct list_head *partitions)
 	}
 
 	if (!hd->gpt_no_backup) {
-		ret = pad_file(image, NULL, image->size, 0x0, MODE_APPEND);
+		ret = extend_file(image, image->size);
 		if (ret) {
 			image_error(image, "failed to pad image to size %lld\n",
 				    image->size);
@@ -395,28 +408,24 @@ static int hdimage_generate(struct image *image)
 {
 	struct partition *part;
 	struct hdimage *hd = image->handler_priv;
-	enum pad_mode mode = MODE_OVERWRITE;
 	int ret;
+
+	/*
+	 * If the output file doesn't exist, that's perfectly ok. If
+	 * it does, calling truncate() here is equivalent to passing
+	 * O_TRUNC on the first open(). The assignment to ret is
+	 * merely to silence a warn_unused_result warning.
+	 */
+	ret = truncate(imageoutfile(image), 0);
 
 	list_for_each_entry(part, &image->partitions, list) {
 		struct image *child;
-		const char *infile;
 
 		image_info(image, "adding partition '%s'%s%s%s%s ...\n", part->name,
 			part->in_partition_table ? " (in MBR)" : "",
 			part->image ? " from '": "",
 			part->image ? part->image : "",
 			part->image ? "'" : "");
-
-		if (part->image || part->extended) {
-			ret = pad_file(image, NULL, part->offset, 0x0, mode);
-			if (ret) {
-				image_error(image, "failed to pad image to size %lld\n",
-						part->offset);
-				return ret;
-			}
-			mode = MODE_APPEND;
-		}
 
 		if (part->extended) {
 			ret = hdimage_insert_ebr(image, part);
@@ -434,10 +443,7 @@ static int hdimage_generate(struct image *image)
 		if (child->size == 0)
 			continue;
 
-		infile = imageoutfile(child);
-
-		ret = pad_file(image, infile, part->offset + child->size, 0x0, MODE_APPEND);
-
+		ret = insert_image(image, child, child->size, part->offset);
 		if (ret) {
 			image_error(image, "failed to write image partition '%s'\n",
 					part->name);
@@ -477,6 +483,91 @@ static unsigned long long roundup(unsigned long long value, unsigned long long a
 	return ((value - 1)/align + 1) * align;
 }
 
+static unsigned long long rounddown(unsigned long long value, unsigned long long align)
+{
+	return value - (value % align);
+}
+
+static unsigned long long min_ull(unsigned long long x, unsigned long long y)
+{
+	return x < y ? x : y;
+}
+
+static unsigned long long max_ull(unsigned long long x, unsigned long long y)
+{
+	return x > y ? x : y;
+}
+
+static bool image_has_hole_covering(const char *image,
+				    unsigned long long start, unsigned long long end)
+{
+	struct image *child;
+	int i;
+
+	if (!image)
+		return false;
+	child = image_get(image);
+	for (i = 0; i < child->n_holes; ++i) {
+		const struct extent *e = &child->holes[i];
+		if (e->start <= start && end <= e->end)
+			return true;
+	}
+	return false;
+}
+
+static int check_overlap(struct image *image, struct partition *p)
+{
+	unsigned long long start, end;
+	struct partition *q;
+
+	list_for_each_entry(q, &image->partitions, list) {
+		/* Stop iterating when we reach p. */
+		if (p == q)
+			return 0;
+		/* We must have that p starts beyond where q ends... */
+		if (p->offset >= q->offset + q->size)
+			continue;
+		/* ...or vice versa. */
+		if (q->offset >= p->offset + p->size)
+			continue;
+
+		/*
+		 * Or maybe the image occupying the q partition has an
+		 * area which it is ok to overwrite. We do not do the
+		 * "vice versa" check, since images are written to the
+		 * output file in the order the partitions are
+		 * specified.
+		 */
+		start = max_ull(p->offset, q->offset);
+		end = min_ull(p->offset + p->size, q->offset + q->size);
+
+		if (image_has_hole_covering(q->image, start - q->offset, end - q->offset))
+			continue;
+
+		image_error(image,
+			    "partition %s (offset 0x%llx, size 0x%llx) overlaps previous "
+			    "partition %s (offset 0x%llx, size 0x%llx)\n",
+			    p->name, p->offset, p->size,
+			    q->name, q->offset, q->size);
+		return -EINVAL;
+	}
+	/* This should not be reached. */
+	image_error(image, "linked list corruption???");
+	return -EIO;
+}
+
+static struct partition *
+fake_partition(const char *name, unsigned long long offset, unsigned long long size)
+{
+	struct partition *p = xzalloc(sizeof(*p));
+
+	p->name = name;
+	p->offset = offset;
+	p->size = size;
+	p->align = 1;
+	return p;
+}
+
 static int hdimage_setup(struct image *image, cfg_t *cfg)
 {
 	struct partition *part;
@@ -486,6 +577,7 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 	unsigned long long now = 0;
 	const char *disk_signature;
 	struct hdimage *hd = xzalloc(sizeof(*hd));
+	struct partition *gpt_backup = NULL;
 
 	hd->align = cfg_getint_suffix(cfg, "align");
 	hd->partition_table = cfg_getbool(cfg, "partition-table");
@@ -550,9 +642,27 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 	}
 
 	if (hd->partition_table) {
-		now = 512;
-		if (hd->gpt)
-			now = hd->gpt_location + (GPT_SECTORS - 1) * 512;
+		struct partition *mbr = fake_partition("[MBR]", 512 - sizeof(struct mbr_tail),
+						       sizeof(struct mbr_tail));
+
+		list_add_tail(&mbr->list, &image->partitions);
+		now = partition_end(mbr);
+		if (hd->gpt) {
+			struct partition *gpt_header, *gpt_array;
+			unsigned long long backup_offset, backup_size;
+
+			gpt_header = fake_partition("[GPT header]", 512, 512);
+			gpt_array = fake_partition("[GPT array]", hd->gpt_location, (GPT_SECTORS - 1) * 512);
+			list_add_tail(&gpt_header->list, &image->partitions);
+			list_add_tail(&gpt_array->list, &image->partitions);
+			now = partition_end(gpt_array);
+
+			/* Includes both the backup header and array. */
+			backup_size = GPT_SECTORS * 512;
+			backup_offset = image->size ? image->size - backup_size : 0;
+			gpt_backup = fake_partition("[GPT backup]", backup_offset, backup_size);
+			list_add_tail(&gpt_backup->list, &image->partitions);
+		}
 	}
 
 	partition_table_entries = 0;
@@ -609,6 +719,14 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 			now += hd->align;
 			now = roundup(now, part->align);
 		}
+		if (part == gpt_backup && !part->offset) {
+			/*
+			 * Make sure the backup, and hence the whole
+			 * image, ends at a 4K boundary.
+			 */
+			now += part->size;
+			part->offset = roundup(now, 4096) - part->size;
+		}
 		if (!part->offset && part->in_partition_table) {
 			part->offset = roundup(now, part->align);
 		}
@@ -623,9 +741,10 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 		}
 		if (part->autoresize) {
 			long long partsize = image->size - part->offset;
-			if (hd->gpt)
-				partsize -= GPT_SECTORS * 512;
-			if (partsize < 0) {
+			if (gpt_backup)
+				partsize -= gpt_backup->size;
+			partsize = rounddown(partsize, part->align);
+			if (partsize <= 0) {
 				image_error(image, "partitions exceed device size\n");
 				return -EINVAL;
 			}
@@ -660,12 +779,14 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 					part->name);
 			return -EINVAL;
 		}
-		if (part->offset && part->in_partition_table) {
-			if (now > part->offset) {
-				image_error(image, "part %s overlaps with previous partition\n",
-						part->name);
-				return -EINVAL;
-			}
+		if (!part->extended) {
+			int ret = check_overlap(image, part);
+			if (ret)
+				return ret;
+		} else if (now > part->offset) {
+			image_error(image, "part %s overlaps with previous partition\n",
+					part->name);
+			return -EINVAL;
 		}
 		if (part->in_partition_table && (part->size % 512)) {
 			image_error(image, "part %s size (%lld) must be a "
@@ -673,11 +794,9 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 					part->name, part->size);
 			return -EINVAL;
 		}
-		now = part->offset + part->size;
+		if (part->offset + part->size > now)
+			now = part->offset + part->size;
 	}
-
-	if (hd->gpt)
-		now += GPT_SECTORS * 512;
 
 	if (image->size > 0 && now > image->size) {
 		image_error(image, "partitions exceed device size\n");
@@ -685,10 +804,7 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 	}
 
 	if (image->size == 0) {
-		if (hd->gpt)
-			image->size = (now + 4095)/4096 * 4096;
-		else
-			image->size = now;
+		image->size = now;
 	}
 
 	image->handler_priv = hd;

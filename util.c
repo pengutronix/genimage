@@ -576,6 +576,173 @@ err_out:
 	return ret;
 }
 
+/*
+ * Write @size zero bytes at the @offset in @fd. Roughly equivalent to
+ * a single "pwrite(fd, big-all-zero-buffer, size, offset)", except
+ * that we try to use more efficient operations (ftruncate and
+ * fallocate). This only uses methods that do not affect the offset of
+ * fd.
+ */
+static int write_zeroes(int fd, size_t size, off_t offset)
+{
+	struct stat st;
+
+	if (!size)
+		return 0;
+
+	if (fstat(fd, &st) < 0)
+		return -errno;
+
+	if (S_ISREG(st.st_mode)) {
+		if (offset + size > (size_t)st.st_size) {
+			if (ftruncate(fd, offset + size) < 0)
+				return -errno;
+			/*
+			 * The area from st.st_size to offset+size is
+			 * zeroed by this operation. If offset was >=
+			 * st.st_size, we're done.
+			 */
+			if (offset >= st.st_size)
+				return 0;
+			/*
+			 * Otherwise, reduce size accordingly, we only
+			 * need to write zeroes from offset until the
+			 * old end of the file.
+			 */
+			size = st.st_size - offset;
+		}
+		/*
+		 * Maybe this should be guarded by a #ifdef
+		 * HAVE_FALLOCATE. That's easy to add, and the code
+		 * will just automatically fall through to the write
+		 * loop, the same way as if the filesystem doesn't
+		 * support FALLOC_FL_PUNCH_HOLE.
+		 */
+		if (fallocate(fd, FALLOC_FL_PUNCH_HOLE | FALLOC_FL_KEEP_SIZE,
+			      offset, size) == 0)
+			return 0;
+	}
+
+	/* Not a regular file, or fallocate not applicable. */
+	while (size) {
+		static char buf[4096];
+		size_t now = min(size, sizeof(buf));
+		int r;
+
+		r = pwrite(fd, buf, now, offset);
+		if (r < 0)
+			return -errno;
+		size -= r;
+		offset += r;
+	}
+	return 0;
+}
+
+/*
+ * Insert the image @sub at offset @offset in @image. If @sub is
+ * smaller than @size (including if @sub is NULL), insert 0 bytes for
+ * the remainder. If @sub is larger than @size, only the first @size
+ * bytes of it will be copied (it's up to the caller to ensure this
+ * doesn't happen). This means that after this call, exactly the range
+ * [offset, offset+size) in the output @image have been updated.
+ */
+int insert_image(struct image *image, struct image *sub,
+		 unsigned long long size, unsigned long long offset)
+{
+	struct extent *extents = NULL;
+	size_t extent_count = 0;
+	int fd = -1, in_fd = -1;
+	unsigned long long in_pos;
+	const char *infile;
+	unsigned e;
+	int ret;
+
+	fd = open_file(image, imageoutfile(image), 0);
+	if (fd < 0) {
+		ret = fd;
+		goto out;
+	}
+	if (lseek(fd, offset, SEEK_SET) < 0) {
+		ret = -errno;
+		goto out;
+	}
+	if (!sub)
+		goto fill;
+
+	infile = imageoutfile(sub);
+	in_fd = open(infile, O_RDONLY);
+	if (in_fd < 0) {
+		ret = -errno;
+		image_error(image, "open %s: %s", infile, strerror(errno));
+		goto out;
+	}
+	ret = map_file_extents(image, infile, in_fd, size, &extents, &extent_count);
+	if (ret)
+		goto out;
+	image_debug(image, "copying %llu bytes from %s at offset %llu\n",
+		    size, infile, offset);
+	in_pos = 0;
+	for (e = 0; e < extent_count && size > 0; e++) {
+		const struct extent *ext = &extents[e];
+		size_t len = ext->start - in_pos;
+
+		/*
+		 * If the input file is larger than size, it might
+		 * have an extent that starts beyond size.
+		 */
+		len = min(len, size);
+		ret = write_zeroes(fd, len, offset);
+		if (ret) {
+			image_error(image, "writing %zu zeroes failed: %s\n", len, strerror(-ret));
+			goto out;
+		}
+		size -= len;
+		offset += len;
+		in_pos += len;
+		while (in_pos < ext->end && size > 0) {
+			char buf[4096];
+			size_t now;
+			int r, w;
+
+			now = min(ext->end - in_pos, sizeof(buf));
+			now = min(now, size);
+			r = pread(in_fd, buf, now, in_pos);
+			if (r < 0) {
+				ret = -errno;
+				image_error(image, "reading %zu bytes from %s failed: %s\n",
+					    now, infile, strerror(errno));
+				goto out;
+			}
+			w = pwrite(fd, buf, r, offset);
+			if (w < r) {
+				ret = w < 0 ? -errno : -EIO;
+				if (w < 0)
+					image_error(image, "write %d bytes: %s\n", r, strerror(errno));
+				else
+					image_error(image, "short write (%d vs %d)\n", w, r);
+				goto out;
+			}
+			size -= now;
+			offset += now;
+			in_pos += now;
+		}
+	}
+
+fill:
+	image_debug(image, "adding %llu nul bytes at offset %llu\n", size, offset);
+	ret = write_zeroes(fd, size, offset);
+	if (ret)
+		image_error(image, "writing %llu zeroes failed: %s\n", size, strerror(-ret));
+
+out:
+	if (fd >= 0)
+		close(fd);
+	if (in_fd >= 0)
+		close(in_fd);
+	free(extents);
+	return ret;
+}
+
 int insert_data(struct image *image, const void *_data, const char *outfile,
 		size_t size, long offset)
 {
