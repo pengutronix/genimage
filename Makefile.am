@@ -83,6 +83,15 @@ EXTRA_DIST += \
 	test/hdimage7.config \
 	test/hdimage7.fdisk \
 	test/hole.config \
+	test/hdimage-hybrid.config \
+	test/hdimage-hybrid.fdisk \
+	test/hdimage-fail1.config \
+	test/hdimage-fail2.config \
+	test/hdimage-fail3.config \
+	test/hdimage-fail4.config \
+	test/hdimage-fail5.config \
+	test/hdimage-fail6.config \
+	test/hdimage-fail7.config \
 	test/iso.config \
 	test/jffs2.config \
 	test/jffs2.md5 \
