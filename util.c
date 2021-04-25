@@ -713,6 +713,9 @@ int insert_image(struct image *image, struct image *sub,
 					    now, infile, strerror(errno));
 				goto out;
 			}
+			if (r == 0)
+				break;
+
 			w = pwrite(fd, buf, r, offset);
 			if (w < r) {
 				ret = w < 0 ? -errno : -EIO;
@@ -722,9 +725,9 @@ int insert_image(struct image *image, struct image *sub,
 					image_error(image, "short write (%d vs %d)\n", w, r);
 				goto out;
 			}
-			size -= now;
-			offset += now;
-			in_pos += now;
+			size -= w;
+			offset += w;
+			in_pos += w;
 		}
 	}
 
