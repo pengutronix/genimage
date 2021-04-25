@@ -577,15 +577,15 @@ err_out:
 }
 
 /*
- * Write @size zero bytes at the @offset in @fd. Roughly equivalent to
- * a single "pwrite(fd, big-all-zero-buffer, size, offset)", except
- * that we try to use more efficient operations (ftruncate and
- * fallocate). This only uses methods that do not affect the offset of
- * fd.
+ * Write @size @byte bytes at the @offset in @fd. Roughly equivalent to
+ * a single "pwrite(fd, big-buffer, size, offset)", except that we try to use
+ * more efficient operations (ftruncate and fallocate) if @byte is zero. This
+ * only uses methods that do not affect the offset of fd.
  */
-static int write_zeroes(int fd, size_t size, off_t offset)
+static int write_bytes(int fd, size_t size, off_t offset, unsigned char byte)
 {
 	struct stat st;
+	char buf[4096];
 
 	if (!size)
 		return 0;
@@ -593,7 +593,7 @@ static int write_zeroes(int fd, size_t size, off_t offset)
 	if (fstat(fd, &st) < 0)
 		return -errno;
 
-	if (S_ISREG(st.st_mode)) {
+	if (S_ISREG(st.st_mode) && (byte == 0)) {
 		if (offset + size > (size_t)st.st_size) {
 			if (ftruncate(fd, offset + size) < 0)
 				return -errno;
@@ -606,7 +606,7 @@ static int write_zeroes(int fd, size_t size, off_t offset)
 				return 0;
 			/*
 			 * Otherwise, reduce size accordingly, we only
-			 * need to write zeroes from offset until the
+			 * need to write bytes from offset until the
 			 * old end of the file.
 			 */
 			size = st.st_size - offset;
@@ -623,9 +623,9 @@ static int write_zeroes(int fd, size_t size, off_t offset)
 			return 0;
 	}
 
-	/* Not a regular file, or fallocate not applicable. */
+	/* Not a regular file, non-zero pattern, or fallocate not applicable. */
+	memset(buf, byte, sizeof(buf));
 	while (size) {
-		static char buf[4096];
 		size_t now = min(size, sizeof(buf));
 		int r;
 
@@ -640,14 +640,15 @@ static int write_zeroes(int fd, size_t size, off_t offset)
 
 /*
  * Insert the image @sub at offset @offset in @image. If @sub is
- * smaller than @size (including if @sub is NULL), insert 0 bytes for
+ * smaller than @size (including if @sub is NULL), insert @byte bytes for
  * the remainder. If @sub is larger than @size, only the first @size
  * bytes of it will be copied (it's up to the caller to ensure this
  * doesn't happen). This means that after this call, exactly the range
  * [offset, offset+size) in the output @image have been updated.
  */
 int insert_image(struct image *image, struct image *sub,
-		 unsigned long long size, unsigned long long offset)
+		 unsigned long long size, unsigned long long offset,
+		 unsigned char byte)
 {
 	struct extent *extents = NULL;
 	size_t extent_count = 0;
@@ -691,9 +692,9 @@ int insert_image(struct image *image, struct image *sub,
 		 * have an extent that starts beyond size.
 		 */
 		len = min(len, size);
-		ret = write_zeroes(fd, len, offset);
+		ret = write_bytes(fd, len, offset, byte);
 		if (ret) {
-			image_error(image, "writing %zu zeroes failed: %s\n", len, strerror(-ret));
+			image_error(image, "writing %zu bytes failed: %s\n", len, strerror(-ret));
 			goto out;
 		}
 		size -= len;
@@ -732,10 +733,11 @@ int insert_image(struct image *image, struct image *sub,
 	}
 
 fill:
-	image_debug(image, "adding %llu nul bytes at offset %llu\n", size, offset);
-	ret = write_zeroes(fd, size, offset);
+	image_debug(image, "adding %llu %#hhx bytes at offset %llu\n",
+			size, byte, offset);
+	ret = write_bytes(fd, size, offset, byte);
 	if (ret)
-		image_error(image, "writing %llu zeroes failed: %s\n", size, strerror(-ret));
+		image_error(image, "writing %llu bytes failed: %s\n", size, strerror(-ret));
 
 out:
 	if (fd >= 0)
