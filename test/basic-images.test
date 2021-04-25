@@ -408,12 +408,16 @@ test_expect_success rauc "rauc" "
 		--keyring input/rauc-openssl-ca/ca.cert.pem \
 		--cert input/rauc-openssl-ca/ca.cert.pem \
 		images/test.raucb \
+		| sed -e 's;O = Test Org, CN = ;/O=Test Org/CN=;' \
+		      -e '/Bundle Format:[ \t]*plain$/d' \
 		> test.raucb.info &&
 	test_cmp '${testdir}/test.raucb.info' test.raucb.info &&
 	rauc info \
 		--keyring input/rauc-openssl-ca/ca.cert.pem \
 		--cert input/rauc-openssl-ca/ca.cert.pem \
 		images/test2.raucb \
+		| sed -e 's;O = Test Org, CN = ;/O=Test Org/CN=;' \
+		      -e '/Bundle Format:[ \t]*plain$/d' \
 		> test2.raucb.info &&
 	test_cmp '${testdir}/test2.raucb.info' test2.raucb.info
 "
