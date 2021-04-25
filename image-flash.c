@@ -32,37 +32,36 @@ struct flash_image {
 static int flash_generate(struct image *image)
 {
 	struct partition *part;
-	enum pad_mode mode = MODE_OVERWRITE;
+	unsigned long long end = 0;
+
+	(void)truncate(imageoutfile(image), 0);
 
 	list_for_each_entry(part, &image->partitions, list) {
-		struct image *child;
-		const char *infile;
+		struct image *child = NULL;
 		int ret;
 
 		image_info(image, "writing image partition '%s' (0x%llx@0x%llx)\n",
 			part->name, part->size, part->offset);
 
-		ret = pad_file(image, NULL, part->offset, 0xFF, mode);
-		if (ret) {
-			image_error(image, "failed to pad image to size %lld\n",
-					part->offset);
-			return ret;
+		if (part->offset > end) {
+			ret = insert_image(image, NULL, part->offset - end, end, 0xFF);
+			if (ret) {
+				image_error(image, "failed to pad image to size %lld\n",
+						part->offset);
+				return ret;
+			}
 		}
-		mode = MODE_APPEND;
 
-		if (part->image) {
+		if (part->image)
 			child = image_get(part->image);
-			infile = imageoutfile(child);
-		} else {
-			infile = NULL;
-		}
 
-		ret = pad_file(image, infile, part->offset + part->size, 0xFF, mode);
+		ret = insert_image(image, child, part->size, part->offset, 0xFF);
 		if (ret) {
 			image_error(image, "failed to write image partition '%s'\n",
 					part->name);
 			return ret;
 		}
+		end = part->offset + part->size;
 	}
 
 	return 0;
