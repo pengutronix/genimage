@@ -16,6 +16,7 @@
  */
 
 #include <confuse.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -25,6 +26,7 @@
 #include <stdbool.h>
 #include <unistd.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 
 #include "genimage.h"
 
@@ -43,6 +45,7 @@ struct hdimage {
 	unsigned long long gpt_location;
 	cfg_bool_t gpt_no_backup;
 	cfg_bool_t fill;
+	unsigned long long file_size;
 };
 
 struct mbr_partition_entry {
@@ -402,15 +405,32 @@ static int hdimage_generate(struct image *image)
 {
 	struct partition *part;
 	struct hdimage *hd = image->handler_priv;
+	struct stat s;
 	int ret;
 
-	/*
-	 * If the output file doesn't exist, that's perfectly ok. If
-	 * it does, calling truncate() here is equivalent to passing
-	 * O_TRUNC on the first open(). The assignment to ret is
-	 * merely to silence a warn_unused_result warning.
-	 */
-	ret = truncate(imageoutfile(image), 0);
+	if (!is_block_device(imageoutfile(image))) {
+		/* for regular files, create the file or truncate it to zero
+		 * size to remove all existing content */
+		int fd = open_file(image, imageoutfile(image), O_TRUNC);
+		if (fd < 0)
+			return fd;
+
+		/*
+		 * Resize the file immediately to the final size. This is not
+		 * strictly necessary but this circumvents XFS preallocation
+		 * heuristics. Without this, the holes in the image may be smaller
+		 * than necessary.
+		 */
+		ret = ftruncate(fd, hd->file_size);
+		close(fd);
+		if (ret < 0) {
+			ret = -errno;
+			image_error(image, "failed to truncate %s to %lld: %s\n",
+				    imageoutfile(image), hd->file_size,
+				    strerror(-ret));
+			return ret;
+		}
+	}
 
 	list_for_each_entry(part, &image->partitions, list) {
 		struct image *child;
@@ -464,6 +484,19 @@ static int hdimage_generate(struct image *image)
 			image_error(image, "failed to fill the image.\n");
 			return ret;
 		}
+	}
+
+	ret = stat(imageoutfile(image), &s);
+	if (ret) {
+		ret = -errno;
+		image_error(image, "stat(%s) failed: %s\n", imageoutfile(image),
+				strerror(errno));
+		return ret;
+	}
+	if (hd->file_size != (unsigned long long)s.st_size) {
+		image_error(image, "unexpected output file size: %llu != %llu\n",
+				hd->file_size, (unsigned long long)s.st_size);
+		return -EINVAL;
 	}
 
 	if (hd->table_type != TYPE_NONE)
@@ -838,6 +871,15 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 		}
 		if (part->offset + part->size > now)
 			now = part->offset + part->size;
+
+		if (part->image) {
+			struct image *child = image_get(part->image);
+			if (part->offset + child->size > hd->file_size) {
+				hd->file_size = part->offset + child->size;
+			}
+		}
+		else if (part->extended)
+			hd->file_size = part->offset - hd->align + 512;
 	}
 
 	if (hybrid_entries > 3) {
@@ -858,6 +900,9 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 	if (image->size == 0) {
 		image->size = now;
 	}
+
+	if (hd->fill || ((hd->table_type & TYPE_GPT) && !hd->gpt_no_backup))
+		hd->file_size = image->size;
 
 	image->handler_priv = hd;
 
