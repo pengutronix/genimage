@@ -1,0 +1,42 @@
+Filesystem volume name:   ext2test
+Last mounted on:          <not available>
+Filesystem magic number:  0xEF53
+Filesystem revision #:    1 (dynamic)
+Filesystem features:      (none)
+Default mount options:    (none)
+Filesystem state:         clean
+Errors behavior:          Unknown (continue)
+Filesystem OS type:       Linux
+Inode count:              56
+Block count:              68
+Reserved block count:     3
+Free blocks:              22
+Free inodes:              5
+First block:              1
+Block size:               1024
+Fragment size:            1024
+Blocks per group:         72
+Fragments per group:      72
+Inodes per group:         56
+Inode blocks per group:   7
+Filesystem created:       Sat Jan  1 00:00:00 2000
+Last mount time:          n/a
+Last write time:          Sat Jan  1 00:00:00 2000
+Mount count:              0
+Maximum mount count:      20
+Last checked:             Sat Jan  1 00:00:00 2000
+Check interval:           0 (<none>)
+Reserved blocks uid:      0 (user root)
+Reserved blocks gid:      0 (group root)
+First inode:              11
+Inode size:	          128
+
+
+Group 0: (Blocks 1-67)
+  Primary superblock at 1, Group descriptors at 2-2
+  Block bitmap at 3 (+2)
+  Inode bitmap at 4 (+3)
+  Inode table at 5-11 (+4)
+  22 free blocks, 5 free inodes, 18 directories
+  Free blocks: 46-67
+  Free inodes: 52-56

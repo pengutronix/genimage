@@ -164,7 +164,21 @@ check_ext() {
 	sed -i 's/^\(Journal size:             \)1029k$/\11024k/' "dump" &&
 	# output format changed with some version
 	sed -i 's/^\(  Block bitmap at .*\),\( Inode bitmap.*\)$/\1\n \2/' "dump" &&
-	test_cmp "${testdir}/${2}.dump" "dump" &&
+	# convert to latest dump2fs output
+	sed -i  -e 's/^J\(ournal size:\)      /Total j\1/' \
+		-e 's/^Journal length:      \( *\)\(.*\)$/Total journal blocks:\1\2\nMax transaction length:   \2\nFast commit length:       0/' \
+		-e '/^Overhead clusters:/d' \
+		"dump" &&
+	if [ "${4}" = "genext2fs" ]; then
+		if [ "$(genext2fs --version)" = "genext2fs 1.4.1" ]; then
+			version=0
+		else
+			version=1
+		fi
+	else
+		version=0
+	fi
+	test_cmp "${testdir}/${2}.${version}.dump" "dump" &&
 	e2fsck -nf "${1}" &&
 	# old versions of debugfs cannot dump '/'
 	debugfs -R "ls -p" "${1}" | (
@@ -185,29 +199,29 @@ exec_test_set_prereq genext2fs
 exec_test_set_prereq e2fsck
 test_expect_success genext2fs,e2fsck "ext2" "
 	run_genimage ext2.config test.ext2 &&
-	check_ext images/test.ext2 ext2test 4194304
+	check_ext images/test.ext2 ext2test 4194304 genext2fs
 "
 
 test_expect_success genext2fs,e2fsck "ext2percent" "
 	run_genimage ext2percent.config test.ext2 &&
-	check_ext images/test.ext2 ext2test-percent 69632
+	check_ext images/test.ext2 ext2test-percent 69632 genext2fs
 "
 
 test_expect_success genext2fs,e2fsck "ext3" "
 	run_genimage ext3.config test.ext3 &&
-	check_ext images/test.ext3 ext3test 4194304
+	check_ext images/test.ext3 ext3test 4194304 genext2fs
 "
 
 test_expect_success genext2fs,e2fsck "ext4" "
 	run_genimage ext4.config test.ext4 &&
-	check_ext images/test.ext4 ext4test 4194304
+	check_ext images/test.ext4 ext4test 4194304 genext2fs
 "
 
 # make sure mke2fs supports '-d root-directory'
 [ "$(mke2fs |& sed -n 's/.*\(-d \).*/\1/p')" = "-d " ] && test_set_prereq mke2fs
 test_expect_success mke2fs,e2fsck "mke2fs" "
 	run_genimage mke2fs.config mke2fs.ext4 &&
-	check_ext images/mke2fs.ext4 mke2fs 33554432
+	check_ext images/mke2fs.ext4 mke2fs 33554432 mke2fs
 "
 
 setup_test_images() {
