@@ -331,6 +331,14 @@ static struct config opts[] = {
 		.env = "GENIMAGE_OUTPUTPATH",
 		.def = "images",
 	}, {
+		.name = "includepath",
+		.opt = CFG_STR("includepath", NULL, CFGF_NONE),
+		.env = "GENIMAGE_INCLUDEPATH",
+		.def = NULL,
+#ifndef HAVE_SEARCHPATH
+		.hidden = 1,
+#endif
+	}, {
 		.name = "cpio",
 		.opt = CFG_STR("cpio", NULL, CFGF_NONE),
 		.env = "GENIMAGE_CPIO",

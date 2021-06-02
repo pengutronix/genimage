@@ -78,7 +78,9 @@ CC_CHECK_CFLAGS_SILENT([-fdata-sections],[AM_CFLAGS="${AM_CFLAGS} -fdata-section
 CC_CHECK_LDFLAGS([-Wl,--as-needed], [AM_LDFLAGS="${AM_LDFLAGS} -Wl,--as-needed"],[])
 CC_CHECK_LDFLAGS([-Wl,--gc-sections], [AM_LDFLAGS="${AM_LDFLAGS} -Wl,--gc-sections"],[])
 
-PKG_CHECK_MODULES(CONFUSE, libconfuse)
+PKG_CHECK_MODULES(CONFUSE, libconfuse >= 2.8,
+       [AC_DEFINE([HAVE_SEARCHPATH], [1], [Define if cfg_add_searchpath() is available])],
+       [PKG_CHECK_MODULES(CONFUSE, libconfuse)])
 
 # ------- use all the settings ----------------------
 
