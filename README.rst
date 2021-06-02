@@ -516,10 +516,12 @@ Example flash section::
 The config section
 ------------------
 
-In this section the global behaviour of the program is described. Except as noted below, all options
-here can be given from either environment variables, the config file or
-command line switches. For instance, a config option ``foo`` can be passed as a
-``--foo`` command line switch or as a GENIMAGE_FOO environment variable.
+In this section the global behaviour of the program is
+described. Except as noted below, all options here can be given from
+either environment variables, the config file or command line
+switches. For instance, a config option ``foo`` can be passed as a
+``--foo`` command line switch or as a GENIMAGE_FOO environment
+variable.
 
 :config:	default: ``genimage.cfg``
 		Path to the genimage config file.
