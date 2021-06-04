@@ -79,7 +79,7 @@ static int ext2_generate_mke2fs(struct image *image)
 		label = NULL;
 
 	if (is_block_device(imageoutfile(image)))
-		pad_file(image, NULL, 2048, 0x0, MODE_OVERWRITE);
+		insert_image(image, NULL, 2048, 0, 0);
 
 	return systemp(image, "%s%s -t %s%s -I 256 -E 'root_owner=%s,%s'%s %s%s%s %s %s%s %s%s%s '%s' %lldk",
 			ext->conf_env, get_opt("mke2fs"), image->handler->type,
