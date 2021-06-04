@@ -55,13 +55,17 @@ EXTRA_DIST += \
 	test/exec-fail.config \
 	test/exec.config \
 	test/ext2.config \
-	test/ext2test.dump \
+	test/ext2test.0.dump \
+	test/ext2test.1.dump \
 	test/ext2percent.config \
-	test/ext2test-percent.dump \
+	test/ext2test-percent.0.dump \
+	test/ext2test-percent.1.dump \
 	test/ext3.config \
-	test/ext3test.dump \
+	test/ext3test.0.dump \
+	test/ext3test.1.dump \
 	test/ext4.config \
-	test/ext4test.dump \
+	test/ext4test.0.dump \
+	test/ext4test.1.dump \
 	test/fit.its \
 	test/fit.config \
 	test/flash-types.config \
@@ -97,7 +101,7 @@ EXTRA_DIST += \
 	test/jffs2.md5 \
 	test/mke2fs.conf \
 	test/mke2fs.config \
-	test/mke2fs.dump \
+	test/mke2fs.0.dump \
 	test/qemu.config \
 	test/qemu.qcow.gz \
 	test/rauc-openssl-ca/ca.cert.pem \
