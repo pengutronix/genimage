@@ -30,7 +30,6 @@ struct config {
 	const char *name;
 	cfg_opt_t opt;
 	const char *env;
-	char cmdlineopt;
 	struct list_head list;
 	char *value;
 	char *def;
