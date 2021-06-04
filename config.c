@@ -96,28 +96,6 @@ static int set_opt(const char *name, const char *value)
 }
 
 /*
- * Add a new option
- *
- * name:	name of the option
- * env:		environment variable this option corresponds to
- * opt:		confuse option
- * def:		default value
- */
-static int add_opt(const char *name, const char *env, cfg_opt_t *opt, char *def)
-{
-	struct config *c = xzalloc(sizeof(*c));
-
-	c->name = name;
-	c->env = env;
-	c->def = def;
-	memcpy(&c->opt, opt, sizeof(cfg_opt_t));
-
-	list_add_tail(&c->list, &optlist);
-
-	return 0;
-}
-
-/*
  * convert all options from the options list to a cfg_opt_t
  * array suitable for confuse
  */
@@ -466,12 +444,11 @@ static struct config opts[] = {
 int init_config(void)
 {
 	unsigned int i;
-	int ret;
 
 	for (i = 0; i < ARRAY_SIZE(opts); i++) {
-		ret = add_opt(opts[i].name, opts[i].env, &opts[i].opt, opts[i].def);
-		if (ret)
-			return ret;
+		struct config *c = &opts[i];
+
+		list_add_tail(&c->list, &optlist);
 	}
 
 	return 0;
