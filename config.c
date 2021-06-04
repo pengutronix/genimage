@@ -33,6 +33,7 @@ struct config {
 	struct list_head list;
 	char *value;
 	char *def;
+	int hidden;
 };
 
 static void show_help(const char *cmd)
@@ -47,6 +48,8 @@ static void show_help(const char *cmd)
 	       "  -v, --version\n", cmd);
 	list_for_each_entry(c, &optlist, list) {
 		char opt[20], def[20];
+		if (c->hidden)
+			continue;
 		snprintf(opt, 20, "%s <arg>", c->name);
 		snprintf(def, 20, "[ %s ]", c->def);
 		printf("  --%-20s %-20s (%s)\n", opt, c->def ? def : "", c->env);
