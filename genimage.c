@@ -597,6 +597,39 @@ static int setenv_image(const struct image *image)
 	return 0;
 }
 
+#ifdef HAVE_SEARCHPATH
+static int add_searchpath(cfg_t *cfg, const char *dir)
+{
+	if (cfg_add_searchpath(cfg, dir)) {
+		error("error adding %s to include search path", dir);
+		return -1;
+	}
+	return 0;
+}
+
+static int set_include_path(cfg_t *cfg, const char *path)
+{
+	char *dup, *s, *e;
+	int ret;
+
+	e = dup = strdup(path);
+	do {
+		s = e;
+		e = strchr(s, ':');
+		if (e)
+			*e++ = '\0';
+		ret = add_searchpath(cfg, s);
+		if (ret)
+			goto out;
+	} while (e);
+	/* Make sure current directory is always searched. */
+	ret = add_searchpath(cfg, ".");
+out:
+	free(dup);
+	return ret;
+}
+#endif
+
 int main(int argc, char *argv[])
 {
 	unsigned int i;
@@ -606,7 +639,7 @@ int main(int argc, char *argv[])
 				ARRAY_SIZE(handlers) + 1) * sizeof(cfg_opt_t));
 	int start;
 	struct image *image;
-	char *str;
+	const char *str;
 	cfg_t *cfg;
 	struct partition *part;
 
@@ -646,6 +679,18 @@ int main(int argc, char *argv[])
 	set_config_opts(argc, argv, NULL);
 
 	cfg = cfg_init(top_opts, CFGF_NONE);
+	str = get_opt("includepath");
+	if (str) {
+#ifdef HAVE_SEARCHPATH
+		ret = set_include_path(cfg, str);
+		if (ret)
+			goto cleanup;
+#else
+		error("--includepath used, but genimage built with too old libconfuse\n");
+		ret = -1;
+		goto cleanup;
+#endif
+	}
 
 	ret = cfg_parse(cfg, get_opt("config"));
 	switch (ret) {

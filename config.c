@@ -30,10 +30,10 @@ struct config {
 	const char *name;
 	cfg_opt_t opt;
 	const char *env;
-	char cmdlineopt;
 	struct list_head list;
 	char *value;
 	char *def;
+	int hidden;
 };
 
 static void show_help(const char *cmd)
@@ -48,6 +48,8 @@ static void show_help(const char *cmd)
 	       "  -v, --version\n", cmd);
 	list_for_each_entry(c, &optlist, list) {
 		char opt[20], def[20];
+		if (c->hidden)
+			continue;
 		snprintf(opt, 20, "%s <arg>", c->name);
 		snprintf(def, 20, "[ %s ]", c->def);
 		printf("  --%-20s %-20s (%s)\n", opt, c->def ? def : "", c->env);
@@ -91,28 +93,6 @@ static int set_opt(const char *name, const char *value)
 	}
 
 	return -EINVAL;
-}
-
-/*
- * Add a new option
- *
- * name:	name of the option
- * env:		environment variable this option corresponds to
- * opt:		confuse option
- * def:		default value
- */
-static int add_opt(const char *name, const char *env, cfg_opt_t *opt, char *def)
-{
-	struct config *c = xzalloc(sizeof(*c));
-
-	c->name = name;
-	c->env = env;
-	c->def = def;
-	memcpy(&c->opt, opt, sizeof(cfg_opt_t));
-
-	list_add_tail(&c->list, &optlist);
-
-	return 0;
 }
 
 /*
@@ -351,6 +331,14 @@ static struct config opts[] = {
 		.env = "GENIMAGE_OUTPUTPATH",
 		.def = "images",
 	}, {
+		.name = "includepath",
+		.opt = CFG_STR("includepath", NULL, CFGF_NONE),
+		.env = "GENIMAGE_INCLUDEPATH",
+		.def = NULL,
+#ifndef HAVE_SEARCHPATH
+		.hidden = 1,
+#endif
+	}, {
 		.name = "cpio",
 		.opt = CFG_STR("cpio", NULL, CFGF_NONE),
 		.env = "GENIMAGE_CPIO",
@@ -464,12 +452,11 @@ static struct config opts[] = {
 int init_config(void)
 {
 	unsigned int i;
-	int ret;
 
 	for (i = 0; i < ARRAY_SIZE(opts); i++) {
-		ret = add_opt(opts[i].name, opts[i].env, &opts[i].opt, opts[i].def);
-		if (ret)
-			return ret;
+		struct config *c = &opts[i];
+
+		list_add_tail(&c->list, &optlist);
 	}
 
 	return 0;

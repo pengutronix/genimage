@@ -43,6 +43,7 @@ run_genimage() {
 		--inputpath=input \
 		--rootpath=root \
 		--tmppath=tmp \
+		${extra_opts} \
 		--config "${1}"
 }
 
@@ -514,6 +515,38 @@ test_expect_success "bootloader-hole4" "
 test_expect_success "bootloader-hole5" "
 	setup_gpt_files &&
 	OFFSET=128K run_genimage hole.config"
+
+
+"$genimage" --help | grep -q 'GENIMAGE_INCLUDEPATH' && test_set_prereq "includepath"
+
+test_expect_success fdisk-gpt,sfdisk-gpt "includepath1" "
+	run_genimage include.config &&
+	sanitized_fdisk_sfdisk images/include.hdimage > include.fdisk &&
+	test_cmp '${testdir}/include-ccc.fdisk' include.fdisk
+"
+
+test_expect_success fdisk-gpt,sfdisk-gpt,includepath "includepath2" "
+	extra_opts='--includepath=${testdir}/include/aaa' run_genimage include.config &&
+	sanitized_fdisk_sfdisk images/include.hdimage > include.fdisk &&
+	test_cmp '${testdir}/include-aaa.fdisk' include.fdisk
+"
+
+test_expect_success fdisk-gpt,sfdisk-gpt,includepath "includepath3" "
+	extra_opts='--includepath=${testdir}/include/bbb:${testdir}/include/aaa' run_genimage include.config &&
+	sanitized_fdisk_sfdisk images/include.hdimage > include.fdisk &&
+	test_cmp '${testdir}/include-bbb.fdisk' include.fdisk
+"
+
+test_expect_success fdisk-gpt,sfdisk-gpt,includepath "includepath4" "
+	extra_opts='--includepath=.:${testdir}/include/bbb' run_genimage include.config &&
+	sanitized_fdisk_sfdisk images/include.hdimage > include.fdisk &&
+	test_cmp '${testdir}/include-ccc.fdisk' include.fdisk
+"
+
+test_expect_success !includepath "includepath5" "
+	extra_opts='--includepath=${testdir}/include/aaa' test_must_fail run_genimage include.config
+"
+
 
 test_done
 

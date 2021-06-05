@@ -516,10 +516,12 @@ Example flash section::
 The config section
 ------------------
 
-In this section the global behaviour of the program is described. All options
-here can be given from either environment variables, the config file or
-command line switches. For instance, a config option ``foo`` can be passed as a
-``--foo`` command line switch or as a GENIMAGE_FOO environment variable.
+In this section the global behaviour of the program is
+described. Except as noted below, all options here can be given from
+either environment variables, the config file or command line
+switches. For instance, a config option ``foo`` can be passed as a
+``--foo`` command line switch or as a GENIMAGE_FOO environment
+variable.
 
 :config:	default: ``genimage.cfg``
 		Path to the genimage config file.
@@ -537,6 +539,11 @@ command line switches. For instance, a config option ``foo`` can be passed as a
 :tmppath:	default: tmp
 		Optional path to a temporary directory. There must be enough space
 		available here to hold a copy of the root filesystem.
+:includepath:	Colon-separated list of directories to search for files
+		included via the ``include'' function. The current
+		directory is searched after these. Thus, if this
+		option is not given, only the current directory is
+		searched. This has no effect when given in the config file.
 
 :cpio:		path to the cpio program (default cpio)
 :dd:		path to the dd program (default dd)

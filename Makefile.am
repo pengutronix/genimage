@@ -96,6 +96,13 @@ EXTRA_DIST += \
 	test/hdimage-fail5.config \
 	test/hdimage-fail6.config \
 	test/hdimage-fail7.config \
+	test/include-aaa.fdisk \
+	test/include-bbb.fdisk \
+	test/include-ccc.fdisk \
+	test/include-test.config \
+	test/include.config \
+	test/include/aaa/include-test.config \
+	test/include/bbb/include-test.config \
 	test/iso.config \
 	test/jffs2.config \
 	test/jffs2.md5 \
