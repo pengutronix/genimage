@@ -118,6 +118,7 @@ static int android_sparse_generate(struct image *image)
 	struct extent *extents = NULL;
 	size_t extent_count, extent, block_count, block;
 	int in_fd = -1, out_fd = -1, ret;
+	off_t offset;
 	unsigned int i;
 	uint32_t *buf, *zeros, crc32 = 0;
 	struct stat s;
@@ -223,8 +224,8 @@ static int android_sparse_generate(struct image *image)
 			for (i = 0; i < chunk_header.blocks; ++i)
 				crc32 = crc32_next(zeros, sparse->block_size, crc32);
 		}
-		ret = lseek(in_fd, extents[extent].start, SEEK_SET);
-		if (ret < 0) {
+		offset = lseek(in_fd, extents[extent].start, SEEK_SET);
+		if (offset < 0) {
 			ret = -errno;
 			image_error(image, "seek %s: %s\n", infile, strerror(errno));
 			goto out;
@@ -330,8 +331,8 @@ static int android_sparse_generate(struct image *image)
 	if (ret < 0)
 		goto out;
 
-	ret = lseek(out_fd, 0, SEEK_SET);
-	if (ret < 0) {
+	offset = lseek(out_fd, 0, SEEK_SET);
+	if (offset < 0) {
 		ret = -errno;
 		image_error(image, "seek %s: %s\n", infile, strerror(errno));
 		goto out;
