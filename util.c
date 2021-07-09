@@ -216,6 +216,7 @@ int systemp(struct image *image, const char *fmt, ...)
 	pid = fork();
 
 	if (!pid) {
+		const char *shell;
 		int fd;
 
 		if (loglevel() < 1) {
@@ -230,7 +231,11 @@ int systemp(struct image *image, const char *fmt, ...)
 			dup2(STDERR_FILENO, STDOUT_FILENO);
 		}
 
-		ret = execl("/bin/sh", "sh", "-c", buf, NULL);
+		shell = getenv("SHELL");
+		if (!shell || shell[0] == 0x0)
+			shell = "/bin/sh";
+
+		ret = execl(shell, shell, "-c", buf, NULL);
 		if (ret < 0) {
 			ret = -errno;
 			error("Cannot execute %s: %s\n", buf, strerror(errno));
