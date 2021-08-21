@@ -725,12 +725,12 @@ char *uuid_random(void)
 {
 	char *uuid;
 
-	asprintf(&uuid, "%04lx%04lx-%04lx-%04lx-%04lx-%04lx%04lx%04lx",
-		 random() & 0xffff, random() & 0xffff,
-		 random() & 0xffff,
-		 (random() & 0x0fff) | 0x4000,
-		 (random() & 0x3fff) | 0x8000,
-		 random() & 0xffff, random() & 0xffff, random() & 0xffff);
+	xasprintf(&uuid, "%04lx%04lx-%04lx-%04lx-%04lx-%04lx%04lx%04lx",
+		  random() & 0xffff, random() & 0xffff,
+		  random() & 0xffff,
+		  (random() & 0x0fff) | 0x4000,
+		  (random() & 0x3fff) | 0x8000,
+		  random() & 0xffff, random() & 0xffff, random() & 0xffff);
 
 	return uuid;
 }
