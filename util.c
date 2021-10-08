@@ -231,7 +231,7 @@ int systemp(struct image *image, const char *fmt, ...)
 			dup2(STDERR_FILENO, STDOUT_FILENO);
 		}
 
-		shell = getenv("SHELL");
+		shell = getenv("GENIMAGE_SHELL");
 		if (!shell || shell[0] == 0x0)
 			shell = "/bin/sh";
 
