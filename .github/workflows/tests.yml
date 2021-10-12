@@ -10,8 +10,8 @@ jobs:
         include:
         - os: ubuntu-20.04
           pkgs: device-tree-compiler rauc simg2img u-boot-tools
-        - os: ubuntu-16.04
-          pkgs: cramfsprogs
+        - os: ubuntu-18.04
+          pkgs: device-tree-compiler simg2img u-boot-tools
 
     steps:
     - name: Inspect environment
