@@ -33,12 +33,18 @@ static int flash_generate(struct image *image)
 {
 	struct partition *part;
 	unsigned long long end = 0;
+	const char *outfile = imageoutfile(image);
+	int ret;
 
-	(void)truncate(imageoutfile(image), 0);
+	ret = truncate(outfile, 0);
+	if ((ret < 0) && (errno != ENOENT)) {
+		ret = -errno;
+		image_error(image, "truncate %s: %s\n", outfile, strerror(errno));
+		return ret;
+	}
 
 	list_for_each_entry(part, &image->partitions, list) {
 		struct image *child = NULL;
-		int ret;
 
 		image_info(image, "writing image partition '%s' (0x%llx@0x%llx)\n",
 			part->name, part->size, part->offset);
