@@ -29,36 +29,6 @@ struct file {
 	cfg_bool_t copy;
 };
 
-static int file_parse_holes(struct image *image, cfg_t *cfg)
-{
-	int i;
-
-	image->n_holes = cfg ? cfg_size(cfg, "holes") : 0;
-	if (image->n_holes == 0)
-		return 0;
-
-	image->holes = xzalloc(image->n_holes * sizeof(*image->holes));
-	for (i = 0; i < image->n_holes; i++) {
-		const char *s = cfg_getnstr(cfg, "holes", i);
-		char *start, *end;
-		int len;
-
-		if (sscanf(s, " ( %m[0-9skKMG] ; %m[0-9skKMG] ) %n", &start, &end, &len) != 2 ||
-		    len != (int)strlen(s)) {
-			image_error(image, "invalid hole specification '%s', use '(<start>;<end>)'\n",
-				    s);
-			return -EINVAL;
-		}
-
-		image->holes[i].start = strtoul_suffix(start, NULL, NULL);
-		image->holes[i].end = strtoul_suffix(end, NULL, NULL);
-		free(start);
-		free(end);
-		image_debug(image, "added hole (%llu, %llu)\n", image->holes[i].start, image->holes[i].end);
-	}
-	return 0;
-}
-
 static int file_generate(struct image *image)
 {
 	struct file *f = image->handler_priv;
@@ -110,7 +80,7 @@ static int file_setup(struct image *image, cfg_t *cfg)
 		free(image->outfile);
 		image->outfile = strdup(f->infile);
 	}
-	ret = file_parse_holes(image, cfg);
+	ret = parse_holes(image, cfg);
 	if (ret)
 		return ret;
 

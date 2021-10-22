@@ -579,7 +579,7 @@ static int check_overlap(struct image *image, struct partition *p)
 		return -EINVAL;
 	}
 	/* This should not be reached. */
-	image_error(image, "linked list corruption???");
+	image_error(image, "linked list corruption???\n");
 	return -EIO;
 }
 

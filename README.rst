@@ -304,6 +304,28 @@ useful data in that range. Further, in this example, the bootloader
 image has been carefully crafted to also allow placing the GPT array
 at offset 64K (the GPT header is always at offset 512).
 
+If the bootloader image is not declared explicitly and only used once then
+the holes can also be configured in the partition. This simplifies the
+config file for simple use-cases.
+
+For example::
+
+  image bar {
+	  hdimage {}
+
+	  partition bootloader {
+		  in-partition-table = false
+		  offset = 0
+		  image = "/path/to/bootloader.img"
+		  holes = {"(440; 512)"}
+	  }
+
+	  partition rootfs {
+		  offset = 1M
+		  image = "rootfs.ext4"
+	  }
+  }
+
 FIT
 ***
 Generates U-Boot FIT images.

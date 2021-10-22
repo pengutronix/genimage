@@ -49,6 +49,7 @@ struct partition {
 	const char *name;
 	const char *partition_type_uuid;
 	const char *partition_uuid;
+	cfg_t *cfg;
 };
 
 struct image {
@@ -168,6 +169,7 @@ int insert_data(struct image *image, const void *data, const char *outfile,
 		size_t size, long offset);
 int extend_file(struct image *image, size_t size);
 int reload_partitions(struct image *image);
+int parse_holes(struct image *image, cfg_t *cfg);
 
 unsigned long long cfg_getint_suffix(cfg_t *sec, const char *name);
 unsigned long long cfg_getint_suffix_percent(cfg_t *sec, const char *name,
