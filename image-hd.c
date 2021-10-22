@@ -576,6 +576,11 @@ static int check_overlap(struct image *image, struct partition *p)
 			    "partition %s (offset 0x%llx, size 0x%llx)\n",
 			    p->name, p->offset, p->size,
 			    q->name, q->offset, q->size);
+		if (!q->in_partition_table &&
+		    (!strcmp(p->name, "[MBR]") || !strncmp(p->name, "[GPT", 4)))
+			image_error(image, "bootloaders, etc. that overlap with the "
+				    "partition table must declare the overlapping "
+				    "area as a hole.\n");
 		return -EINVAL;
 	}
 	/* This should not be reached. */
