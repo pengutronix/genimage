@@ -98,6 +98,7 @@ static cfg_opt_t partition_opts[] = {
 	CFG_BOOL("hidden", cfg_false, CFGF_NONE),
 	CFG_BOOL("no-automount", cfg_false, CFGF_NONE),
 	CFG_STR("image", NULL, CFGF_NONE),
+	CFG_STR_LIST("holes", NULL, CFGF_NONE),
 	CFG_BOOL("autoresize", 0, CFGF_NONE),
 	CFG_BOOL("in-partition-table", cfg_true, CFGF_NONE),
 	CFG_STR("partition-uuid", NULL, CFGF_NONE),
@@ -311,6 +312,7 @@ static int parse_partitions(struct image *image, cfg_t *imagesec)
 		cfg_t *partsec = cfg_getnsec(imagesec, "partition", i);
 
 		part = xzalloc(sizeof *part);
+		part->cfg = partsec;
 		part->name = cfg_title(partsec);
 		list_add_tail(&part->list, &image->partitions);
 		part->size = cfg_getint_suffix(partsec, "size");
@@ -764,14 +766,21 @@ int main(int argc, char *argv[])
 			}
 
 			child = image_get(part->image);
-			if (child)
+			if (child) {
+				if (cfg_size(part->cfg, "holes") > 0) {
+					image_error(image, "holes in partitions are only valid for implicit child images!\n");
+					ret = -EINVAL;
+					goto cleanup;
+				}
 				continue;
+			}
 			image_debug(image, "adding implicit file rule for '%s'\n", part->image);
 			child = xzalloc(sizeof *image);
 			INIT_LIST_HEAD(&child->partitions);
 			list_add_tail(&child->list, &images);
 			child->file = part->image;
 			child->handler = &file_handler;
+			parse_holes(child, part->cfg);
 		}
 	}
 

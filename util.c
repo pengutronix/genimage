@@ -810,3 +810,36 @@ unsigned long long image_dir_size(struct image *image)
 		return 0;
 	return dir_size(image, AT_FDCWD, mountpath(image), 4096);
 }
+
+int parse_holes(struct image *image, cfg_t *cfg)
+{
+	int i;
+
+	if (image->n_holes > 0)
+		return 0;
+
+	image->n_holes = cfg ? cfg_size(cfg, "holes") : 0;
+	if (image->n_holes == 0)
+		return 0;
+
+	image->holes = xzalloc(image->n_holes * sizeof(*image->holes));
+	for (i = 0; i < image->n_holes; i++) {
+		const char *s = cfg_getnstr(cfg, "holes", i);
+		char *start, *end;
+		int len;
+
+		if (sscanf(s, " ( %m[0-9skKMG] ; %m[0-9skKMG] ) %n", &start, &end, &len) != 2 ||
+		    len != (int)strlen(s)) {
+			image_error(image, "invalid hole specification '%s', use '(<start>;<end>)'\n",
+				    s);
+			return -EINVAL;
+		}
+
+		image->holes[i].start = strtoul_suffix(start, NULL, NULL);
+		image->holes[i].end = strtoul_suffix(end, NULL, NULL);
+		free(start);
+		free(end);
+		image_debug(image, "added hole (%llu, %llu)\n", image->holes[i].start, image->holes[i].end);
+	}
+	return 0;
+}
