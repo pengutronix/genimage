@@ -19,6 +19,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #include "genimage.h"
 
@@ -28,6 +31,9 @@ static int squash_generate(struct image *image)
 	char compression[128];
 	char *comp_setup = cfg_getstr(image->imagesec, "compression");
 	unsigned block_size = cfg_getint_suffix(image->imagesec, "block-size");
+	unsigned long long file_size;
+	struct stat sb;
+	int ret;
 
 	/*
 	 * 'mksquashfs' currently defaults to 'gzip' compression. Provide a shortcut
@@ -40,11 +46,31 @@ static int squash_generate(struct image *image)
 	else
 		snprintf(compression, sizeof(compression), "-comp %s", comp_setup);
 
-	return systemp(image, "%s '%s' '%s' -b %u -noappend %s %s",
-			get_opt("mksquashfs"),
-			mountpath(image), /* source dir */
-			imageoutfile(image), /* destination file */
-			block_size, compression, extraargs);
+	ret = systemp(image, "%s '%s' '%s' -b %u -noappend %s %s",
+		      get_opt("mksquashfs"),
+		      mountpath(image), /* source dir */
+		      imageoutfile(image), /* destination file */
+		      block_size, compression, extraargs);
+	if (ret)
+		return ret;
+	ret = stat(imageoutfile(image), &sb);
+	if (ret) {
+		ret = -errno;
+		image_error(image, "stat(%s) failed: %s\n", imageoutfile(image), strerror(errno));
+		return ret;
+	}
+	file_size = sb.st_size;
+
+	if (image->size && file_size > image->size) {
+		image_error(image, "generated image %s is larger than given image size (%llu v %llu)\n",
+			    imageoutfile(image), file_size, image->size);
+		return -E2BIG;
+	}
+
+	image_debug(image, "setting image size to %llu bytes\n", file_size);
+	image->size = file_size;
+
+	return 0;
 }
 
 /**
