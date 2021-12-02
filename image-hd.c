@@ -457,6 +457,12 @@ static int hdimage_generate(struct image *image)
 		if (child->size == 0)
 			continue;
 
+		if (child->size > part->size) {
+			image_error(image, "part %s size (%lld) too small for %s (%lld)\n",
+				    part->name, part->size, child->file, child->size);
+			return -E2BIG;
+		}
+
 		ret = insert_image(image, child, child->size, part->offset, 0);
 		if (ret) {
 			image_error(image, "failed to write image partition '%s'\n",
