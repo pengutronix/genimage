@@ -424,7 +424,7 @@ static int collect_mountpoints(void)
 {
 	struct image *image;
 	struct mountpoint *mp;
-	int ret;
+	int ret, need_mtime_fixup = 0;
 
 	add_root_mountpoint();
 
@@ -456,19 +456,19 @@ static int collect_mountpoints(void)
 		ret = systemp(NULL, "chown --reference=\"%s\" \"%s/root/%s\"", mp->mountpath, tmppath(), mp->path);
 		if (ret)
 			return ret;
+		need_mtime_fixup = 1;
 	}
 
 	/*
 	 * After the mv/mkdir of the mountpoints the timestamps of the
 	 * mountpoint and all parent dirs are changed. Fix that here.
 	 */
-	ret = systemp(NULL,
-		      "find '%s/root' -depth -type d -printf '%%P\\0' | xargs -0 -I {} touch -r '%s/{}' '%s/root/{}'",
-		      tmppath(), rootpath(), tmppath());
-	if (ret)
-		return ret;
+	if (need_mtime_fixup)
+		ret = systemp(NULL,
+			      "find '%s/root' -depth -type d -printf '%%P\\0' | xargs -0 -I {} touch -r '%s/{}' '%s/root/{}'",
+			      tmppath(), rootpath(), tmppath());
 
-	return 0;
+	return ret;
 }
 
 const char *mountpath(const struct image *image)
