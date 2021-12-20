@@ -708,6 +708,21 @@ int main(int argc, char *argv[])
 	/* again, with config file this time */
 	set_config_opts(argc, argv, cfg);
 
+	str = get_opt("configdump");
+	if (str) {
+		FILE *dump;
+
+		dump = (strcmp(str, "-")) ? fopen(str, "w") : stdout;
+		if (!dump) {
+			error("could not open dump file %s: %s", str, strerror(errno));
+			ret = -1;
+			goto cleanup;
+		}
+		cfg_print(cfg, dump);
+		if (dump != stdout)
+			fclose(dump);
+	}
+
 	check_tmp_path();
 
 	ret = systemp(NULL, "rm -rf \"%s\"/*", tmppath());

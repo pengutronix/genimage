@@ -566,6 +566,10 @@ variable.
 		directory is searched after these. Thus, if this
 		option is not given, only the current directory is
 		searched. This has no effect when given in the config file.
+:configdump:	File to write the final configuration to. This includes
+		the results of all ``include'' directives, expansions
+		of environment variables and application of default
+		values - think ``gcc -E''.
 
 :cpio:		path to the cpio program (default cpio)
 :dd:		path to the dd program (default dd)
