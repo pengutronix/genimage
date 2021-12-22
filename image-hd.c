@@ -626,6 +626,20 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 	hd->fill = cfg_getbool(cfg, "fill");
 	hd->disk_uuid = cfg_getstr(cfg, "disk-uuid");
 
+	if (is_block_device(imageoutfile(image))) {
+		int ret;
+
+		if (image->size) {
+			image_error(image, "image size must not be specified for a block device target\n");
+			return -EINVAL;
+		}
+		ret = block_device_size(image, imageoutfile(image), &image->size);
+		if (ret)
+			return ret;
+		image_info(image, "determined size of block device %s to be %llu\n",
+			   imageoutfile(image), image->size);
+	}
+
 	if (!strcmp(table_type, "none"))
 		hd->table_type = TYPE_NONE;
 	else if (!strcmp(table_type, "mbr") || !strcmp(table_type, "dos"))
