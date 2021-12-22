@@ -492,17 +492,19 @@ static int hdimage_generate(struct image *image)
 		}
 	}
 
-	ret = stat(imageoutfile(image), &s);
-	if (ret) {
-		ret = -errno;
-		image_error(image, "stat(%s) failed: %s\n", imageoutfile(image),
-				strerror(errno));
-		return ret;
-	}
-	if (hd->file_size != (unsigned long long)s.st_size) {
-		image_error(image, "unexpected output file size: %llu != %llu\n",
-				hd->file_size, (unsigned long long)s.st_size);
-		return -EINVAL;
+	if (!is_block_device(imageoutfile(image))) {
+		ret = stat(imageoutfile(image), &s);
+		if (ret) {
+			ret = -errno;
+			image_error(image, "stat(%s) failed: %s\n", imageoutfile(image),
+				    strerror(errno));
+			return ret;
+		}
+		if (hd->file_size != (unsigned long long)s.st_size) {
+			image_error(image, "unexpected output file size: %llu != %llu\n",
+				    hd->file_size, (unsigned long long)s.st_size);
+			return -EINVAL;
+		}
 	}
 
 	if (hd->table_type != TYPE_NONE)
