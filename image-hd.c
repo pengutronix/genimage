@@ -492,17 +492,19 @@ static int hdimage_generate(struct image *image)
 		}
 	}
 
-	ret = stat(imageoutfile(image), &s);
-	if (ret) {
-		ret = -errno;
-		image_error(image, "stat(%s) failed: %s\n", imageoutfile(image),
-				strerror(errno));
-		return ret;
-	}
-	if (hd->file_size != (unsigned long long)s.st_size) {
-		image_error(image, "unexpected output file size: %llu != %llu\n",
-				hd->file_size, (unsigned long long)s.st_size);
-		return -EINVAL;
+	if (!is_block_device(imageoutfile(image))) {
+		ret = stat(imageoutfile(image), &s);
+		if (ret) {
+			ret = -errno;
+			image_error(image, "stat(%s) failed: %s\n", imageoutfile(image),
+				    strerror(errno));
+			return ret;
+		}
+		if (hd->file_size != (unsigned long long)s.st_size) {
+			image_error(image, "unexpected output file size: %llu != %llu\n",
+				    hd->file_size, (unsigned long long)s.st_size);
+			return -EINVAL;
+		}
 	}
 
 	if (hd->table_type != TYPE_NONE)
@@ -625,6 +627,20 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 	hd->gpt_no_backup = cfg_getbool(cfg, "gpt-no-backup");
 	hd->fill = cfg_getbool(cfg, "fill");
 	hd->disk_uuid = cfg_getstr(cfg, "disk-uuid");
+
+	if (is_block_device(imageoutfile(image))) {
+		int ret;
+
+		if (image->size) {
+			image_error(image, "image size must not be specified for a block device target\n");
+			return -EINVAL;
+		}
+		ret = block_device_size(image, imageoutfile(image), &image->size);
+		if (ret)
+			return ret;
+		image_info(image, "determined size of block device %s to be %llu\n",
+			   imageoutfile(image), image->size);
+	}
 
 	if (!strcmp(table_type, "none"))
 		hd->table_type = TYPE_NONE;

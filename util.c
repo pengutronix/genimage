@@ -735,6 +735,38 @@ char *uuid_random(void)
 	return uuid;
 }
 
+int block_device_size(struct image *image, const char *blkdev, unsigned long long *size)
+{
+	struct stat st;
+	int fd, ret;
+	off_t offset;
+
+	fd = open(blkdev, O_RDONLY);
+	if (fd < 0 || fstat(fd, &st) < 0) {
+		ret = -errno;
+		goto out;
+	}
+	if ((st.st_mode & S_IFMT) != S_IFBLK) {
+		ret = -EINVAL;
+		goto out;
+	}
+	offset = lseek(fd, 0, SEEK_END);
+	if (offset < 0) {
+		ret = -errno;
+		goto out;
+	}
+	*size = offset;
+	ret = 0;
+
+out:
+	if (ret)
+		image_error(image, "failed to determine size of block device %s: %s",
+			    blkdev, strerror(-ret));
+	if (fd >= 0)
+		close(fd);
+	return ret;
+}
+
 int reload_partitions(struct image *image)
 {
 	const char *outfile = imageoutfile(image);
