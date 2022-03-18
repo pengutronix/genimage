@@ -60,6 +60,7 @@ struct image {
 	int n_holes;
 	cfg_bool_t size_is_percent;
 	const char *mountpoint;
+	const char *srcpath;
 	cfg_bool_t empty;
 	cfg_bool_t temporary;
 	const char *exec_pre;
