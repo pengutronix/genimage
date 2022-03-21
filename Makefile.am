@@ -22,6 +22,7 @@ genimage_SOURCES = \
 	image-cpio.c \
 	image-cramfs.c \
 	image-ext2.c \
+	image-f2fs.c \
 	image-file.c \
 	image-fit.c \
 	image-flash.c \
@@ -66,6 +67,7 @@ EXTRA_DIST += \
 	test/ext4.config \
 	test/ext4test.0.dump \
 	test/ext4test.1.dump \
+	test/f2fs.config \
 	test/fit.its \
 	test/fit.config \
 	test/flash-types.config \
