@@ -236,6 +236,7 @@ static cfg_opt_t rauc_opts[] = {
 
 struct image_handler rauc_handler = {
 	.type = "rauc",
+	.no_rootpath = cfg_true,
 	.generate = rauc_generate,
 	.parse = rauc_parse,
 	.setup = rauc_setup,

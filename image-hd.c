@@ -932,6 +932,7 @@ static cfg_opt_t hdimage_opts[] = {
 
 struct image_handler hdimage_handler = {
 	.type = "hdimage",
+	.no_rootpath = cfg_true,
 	.generate = hdimage_generate,
 	.setup = hdimage_setup,
 	.opts = hdimage_opts,

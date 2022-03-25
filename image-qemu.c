@@ -97,6 +97,7 @@ static cfg_opt_t qemu_opts[] = {
 
 struct image_handler qemu_handler = {
 	.type = "qemu",
+	.no_rootpath = cfg_true,
 	.generate = qemu_generate,
 	.setup = qemu_setup,
 	.opts = qemu_opts,

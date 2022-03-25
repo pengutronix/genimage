@@ -395,6 +395,7 @@ static cfg_opt_t android_sparse_opts[] = {
 
 struct image_handler android_sparse_handler = {
 	.type = "android-sparse",
+	.no_rootpath = cfg_true,
 	.generate = android_sparse_generate,
 	.parse = android_sparse_parse,
 	.setup = android_sparse_setup,

@@ -118,6 +118,7 @@ static cfg_opt_t fit_opts[] = {
 
 struct image_handler fit_handler = {
 	.type = "fit",
+	.no_rootpath = cfg_true,
 	.generate = fit_generate,
 	.parse = fit_parse,
 	.opts = fit_opts,
