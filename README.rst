@@ -80,6 +80,10 @@ Here are all options for images:
 :mountpoint:	mountpoint if image refers to a filesystem image. The
 		default is "/". The content of "${rootpath}${mountpoint}"
 		will be used to fill the filesystem.
+:srcpath:	If this is set, specified path will be directly used
+		to fill the filesystem. Ignoring rootpath/mountpoint logic.
+		Path might be absolute or relative
+		to current working directory.
 :empty:		If this is set to true, then the specified rootpath and
 		mountpoint are ignored for this image and an empty
 		filesystem is created. This option is only used for

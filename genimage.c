@@ -111,6 +111,7 @@ static cfg_opt_t image_common_opts[] = {
 	CFG_STR("name", NULL, CFGF_NONE),
 	CFG_STR("size", NULL, CFGF_NONE),
 	CFG_STR("mountpoint", NULL, CFGF_NONE),
+	CFG_STR("srcpath", NULL, CFGF_NONE),
 	CFG_BOOL("empty", cfg_false, CFGF_NONE),
 	CFG_BOOL("temporary", cfg_false, CFGF_NONE),
 	CFG_STR("exec-pre", NULL, CFGF_NONE),
@@ -474,6 +475,9 @@ static int collect_mountpoints(void)
 
 const char *mountpath(const struct image *image)
 {
+	if(image->srcpath)
+		return image->srcpath;
+
 	struct mountpoint *mp;
 
 	mp = image->mp;
@@ -743,6 +747,7 @@ int main(int argc, char *argv[])
 		image->name = cfg_getstr(imagesec, "name");
 		image->size = cfg_getint_suffix_percent(imagesec, "size",
 				&image->size_is_percent);
+		image->srcpath = cfg_getstr(imagesec, "srcpath");
 		image->mountpoint = cfg_getstr(imagesec, "mountpoint");
 		image->empty = cfg_getbool(imagesec, "empty");
 		image->temporary = cfg_getbool(imagesec, "temporary");
@@ -756,6 +761,10 @@ int main(int argc, char *argv[])
 					image->file);
 		if (image->mountpoint && *image->mountpoint == '/')
 			image->mountpoint++;
+		if (image->srcpath && image->mountpoint && (strlen(image->mountpoint) > 0)) {
+			image_error(image, "Cannot specify both srcpath and mountpoint at the same time.");
+			goto cleanup;
+		}
 		str = cfg_getstr(imagesec, "flashtype");
 		if (str)
 			image->flash_type = flash_type_get(str);
