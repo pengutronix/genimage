@@ -72,14 +72,16 @@ static int ext2_generate_mke2fs(struct image *image)
 	const char *root_owner = cfg_getstr(image->imagesec, "root-owner");
 	const char *options = "lazy_itable_init=0,lazy_journal_init=0";
 	const char *features = ext->features;
+	int ret;
 
 	if (features && features[0] == '\0')
 		features = NULL;
 	if (label && label[0] == '\0')
 		label = NULL;
 
-	if (is_block_device(imageoutfile(image)))
-		insert_image(image, NULL, 2048, 0, 0);
+	ret = prepare_image(image, image->size);
+	if (ret < 0)
+		return ret;
 
 	return systemp(image, "%s%s -t %s%s -I 256 -E 'root_owner=%s,%s'%s %s%s%s %s %s%s %s%s%s '%s' %lldk",
 			ext->conf_env, get_opt("mke2fs"), image->handler->type,

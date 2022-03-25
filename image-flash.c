@@ -33,15 +33,11 @@ static int flash_generate(struct image *image)
 {
 	struct partition *part;
 	unsigned long long end = 0;
-	const char *outfile = imageoutfile(image);
 	int ret;
 
-	ret = truncate(outfile, 0);
-	if ((ret < 0) && (errno != ENOENT)) {
-		ret = -errno;
-		image_error(image, "truncate %s: %s\n", outfile, strerror(errno));
+	ret = prepare_image(image, image->size);
+	if (ret < 0)
 		return ret;
-	}
 
 	list_for_each_entry(part, &image->partitions, list) {
 		struct image *child = NULL;
@@ -145,6 +141,8 @@ err_exceed:
 				partsize, flashsize);
 		return -EINVAL;
 	}
+	if (!image->size)
+		image->size = partsize;
 
 	return 0;
 }

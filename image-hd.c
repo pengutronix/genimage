@@ -408,29 +408,9 @@ static int hdimage_generate(struct image *image)
 	struct stat s;
 	int ret;
 
-	if (!is_block_device(imageoutfile(image))) {
-		/* for regular files, create the file or truncate it to zero
-		 * size to remove all existing content */
-		int fd = open_file(image, imageoutfile(image), O_TRUNC);
-		if (fd < 0)
-			return fd;
-
-		/*
-		 * Resize the file immediately to the final size. This is not
-		 * strictly necessary but this circumvents XFS preallocation
-		 * heuristics. Without this, the holes in the image may be smaller
-		 * than necessary.
-		 */
-		ret = ftruncate(fd, hd->file_size);
-		close(fd);
-		if (ret < 0) {
-			ret = -errno;
-			image_error(image, "failed to truncate %s to %lld: %s\n",
-				    imageoutfile(image), hd->file_size,
-				    strerror(-ret));
-			return ret;
-		}
-	}
+	ret = prepare_image(image, hd->file_size);
+	if (ret < 0)
+		return ret;
 
 	list_for_each_entry(part, &image->partitions, list) {
 		struct image *child;

@@ -487,6 +487,45 @@ static int write_bytes(int fd, size_t size, off_t offset, unsigned char byte)
 }
 
 /*
+ * For regular files this makes sure that:
+ * - the file exists
+ * - the file has the specified size
+ * - any previous date is cleared
+ * For block devices this makes sure that:
+ * - any existing filesystem header is cleared
+ */
+int prepare_image(struct image *image, unsigned long long size)
+{
+	if (is_block_device(imageoutfile(image))) {
+		insert_image(image, NULL, 2048, 0, 0);
+	} else {
+		int ret;
+		/* for regular files, create the file or truncate it to zero
+		 * size to remove all existing content */
+		int fd = open_file(image, imageoutfile(image), O_TRUNC);
+		if (fd < 0)
+			return fd;
+
+		/*
+		 * Resize the file immediately to the final size. This is not
+		 * strictly necessary but this circumvents XFS preallocation
+		 * heuristics. Without this, the holes in the image may be smaller
+		 * than necessary.
+		 */
+		ret = ftruncate(fd, size);
+		close(fd);
+		if (ret < 0) {
+			ret = -errno;
+			image_error(image, "failed to truncate %s to %lld: %s\n",
+				    imageoutfile(image), size,
+				    strerror(-ret));
+			return ret;
+		}
+	}
+	return 0;
+}
+
+/*
  * Insert the image @sub at offset @offset in @image. If @sub is
  * smaller than @size (including if @sub is NULL), insert @byte bytes for
  * the remainder. If @sub is larger than @size, only the first @size

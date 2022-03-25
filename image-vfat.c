@@ -34,8 +34,7 @@ static int vfat_generate(struct image *image)
 	else
 		label = "";
 
-	ret = systemp(image, "%s if=/dev/zero of=\"%s\" seek=%lld count=0 bs=1 2>/dev/null",
-			get_opt("dd"), imageoutfile(image), image->size);
+	ret = prepare_image(image, image->size);
 	if (ret)
 		return ret;
 
