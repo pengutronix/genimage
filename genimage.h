@@ -164,6 +164,7 @@ int map_file_extents(struct image *image, const char *filename, int fd,
 int is_block_device(const char *filename);
 int block_device_size(struct image *image, const char *blkdev,
 		      unsigned long long *size);
+int prepare_image(struct image *image, unsigned long long size);
 int insert_image(struct image *image, struct image *sub,
 		 unsigned long long size, unsigned long long offset,
 		 unsigned char byte);
