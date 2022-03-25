@@ -14,7 +14,7 @@ set -- -v "$@"
 
 filelist_orig="$(pwd)/file-list.orig"
 filelist_test="$(pwd)/file-list.test"
-root_orig="$(pwd)/root"
+root_orig="$(pwd)/root.orig"
 root_test="$(pwd)/root.test"
 
 setup_data() {
@@ -27,7 +27,7 @@ setup_data() {
 	cp "${testdir}"/*.conf* "${testdir}"/*.sh .
 }
 
-run_genimage() {
+run_genimage_impl() {
 	if [ "$verbose" = "t" ]; then
 		vargs="--loglevel=3"
 	fi
@@ -41,10 +41,18 @@ run_genimage() {
 		${vargs} \
 		--outputpath=images \
 		--inputpath=input \
-		--rootpath=root \
+		--rootpath="${root}" \
 		--tmppath=tmp \
 		${extra_opts} \
 		--config "${1}"
+}
+
+run_genimage_root() {
+	root="root.orig" run_genimage_impl "${@}"
+}
+
+run_genimage() {
+	root="/this/directory/does/not/exist" run_genimage_impl "${@}"
 }
 
 func_check() {
@@ -129,7 +137,7 @@ set -o pipefail
 
 exec_test_set_prereq cpio
 test_expect_success cpio "cpio" "
-	run_genimage cpio.config test.cpio &&
+	run_genimage_root cpio.config test.cpio &&
 	zcat images/test.cpio | cpio --extract -t | grep -v '^\.$'  | sort > '${filelist_test}' &&
 	check_size_range images/test.cpio 400 550 &&
 	check_filelist
@@ -137,7 +145,7 @@ test_expect_success cpio "cpio" "
 
 exec_test_set_prereq mkcramfs
 test_expect_success mkcramfs "cramfs" "
-	run_genimage cramfs.config test.cramfs &&
+	run_genimage_root cramfs.config test.cramfs &&
 	check_size images/test.cramfs 4096
 "
 
@@ -199,17 +207,17 @@ check_ext() {
 exec_test_set_prereq genext2fs
 exec_test_set_prereq e2fsck
 test_expect_success genext2fs,e2fsck "ext2" "
-	run_genimage ext2.config test.ext2 &&
+	run_genimage_root ext2.config test.ext2 &&
 	check_ext images/test.ext2 ext2test 4194304 genext2fs
 "
 
 test_expect_success genext2fs,e2fsck "ext2percent" "
-	run_genimage ext2percent.config test.ext2 &&
+	run_genimage_root ext2percent.config test.ext2 &&
 	check_ext images/test.ext2 ext2test-percent 69632 genext2fs
 "
 
 test_expect_success genext2fs,e2fsck "ext3" "
-	run_genimage ext3.config test.ext3 &&
+	run_genimage_root ext3.config test.ext3 &&
 	check_ext images/test.ext3 ext3test 4194304 genext2fs
 "
 
@@ -221,7 +229,7 @@ test_expect_success genext2fs,e2fsck "ext4" "
 # make sure mke2fs supports '-d root-directory'
 [ "$(mke2fs |& sed -n 's/.*\(-d \).*/\1/p')" = "-d " ] && test_set_prereq mke2fs
 test_expect_success mke2fs,e2fsck "mke2fs" "
-	run_genimage mke2fs.config mke2fs.ext4 &&
+	run_genimage_root mke2fs.config mke2fs.ext4 &&
 	check_ext images/mke2fs.ext4 mke2fs 33554432 mke2fs
 "
 
@@ -329,13 +337,13 @@ test_expect_success "hdimage syntax" "
 
 exec_test_set_prereq genisoimage
 test_expect_success genisoimage "iso" "
-	run_genimage iso.config test.iso &&
+	run_genimage_root iso.config test.iso &&
 	check_size_range images/test.iso 300000 400000
 "
 
 exec_test_set_prereq mkfs.jffs2
 test_expect_success mkfs_jffs2 "jffs2" "
-	run_genimage jffs2.config test.jffs2 &&
+	run_genimage_root jffs2.config test.jffs2 &&
 	md5sum -c '${testdir}/jffs2.md5'
 "
 
@@ -343,7 +351,7 @@ exec_test_set_prereq mkfs.f2fs
 exec_test_set_prereq sload.f2fs
 exec_test_set_prereq fsck.f2fs
 test_expect_success mkfs_f2fs,sload_f2fs,fsck_f2fs "f2fs" "
-	run_genimage f2fs.config test.f2fs &&
+	run_genimage_root f2fs.config test.f2fs &&
 	fsck.f2fs images/test.f2fs
 "
 
@@ -360,7 +368,7 @@ test_expect_success dd,diff,qemu-img "qemu" "
 
 exec_test_set_prereq mksquashfs
 test_expect_success mksquashfs "squashfs" "
-	run_genimage squashfs.config test.squashfs &&
+	run_genimage_root squashfs.config test.squashfs &&
 	check_size_range images/test.squashfs 4000 4100 &&
 	unsquashfs -ls images/test.squashfs  | sed -n '/squashfs-root/s;squashfs-root/;;p' | sort > '${filelist_test}' &&
 	check_filelist
@@ -368,7 +376,7 @@ test_expect_success mksquashfs "squashfs" "
 
 exec_test_set_prereq tar
 test_expect_success tar "tar" "
-	run_genimage tar.config test.tar.gz &&
+	run_genimage_root tar.config test.tar.gz &&
 	check_size_range images/test.tar.gz 500 600 &&
 	zcat images/test.tar.gz | tar -t | sed -n -e 's;/$;;' -e 's;^\./\(..*\)$;\1;p' | sort > '${filelist_test}' &&
 	check_filelist
@@ -376,7 +384,7 @@ test_expect_success tar "tar" "
 
 exec_test_set_prereq mkfs.ubifs
 test_expect_success mkfs_ubifs "ubifs" "
-	run_genimage ubifs.config test.ubifs &&
+	run_genimage_root ubifs.config test.ubifs &&
 	check_size_range images/test.ubifs 200000 300000
 "
 
@@ -397,7 +405,7 @@ exec_test_set_prereq dd
 exec_test_set_prereq mkdosfs
 exec_test_set_prereq mcopy
 test_expect_success dd,mkdosfs,mcopy "vfat" "
-	run_genimage vfat.config test.vfat &&
+	run_genimage_root vfat.config test.vfat &&
 	fsck.fat -p images/test.vfat | tee fsck.log &&
 	test_must_fail grep -q 'Filesystem was changed' fsck.log &&
 	check_size images/test.vfat 4193280 &&
@@ -473,11 +481,11 @@ setup_exec_files() {
 
 test_expect_success "exec" "
 	setup_exec_files &&
-	run_genimage exec.config"
+	run_genimage_root exec.config"
 
 test_expect_success "exec-fail" "
 	setup_exec_files &&
-	test_must_fail run_genimage exec-fail.config"
+	test_must_fail run_genimage_root exec-fail.config"
 
 setup_gpt_files() {
 	rm -rf input &&

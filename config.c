@@ -284,14 +284,19 @@ const char *inputpath(void)
 	return inputpath;
 }
 
+static const char *cached_rootpath;
+
+void disable_rootpath(void)
+{
+	cached_rootpath = "";
+}
+
 const char *rootpath(void)
 {
-	static const char *rootpath;
+	if (!cached_rootpath)
+		cached_rootpath = abspath(get_opt("rootpath"));
 
-	if (!rootpath)
-		rootpath = abspath(get_opt("rootpath"));
-
-	return rootpath;
+	return cached_rootpath;
 }
 
 const char *tmppath(void)

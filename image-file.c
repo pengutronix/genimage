@@ -89,6 +89,16 @@ static int file_setup(struct image *image, cfg_t *cfg)
 	return 0;
 }
 
+static int file_parse(struct image *image, cfg_t *cfg)
+{
+	/* File type images are used for custom types so assume that the
+	 * rootpath is need when a pre/post command is defined */
+	if (!image->exec_pre && !image->exec_post)
+		image->empty = cfg_true;
+
+	return 0;
+}
+
 static cfg_opt_t file_opts[] = {
 	CFG_STR("name", NULL, CFGF_NONE),
 	CFG_BOOL("copy", cfg_true, CFGF_NONE),
@@ -100,6 +110,7 @@ struct image_handler file_handler = {
 	.type = "file",
 	.generate = file_generate,
 	.setup = file_setup,
+	.parse = file_parse,
 	.opts = file_opts,
 };
 

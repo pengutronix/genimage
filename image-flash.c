@@ -153,6 +153,7 @@ static cfg_opt_t flash_opts[] = {
 
 struct image_handler flash_handler = {
 	.type = "flash",
+	.no_rootpath = cfg_true,
 	.generate = flash_generate,
 	.setup = flash_setup,
 	.opts = flash_opts,

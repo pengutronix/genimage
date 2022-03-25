@@ -12,7 +12,7 @@ test "${OUTPUTPATH}" = "${PWD}/images"
 : INPUTPATH
 test "${INPUTPATH}" = "${PWD}/input"
 : ROOTPATH
-test "${ROOTPATH}" = "${PWD}/root"
+test "${ROOTPATH}" = "${PWD}/root.orig"
 : TMPPATH
 test "${TMPPATH}" = "${PWD}/tmp"
 : IMAGE

@@ -426,7 +426,18 @@ static int collect_mountpoints(void)
 {
 	struct image *image;
 	struct mountpoint *mp;
-	int ret, need_mtime_fixup = 0;
+	int ret, need_mtime_fixup = 0, need_root = 0;
+
+	list_for_each_entry(image, &images, list) {
+		if (!(image->empty || image->handler->no_rootpath || image->srcpath)) {
+			need_root = 1;
+			break;
+		}
+	}
+	if (!need_root) {
+		disable_rootpath();
+		return 0;
+	}
 
 	add_root_mountpoint();
 
@@ -479,6 +490,9 @@ const char *mountpath(const struct image *image)
 		return image->srcpath;
 
 	struct mountpoint *mp;
+
+	if (image->empty || image->handler->no_rootpath)
+		return "";
 
 	mp = image->mp;
 	if (!mp)
@@ -805,6 +819,11 @@ int main(int argc, char *argv[])
 			list_add_tail(&child->list, &images);
 			child->file = part->image;
 			child->handler = &file_handler;
+			if (child->handler->parse) {
+				ret = child->handler->parse(child, child->imagesec);
+				if (ret)
+					goto cleanup;
+			}
 			parse_holes(child, part->cfg);
 		}
 	}

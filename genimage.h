@@ -19,6 +19,7 @@ void image_debug(struct image *image, const char *fmt, ...) __attribute__ ((form
 void xasprintf(char **strp, const char *fmt, ...) __attribute__ ((format(printf, 2, 3)));
 void xstrcatf(char **strp, const char *fmt, ...) __attribute__ ((format(printf, 2, 3)));
 
+void disable_rootpath(void);
 const char *imagepath(void);
 const char *inputpath(void);
 const char *rootpath(void);
@@ -81,6 +82,7 @@ struct image {
 
 struct image_handler {
 	char *type;
+	cfg_bool_t no_rootpath;
 	int (*parse)(struct image *i, cfg_t *cfg);
 	int (*setup)(struct image *i, cfg_t *cfg);
 	int (*generate)(struct image *i);

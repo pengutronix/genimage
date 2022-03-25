@@ -123,6 +123,7 @@ static cfg_opt_t ubi_opts[] = {
 
 struct image_handler ubi_handler = {
 	.type = "ubi",
+	.no_rootpath = cfg_true,
 	.generate = ubi_generate,
 	.setup = ubi_setup,
 	.opts = ubi_opts,
