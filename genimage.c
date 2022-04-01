@@ -47,6 +47,7 @@ static struct image_handler *handlers[] = {
 	&f2fs_handler,
 	&file_handler,
 	&fit_handler,
+	&fip_handler,
 	&flash_handler,
 	&hdimage_handler,
 	&iso_handler,

@@ -564,6 +564,14 @@ test_expect_success !includepath "includepath5" "
 "
 
 
+exec_test_set_prereq fiptool
+test_expect_success fiptool "fip" "
+	setup_test_images &&
+	run_genimage fip.config test.fip &&
+	check_size_range images/test.fip 12804 13056 &&
+	fiptool info images/test.fip
+"
+
 test_done
 
 # vim: syntax=sh
