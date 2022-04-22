@@ -254,6 +254,7 @@ Options:
 			using the debugfs commands ``set_current_time``,
 			``set_super_value mkfs_time`` and ``set_super_value lastcheck``
 :root-owner:		User and group IDs for the root directory. Defaults to ``0:0``.
+			Only valid with mke2fs.
 :usage-type:		Specify the usage type for the filesystem. Only valid with mke2fs.
 			More details can be found in the mke2fs man-page.
 
