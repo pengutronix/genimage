@@ -454,6 +454,11 @@ static struct config opts[] = {
 		.env = "GENIMAGE_MKIMAGE",
 		.def = "mkimage",
 	}, {
+		.name = "fiptool",
+		.opt = CFG_STR("fiptool", NULL, CFGF_NONE),
+		.env = "GENIMAGE_FIPTOOL",
+		.def = "fiptool",
+	}, {
 		.name = "config",
 		.env = "GENIMAGE_CONFIG",
 		.def = "genimage.cfg",

@@ -24,6 +24,7 @@ genimage_SOURCES = \
 	image-ext2.c \
 	image-f2fs.c \
 	image-file.c \
+	image-fip.c \
 	image-fit.c \
 	image-flash.c \
 	image-hd.c \
@@ -68,6 +69,7 @@ EXTRA_DIST += \
 	test/ext4test.0.dump \
 	test/ext4test.1.dump \
 	test/f2fs.config \
+	test/fip.config \
 	test/fit.its \
 	test/fit.config \
 	test/flash-types.config \
