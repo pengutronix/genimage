@@ -17,7 +17,7 @@ The Configuration File
 The config file of genimage uses a simple configuration language, provided by `libconfuse`_.
 This supports nested sections, as well as simple key-value pairs.
 
-.. _libconfuse: https://github.com/martinh/libconfuse
+.. _libconfuse: https://github.com/libconfuse/libconfuse
 
 Single-line comments can be introduced with ``#`` or ``//``,
 multi-line comments look like ``/* … */`` (as in C).
