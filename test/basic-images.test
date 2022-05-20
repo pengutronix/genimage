@@ -440,7 +440,7 @@ test_expect_success rauc "rauc" "
 	rauc info \
 		--keyring input/rauc-openssl-ca/ca.cert.pem \
 		--cert input/rauc-openssl-ca/ca.cert.pem \
-		images/test.raucb \
+		images/test.raucb | grep -v cms_get_enveloped_type \
 		| sed -e 's;O = Test Org, CN = ;/O=Test Org/CN=;' \
 		      -e '/Bundle Format:[ \t]*plain$/d' \
 		> test.raucb.info &&
@@ -452,7 +452,7 @@ test_expect_success rauc "rauc" "
 	rauc info \
 		--keyring input/rauc-openssl-ca/ca.cert.pem \
 		--cert input/rauc-openssl-ca/ca.cert.pem \
-		images/test2.raucb \
+		images/test2.raucb | grep -v cms_get_enveloped_type \
 		| sed -e 's;O = Test Org, CN = ;/O=Test Org/CN=;' \
 		      -e '/Bundle Format:[ \t]*plain$/d' \
 		> test2.raucb.info &&
