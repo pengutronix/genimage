@@ -440,19 +440,27 @@ test_expect_success rauc "rauc" "
 	rauc info \
 		--keyring input/rauc-openssl-ca/ca.cert.pem \
 		--cert input/rauc-openssl-ca/ca.cert.pem \
-		images/test.raucb \
+		images/test.raucb | grep -v cms_get_enveloped_type \
 		| sed -e 's;O = Test Org, CN = ;/O=Test Org/CN=;' \
 		      -e '/Bundle Format:[ \t]*plain$/d' \
 		> test.raucb.info &&
-	test_cmp '${testdir}/test.raucb.info' test.raucb.info &&
+	if ! grep -r 'Filename:' test.raucb.info; then
+		test_cmp '${testdir}/test.raucb.info' test.raucb.info
+	else
+		test_cmp '${testdir}/test.raucb.info.new' test.raucb.info
+	fi
 	rauc info \
 		--keyring input/rauc-openssl-ca/ca.cert.pem \
 		--cert input/rauc-openssl-ca/ca.cert.pem \
-		images/test2.raucb \
+		images/test2.raucb | grep -v cms_get_enveloped_type \
 		| sed -e 's;O = Test Org, CN = ;/O=Test Org/CN=;' \
 		      -e '/Bundle Format:[ \t]*plain$/d' \
 		> test2.raucb.info &&
-	test_cmp '${testdir}/test2.raucb.info' test2.raucb.info
+	if ! grep -r 'Filename:' test2.raucb.info; then
+		test_cmp '${testdir}/test2.raucb.info' test2.raucb.info
+	else
+		test_cmp '${testdir}/test2.raucb.info.new' test2.raucb.info
+	fi
 "
 
 exec_test_set_prereq simg2img

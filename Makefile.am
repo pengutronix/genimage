@@ -124,7 +124,9 @@ EXTRA_DIST += \
 	test/squashfs.config \
 	test/tar.config \
 	test/test.raucb.info \
+	test/test.raucb.info.new \
 	test/test2.raucb.info \
+	test/test2.raucb.info.new \
 	test/ubi.config \
 	test/ubifs.config \
 	test/vfat.config
