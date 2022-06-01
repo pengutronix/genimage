@@ -661,6 +661,7 @@ variable.
 :tar:		path to the tar program (default tar)
 :tune2fs:	path to the tune2fs program (default tune2fs)
 :ubinize:	path to the ubinize program (default ubinize)
+:fiptool:	path to the fiptool utility (default fiptool)
 
 
 Include Configurations Fragments
