@@ -301,6 +301,10 @@ static int image_generate(struct image *image)
 		}
 	}
 
+	ret = setenv_image(image);
+	if (ret)
+		return ret;
+
 	if (image->exec_pre) {
 		ret = systemp(image, "%s", image->exec_pre);
 		if (ret)
@@ -853,10 +857,6 @@ int main(int argc, char *argv[])
 		goto cleanup;
 
 	list_for_each_entry(image, &images, list) {
-		ret = setenv_image(image);
-		if (ret)
-			goto cleanup;
-
 		ret = image_generate(image);
 		if (ret) {
 			image_error(image, "failed to generate %s\n", image->file);
