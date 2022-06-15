@@ -198,6 +198,74 @@ static int image_setup(struct image *image)
 	return 0;
 }
 
+static int overwriteenv(const char *name, const char *value)
+{
+	int ret;
+
+	ret = setenv(name, value ? : "", 1);
+	if (ret)
+		return -errno;
+
+	return 0;
+}
+
+static int setenv_paths(void)
+{
+	int ret;
+
+	ret = overwriteenv("OUTPUTPATH", imagepath());
+	if (ret)
+		return ret;
+
+	ret = overwriteenv("INPUTPATH", inputpath());
+	if (ret)
+		return ret;
+
+	ret = overwriteenv("ROOTPATH", rootpath());
+	if (ret)
+		return ret;
+
+	ret = overwriteenv("TMPPATH", tmppath());
+	if (ret)
+		return ret;
+
+	return 0;
+}
+
+static int setenv_image(const struct image *image)
+{
+	int ret;
+	char sizestr[20];
+
+	snprintf(sizestr, sizeof(sizestr), "%llu", image->size);
+
+	ret = overwriteenv("IMAGE", image->file);
+	if (ret)
+		return ret;
+
+	ret = overwriteenv("IMAGEOUTFILE", imageoutfile(image));
+	if (ret)
+		return ret;
+
+	ret = overwriteenv("IMAGENAME", image->name);
+	if (ret)
+		return ret;
+
+	ret = overwriteenv("IMAGESIZE", sizestr);
+	if (ret)
+		return ret;
+
+	ret = overwriteenv("IMAGEMOUNTPOINT", image->mountpoint);
+	if (ret)
+		return ret;
+
+	ret = overwriteenv("IMAGEMOUNTPATH", image->empty ? NULL : mountpath(image));
+	if (ret)
+		return ret;
+
+	return 0;
+}
+
 /*
  * generate the images. Calls ->generate function for each
  * image, recursively calls itself for resolving dependencies
@@ -550,74 +618,6 @@ static cfg_opt_t top_opts[] = {
 	CFG_FUNC("include", &cfg_include),
 	CFG_END()
 };
-
-static int overwriteenv(const char *name, const char *value)
-{
-	int ret;
-
-	ret = setenv(name, value ? : "", 1);
-	if (ret)
-		return -errno;
-
-	return 0;
-}
-
-static int setenv_paths(void)
-{
-	int ret;
-
-	ret = overwriteenv("OUTPUTPATH", imagepath());
-	if (ret)
-		return ret;
-
-	ret = overwriteenv("INPUTPATH", inputpath());
-	if (ret)
-		return ret;
-
-	ret = overwriteenv("ROOTPATH", rootpath());
-	if (ret)
-		return ret;
-
-	ret = overwriteenv("TMPPATH", tmppath());
-	if (ret)
-		return ret;
-
-	return 0;
-}
-
-static int setenv_image(const struct image *image)
-{
-	int ret;
-	char sizestr[20];
-
-	snprintf(sizestr, sizeof(sizestr), "%llu", image->size);
-
-	ret = overwriteenv("IMAGE", image->file);
-	if (ret)
-		return ret;
-
-	ret = overwriteenv("IMAGEOUTFILE", imageoutfile(image));
-	if (ret)
-		return ret;
-
-	ret = overwriteenv("IMAGENAME", image->name);
-	if (ret)
-		return ret;
-
-	ret = overwriteenv("IMAGESIZE", sizestr);
-	if (ret)
-		return ret;
-
-	ret = overwriteenv("IMAGEMOUNTPOINT", image->mountpoint);
-	if (ret)
-		return ret;
-
-	ret = overwriteenv("IMAGEMOUNTPATH", image->empty ? NULL : mountpath(image));
-	if (ret)
-		return ret;
-
-	return 0;
-}
 
 #ifdef HAVE_SEARCHPATH
 static int add_searchpath(cfg_t *cfg, const char *dir)
