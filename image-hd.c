@@ -644,6 +644,9 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 		image_info(image, "The option 'gpt' is deprecated. Use 'partition-table-type' instead\n");
 	}
 
+	if (!hd->align)
+		hd->align = hd->table_type == TYPE_NONE ? 1 : 512;
+
 	if (hd->extended_partition > 4) {
 		image_error(image, "invalid extended partition index (%i). must be "
 				"inferior or equal to 4 (0 for automatic)\n",
@@ -651,7 +654,7 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 		return -EINVAL;
 	}
 
-	if ((hd->align % 512) || (hd->align == 0)) {
+	if ((hd->table_type != TYPE_NONE) && ((hd->align % 512) || (hd->align == 0))) {
 		image_error(image, "partition alignment (%lld) must be a "
 				"multiple of 1 sector (512 bytes)\n", hd->align);
 		return -EINVAL;
@@ -662,7 +665,7 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 		if (part->in_partition_table)
 			++partition_table_entries;
 		if (!part->align)
-			part->align = part->in_partition_table ? hd->align : 1;
+			part->align = (part->in_partition_table || hd->table_type == TYPE_NONE) ? hd->align : 1;
 		if (part->in_partition_table && part->align % hd->align) {
 			image_error(image, "partition alignment (%lld) of partition %s "
 				    "must be multiple of image alignment (%lld)",
@@ -809,7 +812,7 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 			now += part->size;
 			part->offset = roundup(now, 4096) - part->size;
 		}
-		if (!part->offset && part->in_partition_table) {
+		if (!part->offset && (part->in_partition_table || hd->table_type == TYPE_NONE)) {
 			part->offset = roundup(now, part->align);
 		}
 		if (part->extended && !hd->extended_lba)
@@ -917,7 +920,7 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 }
 
 static cfg_opt_t hdimage_opts[] = {
-	CFG_STR("align", "512", CFGF_NONE),
+	CFG_STR("align", NULL, CFGF_NONE),
 	CFG_STR("disk-signature", NULL, CFGF_NONE),
 	CFG_STR("disk-uuid", NULL, CFGF_NONE),
 	CFG_BOOL("partition-table", cfg_false, CFGF_NODEFAULT),

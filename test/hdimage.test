@@ -145,6 +145,15 @@ test_expect_success "bootloader-hole5" "
 	setup_gpt_files &&
 	OFFSET=128K run_genimage hole.config"
 
+test_expect_success "hdimage no-partition" "
+	dd if=/dev/zero bs=1 count=100 | tr '\000' '\377' > input/block1.img &&
+	dd if=/dev/zero bs=1 count=50  | tr '\000' '\252' > input/block2.img &&
+	dd if=/dev/zero bs=1 count=75  | tr '\000' '\167' > input/block3.img &&
+	run_genimage hdimage-nopart.config &&
+	hexdump -C images/test.hdimage > 'hdimage-nopart.hexdump' &&
+	test_cmp 'hdimage-nopart.hexdump' '${testdir}/hdimage-nopart.hexdump'
+"
+
 test_done
 
 # vim: syntax=sh
