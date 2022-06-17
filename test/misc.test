@@ -1,0 +1,93 @@
+#!/bin/bash
+set -x
+test_description="Misc Image Tests"
+
+. "$(dirname "${0}")/test-setup.sh"
+
+exec_test_set_prereq dd
+exec_test_set_prereq diff
+exec_test_set_prereq qemu-img
+test_expect_success dd,diff,qemu-img "qemu" "
+	setup_test_images &&
+	run_genimage qemu.config test.qcow &&
+	qemu-img check images/test.qcow &&
+	zcat '${testdir}/qemu.qcow.gz' > qemu.qcow &&
+	qemu-img compare images/test.qcow qemu.qcow
+"
+
+setup_fit_its() {
+	setup_test_images &&
+	cp ${testdir}/fit.its input/
+}
+
+exec_test_set_prereq mkimage
+exec_test_set_prereq dtc
+test_expect_success mkimage,dtc "fit" "
+	setup_fit_its &&
+	run_genimage fit.config test.fit
+"
+
+setup_rauc() {
+	rm -rf input &&
+	mkdir input &&
+	cp -r "${testdir}"/rauc-openssl-ca input/ &&
+	echo "test" > input/rauc.content &&
+	echo "test2" > input/rauc2.content
+}
+
+exec_test_set_prereq rauc
+test_expect_success rauc "rauc" "
+	setup_rauc &&
+	run_genimage rauc.config test.raucb &&
+	rauc info \
+		--keyring input/rauc-openssl-ca/ca.cert.pem \
+		--cert input/rauc-openssl-ca/ca.cert.pem \
+		images/test.raucb | grep -v cms_get_enveloped_type \
+		| sed -e 's;O = Test Org, CN = ;/O=Test Org/CN=;' \
+		      -e '/Bundle Format:[ \t]*plain$/d' \
+		> test.raucb.info &&
+	if ! grep -r 'Filename:' test.raucb.info; then
+		test_cmp '${testdir}/test.raucb.info' test.raucb.info
+	else
+		test_cmp '${testdir}/test.raucb.info.new' test.raucb.info
+	fi
+	rauc info \
+		--keyring input/rauc-openssl-ca/ca.cert.pem \
+		--cert input/rauc-openssl-ca/ca.cert.pem \
+		images/test2.raucb | grep -v cms_get_enveloped_type \
+		| sed -e 's;O = Test Org, CN = ;/O=Test Org/CN=;' \
+		      -e '/Bundle Format:[ \t]*plain$/d' \
+		> test2.raucb.info &&
+	if ! grep -r 'Filename:' test2.raucb.info; then
+		test_cmp '${testdir}/test2.raucb.info' test2.raucb.info
+	else
+		test_cmp '${testdir}/test2.raucb.info.new' test2.raucb.info
+	fi
+"
+
+exec_test_set_prereq simg2img
+test_expect_success simg2img "android-sparse" "
+	setup_test_images &&
+	for i in \`seq 16\`; do
+		dd if=/dev/urandom of=input/interleaved conv=notrunc seek=\$[i*i] count=\$[i] bs=\$[i*i*512] || break
+	done &&
+	run_genimage sparse.config &&
+	md5sum images/test.hdimage input/interleaved > md5sum &&
+	rm images/test.hdimage input/interleaved &&
+	check_size_range images/interleaved.sparse 9732464 9732608 &&
+	simg2img images/test.sparse images/test.hdimage &&
+	simg2img images/interleaved.sparse input/interleaved &&
+	md5sum -c md5sum
+"
+
+exec_test_set_prereq fiptool
+test_expect_success fiptool "fip" "
+	setup_test_images &&
+	run_genimage fip.config test.fip &&
+	check_size_range images/test.fip 12804 13056 &&
+	fiptool info images/test.fip
+"
+
+test_done
+
+# vim: syntax=sh

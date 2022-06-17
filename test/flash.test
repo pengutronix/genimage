@@ -1,0 +1,41 @@
+#!/bin/bash
+set -x
+test_description="Flash Image Tests"
+
+. "$(dirname "${0}")/test-setup.sh"
+
+exec_test_set_prereq dd
+test_expect_success "flash" "
+	setup_test_images &&
+	run_genimage flash.config test.flash &&
+	md5sum -c '${testdir}/flash.md5'
+"
+
+exec_test_set_prereq mkfs.jffs2
+test_expect_success mkfs_jffs2 "jffs2" "
+	run_genimage_root jffs2.config test.jffs2 &&
+	md5sum -c '${testdir}/jffs2.md5'
+"
+
+exec_test_set_prereq mkfs.ubifs
+test_expect_success mkfs_ubifs "ubifs" "
+	run_genimage_root ubifs.config test.ubifs &&
+	check_size_range images/test.ubifs 200000 300000
+"
+
+setup_ubi_images() {
+	rm -rf input &&
+	mkdir input &&
+	cp images/test.ubifs input/
+}
+
+exec_test_set_prereq ubinize
+test_expect_success ubinize "ubi" "
+	setup_ubi_images &&
+	run_genimage ubi.config test.ubi &&
+	check_size_range images/test.ubi 550000 600000
+"
+
+test_done
+
+# vim: syntax=sh

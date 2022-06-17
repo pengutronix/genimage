@@ -50,7 +50,8 @@ noinst_HEADERS = \
 	list.h
 
 EXTRA_DIST += \
-	test/basic-images.test \
+	$(TESTS) \
+	test/test-setup.sh \
 	test/cpio.config \
 	test/cramfs.config \
 	test/exec-check.sh \
@@ -138,11 +139,16 @@ TEST_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
 TEST_LOG_COMPILER = fakeroot
 
 TESTS = \
-	test/basic-images.test
+	test/genimage.test \
+	test/ext.test \
+	test/filesystem.test \
+	test/flash.test \
+	test/hdimage.test \
+	test/misc.test
 
 # when "make clean" runs
 CLEANFILES = \
-	test-results/basic-images.test*.counts
+	test-results/*.test*.counts
 
 # when "make distclean" runs
 DISTCLEAN = \

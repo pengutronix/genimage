@@ -1,0 +1,106 @@
+#!/bin/bash
+set -x
+test_description="extX Image Tests"
+
+. "$(dirname "${0}")/test-setup.sh"
+
+check_root() {
+	diff -ru "${root_orig}" "${root_test}"
+}
+
+func_check() {
+	local ret="$?"
+	set +x
+	if [ "${ret}" != 0 ]; then
+		echo "Failed to execute '${FUNCNAME[1]}'!" >&2
+		return "${ret}"
+	fi
+}
+
+compare_label() {
+	if [ "${1}" != "${2}" ]; then
+		echo "Filesystem Label does not match: exprected: '${2}' found '${1}'"
+		return 1
+	fi
+}
+
+check_ext() {
+	[ "$verbose" = "t" ] && set -x
+	# UUID is randomly generated
+	uuid="Filesystem UUID"
+	# Hash Seed is randomly generated
+	seed="Directory Hash Seed:"
+	# checksum depends on random data
+	csum1="Checksum: \|Group 0: (Blocks 1-4095) csum"
+	# format change
+	csum2="Group 0: (Blocks 1-4095) \\[ITABLE_ZEROED\\]\|  Checksum .*, unused inodes 205"
+	dumpe2fs "${1}" | grep -v "^\($uuid\|$seed\|$csum1\|$csum2\)" > "dump" &&
+	# some architectures (including arm64) use unsigned char
+	sed -i 's/un\(signed_directory_hash\)/\1/' "dump" &&
+	# fixup for ext3 journal size with old tune2fs
+	sed -i 's/^\(Journal size:             \)1029k$/\11024k/' "dump" &&
+	# output format changed with some version
+	sed -i 's/^\(  Block bitmap at .*\),\( Inode bitmap.*\)$/\1\n \2/' "dump" &&
+	# convert to latest dump2fs output
+	sed -i  -e 's/^J\(ournal size:\)      /Total j\1/' \
+		-e 's/^Journal length:      \( *\)\(.*\)$/Total journal blocks:\1\2\nMax transaction length:   \2\nFast commit length:       0/' \
+		-e '/^Overhead clusters:/d' \
+		"dump" &&
+	if [ "${4}" = "genext2fs" ]; then
+		if [ "$(genext2fs --version)" = "genext2fs 1.4.1" ]; then
+			version=0
+		else
+			version=1
+		fi
+	else
+		version=0
+	fi
+	test_cmp "${testdir}/${2}.${version}.dump" "dump" &&
+	e2fsck -nf "${1}" &&
+	# old versions of debugfs cannot dump '/'
+	debugfs -R "ls -p" "${1}" | (
+		IFS=/
+		while read a b c d e x f; do
+			case "${x}" in
+			.|..|lost+found|"") continue ;;
+			esac
+			debugfs -R "rdump \"${x}\" \"${root_test}\"" "${1}" || break
+		done
+	) &&
+	check_size "${1}" "${3}" &&
+	check_root
+	func_check
+}
+
+exec_test_set_prereq genext2fs
+exec_test_set_prereq e2fsck
+test_expect_success genext2fs,e2fsck "ext2" "
+	run_genimage_root ext2.config test.ext2 &&
+	check_ext images/test.ext2 ext2test 4194304 genext2fs
+"
+
+test_expect_success genext2fs,e2fsck "ext2percent" "
+	run_genimage_root ext2percent.config test.ext2 &&
+	check_ext images/test.ext2 ext2test-percent 69632 genext2fs
+"
+
+test_expect_success genext2fs,e2fsck "ext3" "
+	run_genimage_root ext3.config test.ext3 &&
+	check_ext images/test.ext3 ext3test 4194304 genext2fs
+"
+
+test_expect_success genext2fs,e2fsck "ext4" "
+	run_genimage ext4.config test.ext4 &&
+	check_ext images/test.ext4 ext4test 4194304 genext2fs
+"
+
+# make sure mke2fs supports '-d root-directory'
+[ "$(mke2fs |& sed -n 's/.*\(-d \).*/\1/p')" = "-d " ] && test_set_prereq mke2fs
+test_expect_success mke2fs,e2fsck "mke2fs" "
+	run_genimage_root mke2fs.config mke2fs.ext4 &&
+	check_ext images/mke2fs.ext4 mke2fs 33554432 mke2fs
+"
+
+test_done
+
+# vim: syntax=sh

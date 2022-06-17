@@ -1,0 +1,69 @@
+#!/bin/bash
+set -x
+test_description="Filesystem Image Tests"
+
+. "$(dirname "${0}")/test-setup.sh"
+
+check_filelist() {
+	test_cmp "${filelist_orig}" "${filelist_test}"
+}
+
+exec_test_set_prereq cpio
+test_expect_success cpio "cpio" "
+	run_genimage_root cpio.config test.cpio &&
+	zcat images/test.cpio | cpio --extract -t | grep -v '^\.$'  | sort > '${filelist_test}' &&
+	check_size_range images/test.cpio 400 550 &&
+	check_filelist
+"
+
+exec_test_set_prereq mkcramfs
+test_expect_success mkcramfs "cramfs" "
+	run_genimage_root cramfs.config test.cramfs &&
+	check_size images/test.cramfs 4096
+"
+
+exec_test_set_prereq genisoimage
+test_expect_success genisoimage "iso" "
+	run_genimage_root iso.config test.iso &&
+	check_size_range images/test.iso 300000 400000
+"
+
+exec_test_set_prereq mkfs.f2fs
+exec_test_set_prereq sload.f2fs
+exec_test_set_prereq fsck.f2fs
+test_expect_success mkfs_f2fs,sload_f2fs,fsck_f2fs "f2fs" "
+	run_genimage_root f2fs.config test.f2fs &&
+	fsck.f2fs images/test.f2fs
+"
+
+exec_test_set_prereq mksquashfs
+test_expect_success mksquashfs "squashfs" "
+	run_genimage_root squashfs.config test.squashfs &&
+	check_size_range images/test.squashfs 4000 4100 &&
+	unsquashfs -ls images/test.squashfs  | sed -n '/squashfs-root/s;squashfs-root/;;p' | sort > '${filelist_test}' &&
+	check_filelist
+"
+
+exec_test_set_prereq tar
+test_expect_success tar "tar" "
+	run_genimage_root tar.config test.tar.gz &&
+	check_size_range images/test.tar.gz 500 600 &&
+	zcat images/test.tar.gz | tar -t | sed -n -e 's;/$;;' -e 's;^\./\(..*\)$;\1;p' | sort > '${filelist_test}' &&
+	check_filelist
+"
+
+exec_test_set_prereq dd
+exec_test_set_prereq mkdosfs
+exec_test_set_prereq mcopy
+test_expect_success dd,mkdosfs,mcopy "vfat" "
+	run_genimage_root vfat.config test.vfat &&
+	fsck.fat -p images/test.vfat | tee fsck.log &&
+	test_must_fail grep -q 'Filesystem was changed' fsck.log &&
+	check_size images/test.vfat 4193280 &&
+	MTOOLS_SKIP_CHECK=1 mdir -/ -f -b -i images/test.vfat / | sed -e 's;^::/;;' -e 's;/$;;' | sort > '${filelist_test}' &&
+	check_filelist
+"
+
+test_done
+
+# vim: syntax=sh
