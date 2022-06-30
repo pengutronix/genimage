@@ -1,0 +1,159 @@
+#!/bin/bash
+set -x
+test_description="hdimage Image Tests"
+
+. "$(dirname "${0}")/test-setup.sh"
+
+get_disk_usage() {
+	local file="${1}"
+	if [ ! -f "${file}" ]; then
+		echo "Failed to check file disk usage: '${file}' does not exist!"
+		return 1
+	fi
+	set -- $(du -B 1 "${file}")
+	usage="${1}"
+}
+
+check_disk_usage_range() {
+	local usage
+	get_disk_usage "${1}" || return
+	if [ "${usage}" -lt "${2}" -o "${usage}" -gt "${3}" ]; then
+		echo "Incorrect file disk usage for '${1}': expected min: ${2} max: ${3} found: ${usage}"
+		return 1
+	fi
+}
+
+exec_test_set_prereq fdisk
+exec_test_set_prereq sfdisk
+test_expect_success fdisk,sfdisk "hdimage" "
+	setup_test_images &&
+	run_genimage hdimage.config test.hdimage &&
+	check_size images/test.hdimage 10485760 &&
+	sfdisk_validate images/test.hdimage &&
+	check_disk_usage_range images/test.hdimage 40960 57344 &&
+	sanitized_fdisk_sfdisk images/test.hdimage > hdimage.fdisk &&
+	test_cmp '${testdir}/hdimage.fdisk' hdimage.fdisk &&
+	check_size images/test.hdimage-2 11539968 &&
+	sfdisk_validate images/test.hdimage-2 &&
+	check_disk_usage_range images/test.hdimage-2 61290 65376 &&
+	sanitized_fdisk_sfdisk images/test.hdimage-2 > hdimage.fdisk-2 &&
+	test_cmp '${testdir}/hdimage.fdisk-2' hdimage.fdisk-2
+"
+
+test_expect_success "hdimage2" "
+	setup_test_images &&
+	test_must_fail run_genimage hdimage2.config test.hdimage
+"
+
+test_expect_success fdisk-gpt,sfdisk-gpt "hdimage4" "
+	setup_test_images &&
+	run_genimage hdimage4.config test.hdimage &&
+	check_size images/test.hdimage 7360512 &&
+	sfdisk_validate images/test.hdimage &&
+	sanitized_fdisk_sfdisk images/test.hdimage > hdimage4.fdisk &&
+	test_cmp '${testdir}/hdimage4.fdisk' hdimage4.fdisk
+"
+
+test_expect_success fdisk-gpt,sfdisk-gpt "hdimage5" "
+	setup_test_images &&
+	run_genimage hdimage5.config test.hdimage &&
+	check_size images/test.hdimage 7360512 &&
+	sanitized_fdisk_sfdisk images/test.hdimage > hdimage5.fdisk &&
+	test_cmp '${testdir}/hdimage5.fdisk' hdimage5.fdisk
+"
+
+test_expect_success fdisk,sfdisk "hdimage6" "
+	setup_test_images &&
+	run_genimage hdimage6.config test.hdimage &&
+	check_size images/test.hdimage 28082176 &&
+	sanitized_fdisk_sfdisk images/test.hdimage > hdimage6.fdisk &&
+	test_cmp '${testdir}/hdimage6.fdisk' hdimage6.fdisk
+"
+
+test_expect_success fdisk-gpt,sfdisk-gpt "hdimage7" "
+	setup_test_images &&
+	run_genimage hdimage7.config &&
+	sfdisk_validate images/test.hdimage &&
+	sanitized_fdisk_sfdisk images/test.hdimage > hdimage7.fdisk &&
+	test_cmp '${testdir}/hdimage7.fdisk' hdimage7.fdisk
+"
+
+test_expect_success fdisk-gpt,sfdisk-gpt "hdimage-hybrid" "
+	setup_test_images &&
+	run_genimage hdimage-hybrid.config &&
+	sfdisk_validate images/hybrid.hdimage &&
+	sanitized_fdisk_sfdisk images/hybrid.hdimage > hdimage-hybrid.fdisk &&
+	test_cmp '${testdir}/hdimage-hybrid.fdisk' hdimage-hybrid.fdisk &&
+	dd if=images/hybrid.hdimage count=1 | hexdump -C > hybrid.sector0 &&
+	dd if=images/mbr.hdimage count=1 | hexdump -C > mbr.sector0 &&
+	test_cmp hybrid.sector0 mbr.sector0
+"
+
+test_expect_success "hdimage syntax" "
+	setup_test_images &&
+	test_must_fail run_genimage hdimage-fail1.config &&
+	test_must_fail run_genimage hdimage-fail2.config &&
+	test_must_fail run_genimage hdimage-fail3.config &&
+	test_must_fail run_genimage hdimage-fail4.config &&
+	test_must_fail run_genimage hdimage-fail5.config &&
+	test_must_fail run_genimage hdimage-fail6.config &&
+	test_must_fail run_genimage hdimage-fail7.config
+"
+
+setup_gpt_files() {
+	rm -rf input &&
+	mkdir input &&
+	truncate -s 3k input/3K.img &&
+	truncate -s 70k input/70K.img
+}
+
+test_expect_success "gpt-overlap1" "
+	setup_gpt_files &&
+	test_must_fail run_genimage gpt-overlap1.config"
+
+test_expect_success "gpt-overlap2" "
+	setup_gpt_files &&
+	run_genimage gpt-overlap2.config"
+
+test_expect_success "gpt-overlap3" "
+	setup_gpt_files &&
+	test_must_fail run_genimage gpt-overlap3.config"
+
+# A bootloader image with a don't-care region extending over MBR
+# table, GPT header and (usual) placement of GPT array.
+test_expect_success "bootloader-hole1" "
+	setup_gpt_files &&
+	run_genimage hole.config"
+
+# Oops, if we move the GPT array we're no longer covered by the hole.
+test_expect_success "bootloader-hole2" "
+	setup_gpt_files &&
+	GPT_LOCATION=64K test_must_fail run_genimage hole.config"
+
+# But it's ok if the array is moved beyond the bootloader.
+test_expect_success "bootloader-hole3" "
+	setup_gpt_files &&
+	GPT_LOCATION=70K run_genimage hole.config"
+
+# If the 70K bootloader starts at 64K, it will overlap a partition at 129K.
+test_expect_success "bootloader-hole4" "
+	setup_gpt_files &&
+	OFFSET=64K test_must_fail run_genimage hole.config"
+
+# But if it starts at 128K, its hole will cover the small 3K partition.
+test_expect_success "bootloader-hole5" "
+	setup_gpt_files &&
+	OFFSET=128K run_genimage hole.config"
+
+test_expect_success "hdimage no-partition" "
+	dd if=/dev/zero bs=1 count=100 | tr '\000' '\377' > input/block1.img &&
+	dd if=/dev/zero bs=1 count=50  | tr '\000' '\252' > input/block2.img &&
+	dd if=/dev/zero bs=1 count=75  | tr '\000' '\167' > input/block3.img &&
+	run_genimage hdimage-nopart.config &&
+	hexdump -C images/test.hdimage > 'hdimage-nopart.hexdump' &&
+	test_cmp 'hdimage-nopart.hexdump' '${testdir}/hdimage-nopart.hexdump'
+"
+
+test_done
+
+# vim: syntax=sh

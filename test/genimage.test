@@ -1,0 +1,57 @@
+#!/bin/bash
+set -x
+test_description="Genimage Basic Functionality Tests"
+
+. "$(dirname "${0}")/test-setup.sh"
+
+setup_exec_files() {
+	rm -rf input &&
+	mkdir input &&
+	dd if=/dev/zero of=input/file1.img bs=512 count=7 &&
+	dd if=/dev/zero of=input/file2.img bs=512 count=7 &&
+	dd if=/dev/zero of=input/file3.img bs=512 count=7 &&
+	dd if=/dev/zero of=input/file4.img bs=512 count=7
+}
+
+test_expect_success "exec" "
+	setup_exec_files &&
+	run_genimage_root exec.config"
+
+test_expect_success "exec-fail" "
+	setup_exec_files &&
+	test_must_fail run_genimage_root exec-fail.config"
+
+
+"$genimage" --help | grep -q 'GENIMAGE_INCLUDEPATH' && test_set_prereq "includepath"
+
+test_expect_success fdisk-gpt,sfdisk-gpt "includepath1" "
+	run_genimage include.config &&
+	sanitized_fdisk_sfdisk images/include.hdimage > include.fdisk &&
+	test_cmp '${testdir}/include-ccc.fdisk' include.fdisk
+"
+
+test_expect_success fdisk-gpt,sfdisk-gpt,includepath "includepath2" "
+	extra_opts='--includepath=${testdir}/include/aaa' run_genimage include.config &&
+	sanitized_fdisk_sfdisk images/include.hdimage > include.fdisk &&
+	test_cmp '${testdir}/include-aaa.fdisk' include.fdisk
+"
+
+test_expect_success fdisk-gpt,sfdisk-gpt,includepath "includepath3" "
+	extra_opts='--includepath=${testdir}/include/bbb:${testdir}/include/aaa' run_genimage include.config &&
+	sanitized_fdisk_sfdisk images/include.hdimage > include.fdisk &&
+	test_cmp '${testdir}/include-bbb.fdisk' include.fdisk
+"
+
+test_expect_success fdisk-gpt,sfdisk-gpt,includepath "includepath4" "
+	extra_opts='--includepath=.:${testdir}/include/bbb' run_genimage include.config &&
+	sanitized_fdisk_sfdisk images/include.hdimage > include.fdisk &&
+	test_cmp '${testdir}/include-ccc.fdisk' include.fdisk
+"
+
+test_expect_success !includepath "includepath5" "
+	extra_opts='--includepath=${testdir}/include/aaa' test_must_fail run_genimage include.config
+"
+
+test_done
+
+# vim: syntax=sh
