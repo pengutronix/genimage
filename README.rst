@@ -279,7 +279,7 @@ For example::
 
   image foo {
 	  hdimage {
-		  gpt = true
+		  partition-table-type = "gpt"
 		  gpt-location = 64K
 	  }
 
