@@ -30,6 +30,22 @@ AC_FUNC_MALLOC
 AC_TYPE_SIZE_T
 AC_TYPE_UINT32_T
 
+AC_CACHE_CHECK([whether linux/fs.h is available], [genimage_cv_header_linux_fs_h],
+	AC_CHECK_HEADERS([linux/fs.h], [genimage_cv_header_linux_fs_h=yes],
+		[genimage_cv_header_linux_fs_h=no]))
+
+AC_CACHE_CHECK([whether linux/fiemap.h is available], [genimage_cv_header_fiemap_h],
+	AC_CHECK_HEADERS([linux/fiemap.h], [genimage_cv_header_fiemap_h=yes],
+		[genimage_cv_header_fiemap_h=no]))
+
+if test "x$genimage_cv_header_linux_fs_h" = "xyes"; then
+	AC_DEFINE([HAVE_LINUX_FS_H], [1], [Define if linux/fs.h is available])
+fi
+
+if test "x$genimage_cv_header_fiemap_h" = "xyes" -a "x$genimage_cv_header_linux_fs_h" = "xyes"; then
+	AC_DEFINE([HAVE_FIEMAP], [1], [Define if fiemap can be used])
+fi
+
 # ----------- query user's settings ----------------------
 AC_MSG_CHECKING([whether to enable debugging])
 AC_ARG_ENABLE([debug],

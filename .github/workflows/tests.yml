@@ -10,6 +10,9 @@ jobs:
         include:
         - os: ubuntu-22.04
           pkgs: device-tree-compiler rauc simg2img u-boot-tools f2fs-tools arm-trusted-firmware-tools
+        - os: ubuntu-22.04
+          pkgs: device-tree-compiler rauc simg2img u-boot-tools f2fs-tools arm-trusted-firmware-tools
+          fake: sudo rm /usr/include/linux/fiemap.h /usr/include/linux/fs.h
         - os: ubuntu-20.04
           pkgs: device-tree-compiler rauc simg2img u-boot-tools f2fs-tools
         - os: ubuntu-18.04
@@ -28,6 +31,7 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install dosfstools fakeroot genext2fs genisoimage libconfuse-dev mtd-utils mtools qemu-utils qemu-utils squashfs-tools ${{ matrix.pkgs }}
+        ${{ matrix.fake }}
 
     - name: Build & Test (with ${{ matrix.options }})
       run: |

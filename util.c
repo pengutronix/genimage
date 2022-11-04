@@ -24,8 +24,12 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
+#ifdef HAVE_LINUX_FS_H
 #include <linux/fs.h>
+#endif
+#ifdef HAVE_FIEMAP
 #include <linux/fiemap.h>
+#endif
 #include <unistd.h>
 #include <fcntl.h>
 #include <ctype.h>
@@ -375,9 +379,10 @@ static int whole_file_exent(size_t size, struct extent **extents,
 int map_file_extents(struct image *image, const char *filename, int f,
 		     size_t size, struct extent **extents, size_t *extent_count)
 {
+	int ret;
+#ifdef HAVE_FIEMAP
 	struct fiemap *fiemap;
 	unsigned i;
-	int ret;
 
 	/* Get extent count */
 	fiemap = xzalloc(sizeof(struct fiemap));
@@ -413,6 +418,9 @@ err_out:
 	ret = -errno;
 
 	free(fiemap);
+#else
+	ret = -EOPNOTSUPP;
+#endif
 
 	/* If failure is due to no filesystem support, return a single extent */
 	if (ret == -EOPNOTSUPP || ret == -ENOTTY)
@@ -806,6 +814,7 @@ out:
 
 int reload_partitions(struct image *image)
 {
+#ifdef HAVE_LINUX_FS_H
 	const char *outfile = imageoutfile(image);
 	int fd;
 
@@ -823,6 +832,7 @@ int reload_partitions(struct image *image)
 		image_info(image, "failed to re-read partition table: %s\n",
 			strerror(errno));
 	close(fd);
+#endif
 	return 0;
 }
 
