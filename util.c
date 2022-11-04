@@ -235,12 +235,10 @@ int systemp(struct image *image, const char *fmt, ...)
 		if (!shell || shell[0] == 0x0)
 			shell = "/bin/sh";
 
-		ret = execl(shell, shell, "-c", buf, NULL);
-		if (ret < 0) {
-			ret = -errno;
-			error("Cannot execute %s: %s\n", buf, strerror(errno));
-			goto err_out;
-		}
+		execl(shell, shell, "-c", buf, NULL);
+		ret = -errno;
+		error("Cannot execute %s: %s\n", buf, strerror(errno));
+		goto err_out;
 	} else {
 		ret = waitpid(pid, &status, 0);
 		if (ret < 0) {
