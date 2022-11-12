@@ -9,11 +9,11 @@ jobs:
       matrix:
         include:
         - os: ubuntu-22.04
-          pkgs: device-tree-compiler rauc simg2img u-boot-tools f2fs-tools arm-trusted-firmware-tools
+          pkgs: device-tree-compiler rauc simg2img u-boot-tools f2fs-tools btrfs-tools arm-trusted-firmware-tools
         - os: ubuntu-20.04
-          pkgs: device-tree-compiler rauc simg2img u-boot-tools f2fs-tools
+          pkgs: device-tree-compiler rauc simg2img u-boot-tools f2fs-tools btrfs-tools
         - os: ubuntu-18.04
-          pkgs: device-tree-compiler simg2img u-boot-tools f2fs-tools
+          pkgs: device-tree-compiler simg2img u-boot-tools f2fs-tools btrfs-tools
 
     steps:
     - name: Inspect environment
