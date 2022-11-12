@@ -33,12 +33,13 @@ static int btrfs_generate(struct image *image)
 		return ret;
 
 
-	ret = systemp(image, "%s %s %s %s '%s'",
-			get_opt("mkfsf2fs"),
+	ret = systemp(image, "%s %s %s %s '%s' '%s'",
+			get_opt("mkfsbtrfs"),
 			label ? "-L"  : "",
 			label ? label : "",
 			label ? "-r" : "",
-			imageoutfile(image));
+			mountpath(image), /* source dir */
+			imageoutfile(image)); /* destination file */
 
 	if(ret || image->empty)
 		return ret;
