@@ -11,7 +11,7 @@ Filesystem OS type:       Linux
 Inode count:              8192
 Block count:              32768
 Reserved block count:     1638
-Free blocks:              26568
+Free blocks:              26580
 Free inodes:              8141
 First block:              1
 Block size:               1024
@@ -29,7 +29,7 @@ Mount count:              0
 Maximum mount count:      -1
 Last checked:             Sat Jan  1 00:00:00 2000
 Check interval:           0 (<none>)
-Lifetime writes:          141 kB
+Lifetime writes:          107 kB
 Reserved blocks uid:      0 (user root)
 Reserved blocks gid:      0 (group root)
 First inode:              11
@@ -39,8 +39,6 @@ Desired extra isize:      32
 Journal inode:            8
 Default directory hash:   half_md4
 Journal backup:           inode blocks
-User quota inode:         3
-Group quota inode:        4
 Checksum type:            crc32c
 Journal features:         (none)
 Total journal size:       4096k
@@ -51,13 +49,13 @@ Journal sequence:         0x00000001
 Journal start:            0
 
 
-Group 0: (Blocks 1-8192) csum 0x74a0 [ITABLE_ZEROED]
+Group 0: (Blocks 1-8192) csum 0xd0bb [ITABLE_ZEROED]
   Primary superblock at 1, Group descriptors at 2-2
-  Block bitmap at 3 (+2), csum 0x16cec4db
+  Block bitmap at 3 (+2), csum 0xde29f1cb
   Inode bitmap at 7 (+6), csum 0xb1052088
   Inode table at 11-522 (+10)
-  6093 free blocks, 1997 free inodes, 18 directories, 1997 unused inodes
-  Free blocks: 2100-8192
+  6105 free blocks, 1997 free inodes, 18 directories, 1997 unused inodes
+  Free blocks: 2088-8192
   Free inodes: 52-2048
 Group 1: (Blocks 8193-16384) csum 0x8fde [INODE_UNINIT, BLOCK_UNINIT, ITABLE_ZEROED]
   Backup superblock at 8193, Group descriptors at 8194-8194
