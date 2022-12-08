@@ -1,5 +1,4 @@
 #!/bin/bash
-set -x
 test_description="extX Image Tests"
 
 . "$(dirname "${0}")/test-setup.sh"
