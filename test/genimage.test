@@ -1,5 +1,4 @@
 #!/bin/bash
-set -x
 test_description="Genimage Basic Functionality Tests"
 
 . "$(dirname "${0}")/test-setup.sh"
