@@ -46,6 +46,8 @@ if test "x$genimage_cv_header_fiemap_h" = "xyes" -a "x$genimage_cv_header_linux_
 	AC_DEFINE([HAVE_FIEMAP], [1], [Define if fiemap can be used])
 fi
 
+AC_CHECK_FUNCS(fallocate)
+
 # ----------- query user's settings ----------------------
 AC_MSG_CHECKING([whether to enable debugging])
 AC_ARG_ENABLE([debug],
