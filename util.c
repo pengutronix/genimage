@@ -465,16 +465,16 @@ static int write_bytes(int fd, size_t size, off_t offset, unsigned char byte)
 			 */
 			size = st.st_size - offset;
 		}
+#ifdef HAVE_FALLOCATE
 		/*
-		 * Maybe this should be guarded by a #ifdef
-		 * HAVE_FALLOCATE. That's easy to add, and the code
-		 * will just automatically fall through to the write
-		 * loop, the same way as if the filesystem doesn't
-		 * support FALLOC_FL_PUNCH_HOLE.
+		 * Use fallocate if it is available and FALLOC_FL_PUNCH_HOLE
+		 * is supported by the filesystem. If not, fall through to
+		 * the write loop.
 		 */
 		if (fallocate(fd, FALLOC_FL_PUNCH_HOLE | FALLOC_FL_KEEP_SIZE,
 			      offset, size) == 0)
 			return 0;
+#endif
 	}
 
 	/* Not a regular file, non-zero pattern, or fallocate not applicable. */
