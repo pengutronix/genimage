@@ -174,7 +174,7 @@ int insert_image(struct image *image, struct image *sub,
 		 unsigned long long size, unsigned long long offset,
 		 unsigned char byte);
 int insert_data(struct image *image, const void *data, const char *outfile,
-		size_t size, long offset);
+		size_t size, unsigned long long offset);
 int extend_file(struct image *image, size_t size);
 int reload_partitions(struct image *image);
 int parse_holes(struct image *image, cfg_t *cfg);
