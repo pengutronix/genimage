@@ -99,6 +99,7 @@ static cfg_opt_t partition_opts[] = {
 	CFG_BOOL("read-only", cfg_false, CFGF_NONE),
 	CFG_BOOL("hidden", cfg_false, CFGF_NONE),
 	CFG_BOOL("no-automount", cfg_false, CFGF_NONE),
+	CFG_BOOL("fill", cfg_false, CFGF_NONE),
 	CFG_STR("image", NULL, CFGF_NONE),
 	CFG_STR_LIST("holes", NULL, CFGF_NONE),
 	CFG_BOOL("autoresize", 0, CFGF_NONE),
@@ -398,6 +399,7 @@ static int parse_partitions(struct image *image, cfg_t *imagesec)
 		part->read_only = cfg_getbool(partsec, "read-only");
 		part->hidden = cfg_getbool(partsec, "hidden");
 		part->no_automount = cfg_getbool(partsec, "no-automount");
+		part->fill = cfg_getbool(partsec, "fill");
 		part->image = cfg_getstr(partsec, "image");
 		part->autoresize = cfg_getbool(partsec, "autoresize");
 		part->in_partition_table = cfg_getbool(partsec, "in-partition-table");
