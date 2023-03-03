@@ -434,7 +434,7 @@ static int hdimage_generate(struct image *image)
 
 		child = image_get(part->image);
 
-		if (child->size == 0)
+		if (child->size == 0 && !part->fill)
 			continue;
 
 		if (child->size > part->size) {
@@ -443,7 +443,7 @@ static int hdimage_generate(struct image *image)
 			return -E2BIG;
 		}
 
-		ret = insert_image(image, child, child->size, part->offset, 0);
+		ret = insert_image(image, child, part->fill ? part->size : child->size, part->offset, 0);
 		if (ret) {
 			image_error(image, "failed to write image partition '%s'\n",
 					part->name);

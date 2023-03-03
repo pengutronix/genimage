@@ -120,6 +120,9 @@ Partition options:
 			table, otherwise to the image's ``align`` value.
 :partition-type:	Used by dos partition tables to specify the partition type.
 :image:			The image file this partition shall be filled with
+:fill:			Boolean specifying that all bytes of the partition should be
+			explicitly initialized. Any bytes beyond the size of the specified
+			image will be set to 0.
 :autoresize:		Boolean specifying that the partition should be resized
 			automatically. For UBI volumes this means that the
 			``autoresize`` flag is set. Only one volume can have this flag.

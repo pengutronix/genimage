@@ -43,6 +43,7 @@ struct partition {
 	cfg_bool_t read_only;
 	cfg_bool_t hidden;
 	cfg_bool_t no_automount;
+	cfg_bool_t fill;
 	const char *image;
 	struct list_head list;
 	int autoresize;
