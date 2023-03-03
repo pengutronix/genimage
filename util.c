@@ -642,7 +642,7 @@ out:
 }
 
 int insert_data(struct image *image, const void *_data, const char *outfile,
-		size_t size, long offset)
+		size_t size, unsigned long long offset)
 {
 	const char *data = _data;
 	int outf = -1;
