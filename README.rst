@@ -135,14 +135,16 @@ Partition options:
 			id. Defaults to a random value.
 :partition-type-uuid:	String used by GPT partition tables to specify the partition type.
 			Either a UUID or a shortcut:
-			 * L: Linux filesystem (0fc63daf-8483-4772-8e79-3d69d8477de4)
-			 * S: Swap (0657fd6d-a4ab-43c4-84e5-0933c84b4f4f)
-			 * H: Home (933ac7e1-2eb4-4f13-b844-0e14e2aef915)
-			 * U: EFI System (c12a7328-f81f-11d2-ba4b-00a0c93ec93b)
-			 * R: Linux RAID (a19d880f-05fc-4d3b-a006-743f0f84911e)
-			 * V: Linux LVM (e6d6d379-f507-44c2-a23c-238f2a3df928)
-			 * F: FAT32 / Basic Data Partition (ebd0a0a2-b9e5-4433-87c0-68b6b72699c7)
-			Defaults to L.
+
+			* ``L``: Linux filesystem (0fc63daf-8483-4772-8e79-3d69d8477de4)
+			* ``S``: Swap (0657fd6d-a4ab-43c4-84e5-0933c84b4f4f)
+			* ``H``: Home (933ac7e1-2eb4-4f13-b844-0e14e2aef915)
+			* ``U``: EFI System (c12a7328-f81f-11d2-ba4b-00a0c93ec93b)
+			* ``R``: Linux RAID (a19d880f-05fc-4d3b-a006-743f0f84911e)
+			* ``V``: Linux LVM (e6d6d379-f507-44c2-a23c-238f2a3df928)
+			* ``F``: FAT32 / Basic Data Partition (ebd0a0a2-b9e5-4433-87c0-68b6b72699c7)
+
+			Defaults to ``L``.
 
 For each partition, its final alignment, offset and size are determined as follows:
 
