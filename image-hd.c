@@ -265,6 +265,7 @@ gpt_partition_type_lookup(char shortcut)
 	case 'R': return "a19d880f-05fc-4d3b-a006-743f0f84911e";
 	case 'V': return "e6d6d379-f507-44c2-a23c-238f2a3df928";
 	case 'F': return "ebd0a0a2-b9e5-4433-87c0-68b6b72699c7";
+	case 'B': return "4778ed65-bf42-45fa-9c5b-287a1dc4aab1";
 	}
 	return NULL;
 }
