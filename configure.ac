@@ -19,6 +19,9 @@ AC_CONFIG_MACRO_DIR([m4])
 # default is less output while building the package
 AM_SILENT_RULES([yes])
 
+# Help the generated libtool script understand the characteristics of the host
+LT_INIT
+
 # change if 'usr/local' as the default install path isn't a good choice
 #AC_PREFIX_DEFAULT([/usr/local])
 
