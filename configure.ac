@@ -7,7 +7,7 @@ AC_INIT([genimage],
 AC_CONFIG_SRCDIR([genimage.c])
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([foreign 1.11 -Wall -Wno-portability silent-rules tar-pax no-dist-gzip dist-xz subdir-objects])
-AC_PROG_CC_STDC
+AC_PROG_CC
 
 # If possible, enable extensions to Posix
 AC_USE_SYSTEM_EXTENSIONS
