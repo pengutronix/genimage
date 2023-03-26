@@ -254,19 +254,43 @@ static int hdimage_insert_ebr(struct image *image, struct partition *part)
 	return 0;
 }
 
-static const char *
-gpt_partition_type_lookup(char shortcut)
+struct gpt_partition_type_shortcut_t
 {
-	switch(shortcut) {
-	case 'L': return "0fc63daf-8483-4772-8e79-3d69d8477de4";
-	case 'S': return "0657fd6d-a4ab-43c4-84e5-0933c84b4f4f";
-	case 'H': return "933ac7e1-2eb4-4f13-b844-0e14e2aef915";
-	case 'U': return "c12a7328-f81f-11d2-ba4b-00a0c93ec93b";
-	case 'R': return "a19d880f-05fc-4d3b-a006-743f0f84911e";
-	case 'V': return "e6d6d379-f507-44c2-a23c-238f2a3df928";
-	case 'F': return "ebd0a0a2-b9e5-4433-87c0-68b6b72699c7";
-	case 'B': return "4778ed65-bf42-45fa-9c5b-287a1dc4aab1";
+	const char * shortcut;
+	const char * guid;
+};
+
+static const struct gpt_partition_type_shortcut_t gpt_partition_type_shortcuts[] =
+{
+	{ "L"                           , "0fc63daf-8483-4772-8e79-3d69d8477de4" },
+	{ "linux"                       , "0fc63daf-8483-4772-8e79-3d69d8477de4" },
+	{ "S"                           , "0657fd6d-a4ab-43c4-84e5-0933c84b4f4f" },
+	{ "swap"                        , "0657fd6d-a4ab-43c4-84e5-0933c84b4f4f" },
+	{ "H"                           , "933ac7e1-2eb4-4f13-b844-0e14e2aef915" },
+	{ "home"                        , "933ac7e1-2eb4-4f13-b844-0e14e2aef915" },
+	{ "U"                           , "c12a7328-f81f-11d2-ba4b-00a0c93ec93b" },
+	{ "uefi"                        , "c12a7328-f81f-11d2-ba4b-00a0c93ec93b" },
+	{ "R"                           , "a19d880f-05fc-4d3b-a006-743f0f84911e" },
+	{ "raid"                        , "a19d880f-05fc-4d3b-a006-743f0f84911e" },
+	{ "V"                           , "e6d6d379-f507-44c2-a23c-238f2a3df928" },
+	{ "lvm"                         , "e6d6d379-f507-44c2-a23c-238f2a3df928" },
+	{ "F"                           , "ebd0a0a2-b9e5-4433-87c0-68b6b72699c7" },
+	{ "fat32"                       , "ebd0a0a2-b9e5-4433-87c0-68b6b72699c7" },
+	{ "B"                           , "4778ed65-bf42-45fa-9c5b-287a1dc4aab1" },
+	{ "barebox-state"               , "4778ed65-bf42-45fa-9c5b-287a1dc4aab1" },
+	{ 0, 0 } /* sentinel */
+};
+
+static const char *
+gpt_partition_type_lookup(const char * shortcut)
+{
+	const struct gpt_partition_type_shortcut_t * s;
+	for(s = gpt_partition_type_shortcuts; s->shortcut; s++) {
+		if(strcasecmp(s->shortcut, shortcut) == 0) {
+			return s->guid;
+		}
 	}
+
 	return NULL;
 }
 
@@ -765,13 +789,14 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 		if ((hd->table_type & TYPE_GPT) && part->in_partition_table) {
 			if (!part->partition_type_uuid)
 				part->partition_type_uuid = "L";
-			if (strlen(part->partition_type_uuid) == 1) {
+			if (strlen(part->partition_type_uuid) > 0 &&
+					uuid_validate(part->partition_type_uuid) != 0) {
 				const char *uuid;
-				uuid = gpt_partition_type_lookup(part->partition_type_uuid[0]);
+				uuid = gpt_partition_type_lookup(part->partition_type_uuid);
 				if (!uuid) {
 					image_error(image,
-						    "part %s has invalid type shortcut: %c\n",
-						    part->name, part->partition_type_uuid[0]);
+						    "part %s has invalid type shortcut: %s\n",
+						    part->name, part->partition_type_uuid);
 					return -EINVAL;
 				}
 				part->partition_type_uuid = uuid;

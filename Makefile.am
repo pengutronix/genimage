@@ -79,6 +79,10 @@ EXTRA_DIST += \
 	test/gpt-overlap1.config \
 	test/gpt-overlap2.config \
 	test/gpt-overlap3.config \
+	test/gpt-partition-types.config \
+	test/gpt-partition-types.fdisk \
+	test/gpt-invalid-partition-type1.config \
+	test/gpt-invalid-partition-type2.config \
 	test/hdimage.config \
 	test/hdimage2.config \
 	test/hdimage.fdisk \
