@@ -136,16 +136,39 @@ Partition options:
 :partition-type-uuid:	String used by GPT partition tables to specify the partition type.
 			Either a UUID or a shortcut:
 
-			* ``L``, ``linux``: Linux filesystem (0fc63daf-8483-4772-8e79-3d69d8477de4)
+			* ``L``, ``linux``, ``linux-generic``: Linux filesystem (0fc63daf-8483-4772-8e79-3d69d8477de4)
 			* ``S``, ``swap``: Swap (0657fd6d-a4ab-43c4-84e5-0933c84b4f4f)
 			* ``H``, ``home``: Home (933ac7e1-2eb4-4f13-b844-0e14e2aef915)
-			* ``U``, ``uefi``: EFI System (c12a7328-f81f-11d2-ba4b-00a0c93ec93b)
+			* ``U``, ``esp``, ``uefi``: EFI System Partition (c12a7328-f81f-11d2-ba4b-00a0c93ec93b)
 			* ``R``, ``raid``: Linux RAID (a19d880f-05fc-4d3b-a006-743f0f84911e)
 			* ``V``, ``lvm``: Linux LVM (e6d6d379-f507-44c2-a23c-238f2a3df928)
 			* ``F``, ``fat32``: FAT32 / Basic Data Partition (ebd0a0a2-b9e5-4433-87c0-68b6b72699c7)
 			* ``B``, ``barebox-state``: Barebox State (4778ed65-bf42-45fa-9c5b-287a1dc4aab1)
 
+                        Furthermore, for ``{arch}`` being one of ``alpha``,
+                        ``arc``, ``arm``, ``arm64``, ``ia64``, ``loongarch64``,
+                        ``mips-le``, ``mips64-le``, ``parisc``, ``ppc``,
+                        ``ppc64``, ``ppc64-le``, ``riscv32``, ``riscv64``,
+                        ``s390``, ``s390x``, ``tilegx``, ``x86``, ``x86-64``,
+                        the following shortcuts from the `Discoverable
+                        Partitions Specification <dps-spec_>`_ are accepted (see the spec
+                        for the respective UUIDs):
+
+                        * ``root-{arch}``: Root Partition
+                        * ``usr-{arch}``: /usr Partition
+                        * ``root-{arch}-verity``: Root Verity Partition
+                        * ``usr-{arch}-verity``: /usr Verity Partition
+                        * ``root-{arch}-verity-sig``: Root Verity Signature Partition
+                        * ``usr-{arch}-verity-sig``: /usr Verity Signature Partition
+                        * ``xbootldr``: Extended Boot Loader Partition
+                        * ``srv``: Server Data Partition
+                        * ``var``: Variable Data Partition
+                        * ``tmp``: Temporary Data Partition
+                        * ``user-home``: Per-user Home Partition
+
 			Defaults to ``L``.
+
+.. _dps-spec: https://uapi-group.org/specifications/specs/discoverable_partitions_specification/
 
 For each partition, its final alignment, offset and size are determined as follows:
 
