@@ -16,8 +16,6 @@ jobs:
           env: ac_cv_func_fallocate=no
         - os: ubuntu-20.04
           pkgs: device-tree-compiler rauc simg2img u-boot-tools f2fs-tools
-        - os: ubuntu-18.04
-          pkgs: device-tree-compiler simg2img u-boot-tools f2fs-tools
 
     steps:
     - name: Inspect environment
