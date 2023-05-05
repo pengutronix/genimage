@@ -1,0 +1,6 @@
+Disk identifier: B0326371-955B-42E3-AD81-AD0151D813EC
+images/gpt-partition-types.img1:start=34,size=2048,type=0FC63DAF-8483-4772-8E79-3D69D8477DE4,uuid=3C1E674D-4BFD-4347-A1AB-4BB5D258B361,name="part1"
+images/gpt-partition-types.img2:start=2082,size=2048,type=C12A7328-F81F-11D2-BA4B-00A0C93EC93B,uuid=6A879323-B5F9-4275-9BB0-1C881048CBA2,name="part2"
+images/gpt-partition-types.img3:start=4130,size=2048,type=0657FD6D-A4AB-43C4-84E5-0933C84B4F4F,uuid=9EA7F2D5-EA3F-431A-A9A5-16CABBCA7F1B,name="part3"
+images/gpt-partition-types.img4:start=6178,size=2048,type=3DF8F8B0-4464-4FE6-8DF4-2A5E2F6C4949,uuid=7DD9BEBE-1C35-4886-A26C-2B784F172D89,name="part4"
+images/gpt-partition-types.img5:start=8226,size=2048,type=B024F315-D330-444C-8461-44BBDE524E99,uuid=AE7784A0-A0B7-4EF4-94C4-C3EF78B00176,name="part5"

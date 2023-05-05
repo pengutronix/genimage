@@ -118,6 +118,16 @@ test_expect_success "gpt-overlap3" "
 	setup_gpt_files &&
 	test_must_fail run_genimage gpt-overlap3.config"
 
+test_expect_success "gpt-partition-types" "
+	run_genimage gpt-partition-types.config &&
+	sfdisk_validate images/gpt-partition-types.img &&
+	sanitized_fdisk_sfdisk images/gpt-partition-types.img > gpt-partition-types.fdisk &&
+	test_cmp '${testdir}/gpt-partition-types.fdisk' gpt-partition-types.fdisk"
+
+test_expect_success "gpt-invalid-partition-types" "
+	test_must_fail run_genimage gpt-invalid-partition-type1.config &&
+	test_must_fail run_genimage gpt-invalid-partition-type2.config"
+
 # A bootloader image with a don't-care region extending over MBR
 # table, GPT header and (usual) placement of GPT array.
 test_expect_success "bootloader-hole1" "

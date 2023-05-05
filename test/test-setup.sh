@@ -98,7 +98,7 @@ setup_test_images() {
 }
 
 sanitized_fdisk_sfdisk() {
-	# check the this identifier
+	# check the disk identifier
 	fdisk -l "${1}" | grep identifier: &&
 	# check partitions; filter output to handle different sfdisk versions
 	sfdisk -d "${1}" 2>/dev/null | grep '^images/' | \
