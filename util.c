@@ -585,7 +585,7 @@ int insert_image(struct image *image, struct image *sub,
 		 * have an extent that starts beyond size.
 		 */
 		len = min(len, size);
-		ret = write_bytes(fd, len, offset, byte);
+		ret = write_bytes(fd, len, offset, 0); // Assumes 'holes' are always 0 bytes
 		if (ret) {
 			image_error(image, "writing %zu bytes failed: %s\n", len, strerror(-ret));
 			goto out;
