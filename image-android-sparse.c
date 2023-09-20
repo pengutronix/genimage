@@ -320,6 +320,19 @@ static int android_sparse_generate(struct image *image)
 		block = extents[extent].end / sparse->block_size;
 	}
 
+	if (block < block_count) {
+		header.input_chunks++;
+		chunk_header.chunk_type = SPARSE_DONT_CARE;
+		chunk_header.blocks = block_count - block;
+		chunk_header.size = sizeof(chunk_header);
+		ret = flush_header(image, out_fd, &chunk_header, -1);
+		if (ret < 0)
+			return ret;
+
+		for (i = 0; i < chunk_header.blocks; ++i)
+			crc32 = crc32_next(zeros, sparse->block_size, crc32);
+	}
+
 	header.input_chunks++;
 	chunk_header.chunk_type = SPARSE_CRC32;
 	chunk_header.blocks = 0;
