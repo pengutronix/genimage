@@ -220,7 +220,7 @@ The image configuration options
 
 android-sparse
 **************
-Generate android sparse images. The are typically used by fastboot. Sparse
+Generate android sparse images. They are typically used by fastboot. Sparse
 images encode "don't care" areas and areas that are filled with a single
 32 bit value. As a result, they are often much smaller than raw disk
 images.
