@@ -317,7 +317,7 @@ static int android_sparse_generate(struct image *image)
 		ret = flush_header(image, out_fd, &chunk_header, pos);
 		if (ret < 0)
 			return ret;
-		block = extents[extent].end / sparse->block_size;
+		block = (extents[extent].end - 1 + sparse->block_size) / sparse->block_size;
 	}
 
 	if (block < block_count) {
