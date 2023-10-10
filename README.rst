@@ -147,7 +147,7 @@ Partition options:
 
                         Furthermore, for ``{arch}`` being one of ``alpha``,
                         ``arc``, ``arm``, ``arm64``, ``ia64``, ``loongarch64``,
-                        ``mips-le``, ``mips64-le``, ``parisc``, ``ppc``,
+                        ``mips``, ``mips64``, ``mips-le``, ``mips64-le``, ``parisc``, ``ppc``,
                         ``ppc64``, ``ppc64-le``, ``riscv32``, ``riscv64``,
                         ``s390``, ``s390x``, ``tilegx``, ``x86``, ``x86-64``,
                         the following shortcuts from the `Discoverable
