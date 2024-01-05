@@ -67,15 +67,22 @@ test_expect_success rauc "rauc" "
 exec_test_set_prereq simg2img
 test_expect_success simg2img "android-sparse" "
 	setup_test_images &&
+	# make sure there is a 4*32k hole at the end
+	i=16
+	truncate --size=\$[i*(i+1)*i*i*512+32768*4] input/interleaved
 	for i in \`seq 16\`; do
 		dd if=/dev/urandom of=input/interleaved conv=notrunc seek=\$[i*i] count=\$[i] bs=\$[i*i*512] || break
 	done &&
+	dd if=/dev/urandom of=input/not-aligned count=9 bs=1024
 	run_genimage sparse.config &&
-	md5sum images/test.hdimage input/interleaved > md5sum &&
-	rm images/test.hdimage input/interleaved &&
-	check_size_range images/interleaved.sparse 9732464 9732608 &&
+	# simg2img will expand the partial block
+	truncate --size=12k input/not-aligned
+	md5sum images/test.hdimage input/interleaved input/not-aligned > md5sum &&
+	rm images/test.hdimage input/interleaved input/not-aligned &&
+	check_size_range images/interleaved.sparse 9732464 9732636 &&
 	simg2img images/test.sparse images/test.hdimage &&
 	simg2img images/interleaved.sparse input/interleaved &&
+	simg2img images/not-aligned.sparse input/not-aligned &&
 	md5sum -c md5sum
 "
 
