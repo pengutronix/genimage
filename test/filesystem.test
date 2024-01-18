@@ -35,6 +35,13 @@ test_expect_success mkfs_f2fs,sload_f2fs,fsck_f2fs "f2fs" "
 	fsck.f2fs images/test.f2fs
 "
 
+exec_test_set_prereq mkfs.btrfs
+exec_test_set_prereq sload.btrfs
+exec_test_set_prereq fsck.btrfs
+test_expect_success mkfs_btrfs,fsck_btrfs "btrfs" "
+	run_genimage_root btrfs.config test.btrfs
+"
+
 exec_test_set_prereq mksquashfs
 test_expect_success mksquashfs "squashfs" "
 	run_genimage_root squashfs.config test.squashfs &&
