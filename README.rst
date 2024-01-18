@@ -670,3 +670,13 @@ To include a ``"foo.cfg"`` config file, use the following statement::
     include("foo.cfg")
 
 This allows to re-use, for example flash configuration files, across different image configurations.
+
+# To develop and run the test
+
+```bash
+./autogen.sh
+./configure CFLAGS='-g -O2' --prefix=/usr
+make
+make check-TESTS
+# and check error in test-suite.log
+```
