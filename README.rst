@@ -511,6 +511,7 @@ Options:
 
 :extraargs:		Extra arguments passed to mkubifs
 :max-size:		Maximum size of the UBIFS image
+:space-fixup:           Instructs the file-system free space to be freed up on first mount.
 
 vfat
 ****
