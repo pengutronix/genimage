@@ -28,17 +28,19 @@ static int ubifs_generate(struct image *image)
 	int ret;
 	char *extraargs = cfg_getstr(image->imagesec, "extraargs");
 	unsigned long long max_size = cfg_getint_suffix(image->imagesec, "max-size");
+	cfg_bool_t space_fixup = cfg_getbool(image->imagesec, "space-fixup");
 
 	if (max_size)
 		max_leb_cnt = max_size / image->flash_type->lebsize;
 	else
 		max_leb_cnt = image->size / image->flash_type->lebsize;
 
-	ret = systemp(image, "%s %s%s%s -e %d -m %d -c %d -o '%s' %s",
+	ret = systemp(image, "%s %s%s%s %s -e %d -m %d -c %d -o '%s' %s",
 			get_opt("mkfsubifs"),
 			image->empty ? "" : "-d '",
 			image->empty ? "" : mountpath(image),
 			image->empty ? "" : "'",
+			space_fixup ? "-F" : "",
 			image->flash_type->lebsize,
 			image->flash_type->minimum_io_unit_size,
 			max_leb_cnt,
@@ -66,6 +68,7 @@ static int ubifs_setup(struct image *image, cfg_t *cfg)
 static cfg_opt_t ubifs_opts[] = {
 	CFG_STR("extraargs", "", CFGF_NONE),
 	CFG_STR("max-size", NULL, CFGF_NONE),
+	CFG_BOOL("space-fixup", 0, CFGF_NONE),
 	CFG_END()
 };
 
