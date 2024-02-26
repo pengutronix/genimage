@@ -89,7 +89,7 @@ test_expect_success simg2img "android-sparse" "
 	truncate --size=12k input/not-aligned
 	md5sum images/test.hdimage input/interleaved input/not-aligned > md5sum &&
 	rm images/test.hdimage input/interleaved input/not-aligned &&
-	check_size_range images/interleaved.sparse 9732464 9732636 &&
+	check_size_range images/interleaved.sparse 9732408 9732580 &&
 	simg2img images/test.sparse images/test.hdimage &&
 	simg2img images/interleaved.sparse input/interleaved &&
 	simg2img images/not-aligned.sparse input/not-aligned &&
@@ -100,7 +100,7 @@ test_expect_success simg2img "android-sparse" "
 	truncate --size=12k input/not-aligned
 	md5sum images/test.hdimage input/interleaved input/not-aligned > md5sum &&
 	rm images/test.hdimage input/interleaved input/not-aligned &&
-	check_size_range images/interleaved.sparse 9732464 9732636 &&
+	check_size_range images/interleaved.sparse 9732408 9732580 &&
 	simg2img images/test.sparse images/test.hdimage &&
 	simg2img images/interleaved.sparse input/interleaved &&
 	simg2img images/not-aligned.sparse input/not-aligned &&

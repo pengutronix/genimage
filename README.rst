@@ -253,6 +253,9 @@ Options:
 			block sizes depend on the user. The default is 4k.
 :fill-holes:		If enabled, 'holes' are filled with zero instead of
 			"don't care". Disabled by default.
+:add-crc:		Generate sparse comptible images containing the CRC. Ensure
+			that your sparse tool can handle CRC sparse images.
+			Defaults to false.
 
 cpio
 ****
