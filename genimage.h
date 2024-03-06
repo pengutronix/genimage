@@ -110,6 +110,7 @@ extern struct image_handler ext2_handler;
 extern struct image_handler ext3_handler;
 extern struct image_handler ext4_handler;
 extern struct image_handler f2fs_handler;
+extern struct image_handler btrfs_handler;
 extern struct image_handler file_handler;
 extern struct image_handler flash_handler;
 extern struct image_handler hdimage_handler;

@@ -45,6 +45,7 @@ static struct image_handler *handlers[] = {
 	&ext3_handler,
 	&ext4_handler,
 	&f2fs_handler,
+	&btrfs_handler,
 	&file_handler,
 	&fit_handler,
 	&fip_handler,
