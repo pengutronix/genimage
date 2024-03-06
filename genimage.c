@@ -576,7 +576,11 @@ const char *mountpath(const struct image *image)
 	return mp->mountpath;
 }
 
-static int tmppath_generated;
+static enum {
+	TMPPATH_NONE,
+	TMPPATH_CHECKED,
+	TMPPATH_CREATED
+} tmppath_generated;
 
 static void check_tmp_path(void)
 {
@@ -595,6 +599,7 @@ static void check_tmp_path(void)
 		ret = systemp(NULL, "mkdir -p \"%s\"", tmppath());
 		if (ret)
 			exit(1);
+		tmppath_generated = TMPPATH_CREATED;
 		return;
 	}
 
@@ -607,14 +612,22 @@ static void check_tmp_path(void)
 			exit(1);
 		}
 	}
-	tmppath_generated = 1;
+	tmppath_generated = TMPPATH_CHECKED;
 	closedir(dir);
 }
 
 static void cleanup(void)
 {
-	if (tmppath_generated)
-		systemp(NULL, "rm -rf \"%s\"/*", tmppath());
+	switch (tmppath_generated) {
+		case TMPPATH_CREATED:
+			systemp(NULL, "rm -rf \"%s/\"", tmppath());
+			break;
+		case TMPPATH_CHECKED:
+			systemp(NULL, "rm -rf \"%s\"/*", tmppath());
+			break;
+		default:
+			break;
+	}
 }
 
 static cfg_opt_t top_opts[] = {
