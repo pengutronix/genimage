@@ -29,6 +29,7 @@
 
 struct sparse {
 	uint32_t block_size;
+	cfg_bool_t add_crc;
 };
 
 struct sparse_header {
@@ -333,16 +334,23 @@ static int android_sparse_generate(struct image *image)
 			crc32 = crc32_next(zeros, sparse->block_size, crc32);
 	}
 
-	header.input_chunks++;
-	chunk_header.chunk_type = SPARSE_CRC32;
-	chunk_header.blocks = 0;
-	chunk_header.size = sizeof(chunk_header) + sizeof(crc32);
-	ret = flush_header(image, out_fd, &chunk_header, -1);
-	if (ret < 0)
-		return ret;
-	ret = write_data(image, out_fd, &crc32, sizeof(crc32));
-	if (ret < 0)
-		goto out;
+	if (sparse->add_crc) {
+		/*
+		 * Albeit CRC is supported by the sparse format, the Android
+		 * tools don't honor the support and now starting to fail if an
+		 * CRC is found.
+		 */
+		header.input_chunks++;
+		chunk_header.chunk_type = SPARSE_CRC32;
+		chunk_header.blocks = 0;
+		chunk_header.size = sizeof(chunk_header) + sizeof(crc32);
+		ret = flush_header(image, out_fd, &chunk_header, -1);
+		if (ret < 0)
+			return ret;
+		ret = write_data(image, out_fd, &crc32, sizeof(crc32));
+		if (ret < 0)
+			goto out;
+	}
 
 	offset = lseek(out_fd, 0, SEEK_SET);
 	if (offset < 0) {
@@ -396,6 +404,8 @@ static int android_sparse_setup(struct image *image, cfg_t *cfg)
 		return -EINVAL;
 	}
 
+	sparse->add_crc = cfg_getbool(cfg, "add-crc");
+
 	image->handler_priv = sparse;
 	return 0;
 }
@@ -403,6 +413,7 @@ static int android_sparse_setup(struct image *image, cfg_t *cfg)
 static cfg_opt_t android_sparse_opts[] = {
 	CFG_STR("image", NULL, CFGF_NONE),
 	CFG_STR("block-size", "4k", CFGF_NONE),
+	CFG_BOOL("add-crc", cfg_false, CFGF_NONE),
 	CFG_END()
 };
 

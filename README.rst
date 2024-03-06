@@ -235,6 +235,9 @@ Options:
 :block-size:		The granularity that the sparse image uses to
 			find "don't care" or "fill" blocks. The supported
 			block sizes depend on the user. The default is 4k.
+:add-crc:		Generate sparse comptible images containing the CRC. Ensure
+			that your sparse tool can handle CRC sparse images.
+			Defaults to false.
 
 cpio
 ****
