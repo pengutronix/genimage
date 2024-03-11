@@ -19,6 +19,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <unistd.h>
 
 #include "genimage.h"
 
@@ -68,6 +69,7 @@ static int rauc_generate(struct image *image)
 		struct image *child = image_get(part->image);
 		const char *file = imageoutfile(child);
 		const char *target = part->name;
+		char *tmptarget;
 		char *path, *tmp;
 
 		if (part->partition_type == RAUC_CERT)
@@ -105,10 +107,34 @@ static int rauc_generate(struct image *image)
 				goto out;
 		}
 
-		image_info(image, "adding file '%s' as '%s' ...\n",
-				child->file, target);
-		ret = systemp(image, "cp --remove-destination '%s' '%s/%s'",
-				file, tmpdir, target);
+		xasprintf(&tmptarget, "%s/%s", tmpdir, target);
+
+		image_info(image, "adding file '%s' as '%s' (offset=%lld)...\n",
+				child->file, target, (long long)part->imageoffset);
+
+		if (part->imageoffset) {
+			unlink(tmptarget);
+
+			/*
+			 * Starting with coreutils 9.1 you can use a 'B' suffix for
+			 * skip=N instead of iflag=skip_bytes to have N count bytes, not
+			 * (input) blocks.
+			 *
+			 * Note that dd doesn't behave as optimal as cp in the
+			 * else branch below because it doesn't preserve holes.
+			 * To improve here insert_image() should be extended to
+			 * support part->imageoffset != 0 and then it can
+			 * replace both commands.
+			 */
+			ret = systemp(image, "dd if='%s' of='%s' iflag=skip_bytes skip=%lld",
+					file, tmptarget, (long long)part->imageoffset);
+
+		} else {
+			ret = systemp(image, "cp --remove-destination '%s' '%s'",
+				      file, tmptarget);
+		}
+
+		free(tmptarget);
 		if (ret)
 			goto out;
 	}
@@ -193,6 +219,7 @@ static int rauc_parse(struct image *image, cfg_t *cfg)
 		part = xzalloc(sizeof *part);
 		part->name = cfg_title(filesec);
 		part->image = cfg_getstr(filesec, "image");
+		part->imageoffset = cfg_getint_suffix(filesec, "offset");
 		part->partition_type = RAUC_CONTENT;
 		list_add_tail(&part->list, &image->partitions);
 	}
@@ -219,6 +246,7 @@ static int rauc_setup(struct image *image, cfg_t *cfg)
 
 static cfg_opt_t file_opts[] = {
 	CFG_STR("image", NULL, CFGF_NONE),
+	CFG_STR("offset", "0", CFGF_NONE),
 	CFG_END()
 };
 
