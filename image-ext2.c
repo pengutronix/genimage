@@ -209,7 +209,7 @@ static cfg_opt_t ext_opts[] = {
 	CFG_STR("features", NULL, CFGF_NONE),
 	CFG_STR("label", NULL, CFGF_NONE),
 	CFG_STR("fs-timestamp", NULL, CFGF_NONE),
-	CFG_BOOL("use-mke2fs", cfg_false, CFGF_NONE),
+	CFG_BOOL("use-mke2fs", cfg_true, CFGF_NONE),
 	CFG_STR("usage-type", NULL, CFGF_NONE),
 	CFG_STR("mke2fs-conf", NULL, CFGF_NONE),
 	CFG_STR("mke2fs_conf", NULL, CFGF_NONE),
