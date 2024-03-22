@@ -31,7 +31,7 @@ setup_rauc() {
 	mkdir input &&
 	cp -r "${testdir}"/rauc-openssl-ca input/ &&
 	echo "test" > input/rauc.content &&
-	echo "test2" > input/rauc2.content
+	echo "xtest2" > input/rauc2.content
 }
 
 exec_test_set_prereq rauc
