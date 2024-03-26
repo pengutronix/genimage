@@ -11,6 +11,7 @@ config.log
 config.status
 configure
 genimage
+libtool
 stamp-h1
 /test/*.log
 /test/*.trs
