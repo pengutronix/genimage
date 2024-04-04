@@ -276,8 +276,8 @@ static const struct gpt_partition_type_shortcut_t gpt_partition_type_shortcuts[]
 	{ "lvm"                         , "e6d6d379-f507-44c2-a23c-238f2a3df928" },
 	{ "F"                           , "ebd0a0a2-b9e5-4433-87c0-68b6b72699c7" },
 	{ "fat32"                       , "ebd0a0a2-b9e5-4433-87c0-68b6b72699c7" },
-	{ "B"                           , "4778ed65-bf42-45fa-9c5b-287a1dc4aab1" },
 	{ "barebox-state"               , "4778ed65-bf42-45fa-9c5b-287a1dc4aab1" },
+	{ "barebox-env"                 , "6c3737f2-07f8-45d1-ad45-15d260aab24d" },
 	/* Discoverable Partitions Specification GUID, see
 	 * https://uapi-group.org/specifications/specs/discoverable_partitions_specification/
 	 */

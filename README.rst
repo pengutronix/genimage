@@ -143,7 +143,8 @@ Partition options:
 			* ``R``, ``raid``: Linux RAID (a19d880f-05fc-4d3b-a006-743f0f84911e)
 			* ``V``, ``lvm``: Linux LVM (e6d6d379-f507-44c2-a23c-238f2a3df928)
 			* ``F``, ``fat32``: FAT32 / Basic Data Partition (ebd0a0a2-b9e5-4433-87c0-68b6b72699c7)
-			* ``B``, ``barebox-state``: Barebox State (4778ed65-bf42-45fa-9c5b-287a1dc4aab1)
+			* ``barebox-state`` (previously ``B``): Barebox State (4778ed65-bf42-45fa-9c5b-287a1dc4aab1)
+			* ``barebox-env``: Barebox Environment (6c3737f2-07f8-45d1-ad45-15d260aab24d)
 
                         Furthermore, for ``{arch}`` being one of ``alpha``,
                         ``arc``, ``arm``, ``arm64``, ``ia64``, ``loongarch64``,
