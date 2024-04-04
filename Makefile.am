@@ -21,6 +21,7 @@ genimage_SOURCES = \
 	image-android-sparse.c \
 	image-cpio.c \
 	image-cramfs.c \
+	image-erofs.c \
 	image-ext2.c \
 	image-f2fs.c \
 	image-file.c \
