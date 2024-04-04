@@ -105,7 +105,7 @@ Here are all options for images:
 Additionally each image can have one of the following sections describing the
 type of the image:
 
-cpio, cramfs, ext2, ext3, ext4, file, flash, hdimage, iso, jffs2, qemu, squashfs,
+cpio, cramfs, erofs, ext2, ext3, ext4, file, flash, hdimage, iso, jffs2, qemu, squashfs,
 tar, ubi, ubifs, vfat.
 
 Partition options:
@@ -258,6 +258,14 @@ Generates cramfs images.
 Options:
 
 :extraargs:		Extra arguments passed to mkcramfs
+
+erofs
+******
+Generates erofs images.
+
+Options:
+
+:extraargs:		Extra arguments passed to mkfs.erofs.
 
 ext2, ext3, ext4
 ****************
@@ -655,6 +663,7 @@ variable.
 :mmd:		path to the mmd program (default mmd)
 :mkcramfs:	path to the mkcramfs program (default mkcramfs)
 :mkdosfs:	path to the mkdosfs program (default mkdosfs)
+:mkfserofs:	path to the mkfs.erofs program (default mkfs.erofs)
 :mkfsjffs2:	path to the mkfs.jffs2 program (default mkfs.jffs2)
 :mkfsubifs:	path to the mkfs.ubifs program (default mkfs.ubifs)
 :mksquashfs:	path to the mksquashfs program (default mksquashfs)
