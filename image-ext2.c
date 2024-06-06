@@ -83,13 +83,16 @@ static int ext2_generate_mke2fs(struct image *image)
 	if (ret < 0)
 		return ret;
 
-	return systemp(image, "%s%s -t %s%s -I 256 -E 'root_owner=%s,%s'%s %s%s%s %s %s%s %s%s%s '%s' %lldk",
+	return systemp(image, "%s%s -t %s%s -I 256 -E 'root_owner=%s,%s'%s %s%s%s %s %s%s%s %s%s%s '%s' %lldk",
 			ext->conf_env, get_opt("mke2fs"), image->handler->type,
 			ext->usage_type_args, root_owner, options, ext->size_features,
 			image->empty ? "" : "-d '",
 			image->empty ? "" : mountpath(image),
 			image->empty ? "" : "'",
-			extraargs, label ? "-L " : "", label ? label : "",
+			extraargs,
+			label ? "-L '" : "",
+			label ? label : "",
+			label ? "'" : "",
 			features ? "-O '" : "",
 			features ? features : "",
 			features ? "'" : "",
