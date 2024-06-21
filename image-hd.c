@@ -878,15 +878,53 @@ static int setup_uuid(struct image *image, cfg_t *cfg)
 	return 0;
 }
 
+static int setup_part_autoresize(struct image *image, struct partition *part, bool *resized)
+{
+	struct hdimage *hd = image->handler_priv;
+	long long partsize;
+
+	if (!part->autoresize)
+		return 0;
+
+	if (*resized) {
+		image_error(image, "'autoresize' is only supported "
+			    "for one partition\n");
+		return -EINVAL;
+	}
+	if (image->size == 0) {
+		image_error(image, "the image size must be specified "
+			    "when using an 'autoresize' partition\n");
+		return -EINVAL;
+	}
+
+	partsize = image->size - part->offset;
+	if (hd->table_type & TYPE_GPT)
+		partsize -= GPT_SECTORS * 512;
+	partsize = rounddown(partsize, part->align);
+	if (partsize <= 0) {
+		image_error(image, "partitions exceed device size\n");
+		return -EINVAL;
+	}
+	if (partsize < (long long)part->size) {
+		image_error(image, "auto-resize partition %s ends up with a size %lld"
+			    " smaller than minimum %lld\n", part->name, partsize, part->size);
+		return -EINVAL;
+	}
+	part->size = partsize;
+
+	*resized = true;
+	return 0;
+}
+
 static int hdimage_setup(struct image *image, cfg_t *cfg)
 {
 	struct partition *part;
-	struct partition *autoresize_part = NULL;
 	unsigned int partition_table_entries = 0, hybrid_entries = 0;
 	unsigned long long now = 0;
 	const char *table_type;
 	struct hdimage *hd = xzalloc(sizeof(*hd));
 	struct partition *gpt_backup = NULL;
+	bool partition_resized = false;
 	int ret;
 
 	image->handler_priv = hd;
@@ -993,19 +1031,6 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 				    part->align, part->name, hd->align);
 		}
 
-		if (part->autoresize) {
-			if (autoresize_part) {
-				image_error(image, "'autoresize' is only supported "
-					    "for one partition\n");
-				return -EINVAL;
-			}
-			autoresize_part = part;
-			if (image->size == 0) {
-				image_error(image, "the image size must be specified "
-					    "when using an 'autoresize' partition\n");
-				return -EINVAL;
-			}
-		}
 		if (part->partition_type_uuid && !(hd->table_type & TYPE_GPT)) {
 			image_error(image, "part %s: 'partition-type-uuid' is only valid for gpt and hybrid partition-table-type\n",
 					part->name);
@@ -1077,22 +1102,10 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 					part->name, part->offset, part->align);
 			return -EINVAL;
 		}
-		if (part->autoresize) {
-			long long partsize = image->size - part->offset;
-			if (gpt_backup)
-				partsize -= gpt_backup->size;
-			partsize = rounddown(partsize, part->align);
-			if (partsize <= 0) {
-				image_error(image, "partitions exceed device size\n");
-				return -EINVAL;
-			}
-			if (partsize < (long long)part->size) {
-				image_error(image, "auto-resize partition %s ends up with a size %lld"
-					    " smaller than minimum %lld\n", part->name, partsize, part->size);
-				return -EINVAL;
-			}
-			part->size = partsize;
-		}
+		ret = setup_part_autoresize(image, part, &partition_resized);
+		if (ret < 0)
+			return ret;
+
 		if (part->image) {
 			struct image *child = image_get(part->image);
 			if (!child) {
