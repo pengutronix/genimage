@@ -131,6 +131,11 @@ Partition options:
 :bootable:		Boolean specifying whether to set the bootable flag.
 :in-partition-table:	Boolean specifying whether to include this partition in
 			the partition table. Defaults to true.
+:forced-primary:	Force this partition to be a primary partition in the
+			MBR partition table, useful when the extended partition should be
+			followed by primary partitions. If there are more partitions
+			defined after the first forced-primary, they must be also defined
+			as forced-primary. Defaults to false.
 :partition-uuid:	UUID string used by GPT partition tables to specify the partition
 			id. Defaults to a random value.
 :partition-type-uuid:	String used by GPT partition tables to specify the partition type.

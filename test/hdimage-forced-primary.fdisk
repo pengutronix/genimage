@@ -1,0 +1,10 @@
+Disk identifier: 0x12345678
+images/test.hdimage1:start=2048,size=2048,type=c,bootable
+images/test.hdimage2:start=4096,size=20480,type=f
+images/test.hdimage3:start=24576,size=2048,type=83
+images/test.hdimage4:start=26624,size=2048,type=82
+images/test.hdimage5:start=6144,size=2048,type=83
+images/test.hdimage6:start=10240,size=2048,type=83
+images/test.hdimage7:start=14336,size=2048,type=83
+images/test.hdimage8:start=18432,size=2048,type=83
+images/test.hdimage9:start=22528,size=2048,type=83

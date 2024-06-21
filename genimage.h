@@ -39,7 +39,8 @@ struct partition {
 	unsigned long long align;
 	unsigned char partition_type;
 	cfg_bool_t bootable;
-	cfg_bool_t extended;
+	cfg_bool_t logical;
+	cfg_bool_t forced_primary;
 	cfg_bool_t read_only;
 	cfg_bool_t hidden;
 	cfg_bool_t no_automount;

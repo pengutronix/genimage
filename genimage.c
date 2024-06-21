@@ -96,6 +96,7 @@ static cfg_opt_t partition_opts[] = {
 	CFG_STR("align", NULL, CFGF_NONE),
 	CFG_INT("partition-type", 0, CFGF_NONE),
 	CFG_BOOL("bootable", cfg_false, CFGF_NONE),
+	CFG_BOOL("forced-primary", cfg_false, CFGF_NONE),
 	CFG_BOOL("read-only", cfg_false, CFGF_NONE),
 	CFG_BOOL("hidden", cfg_false, CFGF_NONE),
 	CFG_BOOL("no-automount", cfg_false, CFGF_NONE),
@@ -396,6 +397,7 @@ static int parse_partitions(struct image *image, cfg_t *imagesec)
 		part->align = cfg_getint_suffix(partsec, "align");
 		part->partition_type = cfg_getint(partsec, "partition-type");
 		part->bootable = cfg_getbool(partsec, "bootable");
+		part->forced_primary = cfg_getbool(partsec, "forced-primary");
 		part->read_only = cfg_getbool(partsec, "read-only");
 		part->hidden = cfg_getbool(partsec, "hidden");
 		part->no_automount = cfg_getbool(partsec, "no-automount");

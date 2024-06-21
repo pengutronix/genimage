@@ -105,8 +105,14 @@ EXTRA_DIST += \
 	test/hdimage-fail5.config \
 	test/hdimage-fail6.config \
 	test/hdimage-fail7.config \
+	test/hdimage-fail8.config \
+	test/hdimage-fail9.config \
+	test/hdimage-fail10.config \
+	test/hdimage-fail11.config \
 	test/hdimage-nopart.config \
 	test/hdimage-nopart.hexdump \
+	test/hdimage-forced-primary.config \
+	test/hdimage-forced-primary.fdisk \
 	test/include-aaa.fdisk \
 	test/include-bbb.fdisk \
 	test/include-ccc.fdisk \

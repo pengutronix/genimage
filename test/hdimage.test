@@ -96,7 +96,11 @@ test_expect_success "hdimage syntax" "
 	test_must_fail run_genimage hdimage-fail4.config &&
 	test_must_fail run_genimage hdimage-fail5.config &&
 	test_must_fail run_genimage hdimage-fail6.config &&
-	test_must_fail run_genimage hdimage-fail7.config
+	test_must_fail run_genimage hdimage-fail7.config &&
+	test_must_fail run_genimage hdimage-fail8.config &&
+	test_must_fail run_genimage hdimage-fail9.config &&
+	test_must_fail run_genimage hdimage-fail10.config &&
+	test_must_fail run_genimage hdimage-fail11.config
 "
 
 setup_gpt_files() {
@@ -161,6 +165,14 @@ test_expect_success "hdimage no-partition" "
 	run_genimage hdimage-nopart.config &&
 	hexdump -C images/test.hdimage > 'hdimage-nopart.hexdump' &&
 	test_cmp 'hdimage-nopart.hexdump' '${testdir}/hdimage-nopart.hexdump'
+"
+
+test_expect_success "hdimage forced-primary" "
+  setup_test_images &&
+	run_genimage hdimage-forced-primary.config &&
+	sfdisk_validate images/test.hdimage &&
+	sanitized_fdisk_sfdisk images/test.hdimage > hdimage.fdisk &&
+	test_cmp '${testdir}/hdimage-forced-primary.fdisk' hdimage.fdisk
 "
 
 test_done
