@@ -753,18 +753,109 @@ fake_partition(const char *name, unsigned long long offset, unsigned long long s
 	return p;
 }
 
+static void ensure_extended_partition_index(struct image *image)
+{
+	struct hdimage *hd = image->handler_priv;
+	struct partition *part;
+	int count = 0;
+
+	if (hd->extended_partition_index)
+		return;
+
+	list_for_each_entry(part, &image->partitions, list) {
+		if (!part->in_partition_table)
+			continue;
+
+		if (++count > 4) {
+			hd->extended_partition_index = 4;
+			return;
+		}
+	}
+}
+
+static int setup_logical_partitions(struct image *image)
+{
+	struct hdimage *hd = image->handler_priv;
+	struct partition *part;
+	bool in_extended = false, found_extended = false;
+	unsigned int count = 0, mbr_entries = 0;
+
+	if (hd->extended_partition_index > 4) {
+		image_error(image, "invalid extended partition index (%i). must be "
+				"less or equal to 4 (0 for automatic)\n",
+				hd->extended_partition_index);
+		return -EINVAL;
+	}
+
+	if (hd->table_type != TYPE_MBR)
+		return 0;
+
+	ensure_extended_partition_index(image);
+
+	if (!hd->extended_partition_index)
+		return 0;
+
+	list_for_each_entry(part, &image->partitions, list) {
+		if (!part->in_partition_table)
+			continue;
+
+		++count;
+
+		if (hd->extended_partition_index == count) {
+			size_t offset = part->offset ? part->offset - hd->align : 0;
+			struct partition *p = fake_partition("[Extended]", offset, 0);
+			p->in_partition_table = true;
+			p->partition_type = PARTITION_TYPE_EXTENDED;
+			p->align = hd->align;
+
+			hd->extended_partition = p;
+			/* insert before the first logical partition */
+			list_add_tail(&p->list, &part->list);
+
+			in_extended = found_extended = true;
+			++mbr_entries;
+		}
+
+		if (part->forced_primary)
+			in_extended = false;
+		if (in_extended && !part->forced_primary)
+			part->logical = true;
+		else
+			++mbr_entries;
+
+		if (part->forced_primary) {
+			if (!found_extended) {
+				image_error(image, "partition %s: forced-primary can only be used for "
+						   "partitions following the extended partition\n",
+					    part->name);
+				return -EINVAL;
+			}
+		} else if (!in_extended && found_extended) {
+			image_error(image,
+				    "cannot create non-primary partition %s after forced-primary partition\n",
+				    part->name);
+			return -EINVAL;
+		}
+		if (mbr_entries > 4) {
+			image_error(image, "too many primary partitions\n");
+			return -EINVAL;
+		}
+	}
+	return 0;
+}
+
 static int hdimage_setup(struct image *image, cfg_t *cfg)
 {
 	struct partition *part;
 	struct partition *autoresize_part = NULL;
-	int has_extended;
 	unsigned int partition_table_entries = 0, hybrid_entries = 0;
-	unsigned int mbr_entries = 0, forced_primary_entries = 0;
 	unsigned long long now = 0;
 	const char *disk_signature, *table_type;
 	struct hdimage *hd = xzalloc(sizeof(*hd));
 	struct partition *gpt_backup = NULL;
+	int ret;
 
+	image->handler_priv = hd;
 	hd->align = cfg_getint_suffix(cfg, "align");
 	hd->extended_partition_index = cfg_getint(cfg, "extended-partition");
 	disk_signature = cfg_getstr(cfg, "disk-signature");
@@ -775,8 +866,6 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 	hd->disk_uuid = cfg_getstr(cfg, "disk-uuid");
 
 	if (is_block_device(imageoutfile(image))) {
-		int ret;
-
 		if (image->size) {
 			image_error(image, "image size must not be specified for a block device target\n");
 			return -EINVAL;
@@ -813,53 +902,20 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 	if (!hd->align)
 		hd->align = hd->table_type == TYPE_NONE ? 1 : 512;
 
-	if (hd->extended_partition_index > 4) {
-		image_error(image, "invalid extended partition index (%i). must be "
-				"inferior or equal to 4 (0 for automatic)\n",
-				hd->extended_partition_index);
-		return -EINVAL;
-	}
-
 	if ((hd->table_type != TYPE_NONE) && ((hd->align % 512) || (hd->align == 0))) {
 		image_error(image, "partition alignment (%lld) must be a "
 				"multiple of 1 sector (512 bytes)\n", hd->align);
 		return -EINVAL;
 	}
-	if (hd->table_type == TYPE_MBR && hd->extended_partition_index)
-		mbr_entries = hd->extended_partition_index;
 
-	has_extended = hd->extended_partition_index > 0;
+	ret = setup_logical_partitions(image);
+	if (ret < 0)
+		return ret;
 
 	list_for_each_entry(part, &image->partitions, list) {
 		if (hd->table_type == TYPE_NONE)
 			part->in_partition_table = false;
-		if (part->in_partition_table)
-			++partition_table_entries;
-		if (hd->table_type == TYPE_MBR && part->in_partition_table) {
-			if (!hd->extended_partition_index && partition_table_entries > 4) {
-				hd->extended_partition_index = mbr_entries = 4;
-				has_extended = true;
-			}
-			if (part->forced_primary) {
-				++forced_primary_entries;
-				++mbr_entries;
-				if (partition_table_entries <= hd->extended_partition_index) {
-					image_error(image, "partition %s: forced-primary can only be used for "
-							   "partitions following the extended partition\n",
-						    part->name);
-					return -EINVAL;
-				}
-			} else if (forced_primary_entries > 0) {
-				image_error(image,
-					    "cannot create non-primary partition %s after forced-primary partition\n",
-					    part->name);
-				return -EINVAL;
-			}
-			if (mbr_entries > 4) {
-				image_error(image, "too many primary partitions\n");
-				return -EINVAL;
-			}
-		}
+
 		if (!part->align)
 			part->align = (part->in_partition_table || hd->table_type == TYPE_NONE) ? hd->align : 1;
 		if (part->in_partition_table && part->align % hd->align) {
@@ -990,8 +1046,6 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 		}
 		if (part->in_partition_table)
 			++partition_table_entries;
-		part->logical = !part->forced_primary && has_extended && part->in_partition_table &&
-				(partition_table_entries >= hd->extended_partition_index);
 		if (part->logical) {
 			/* reserve space for extended boot record */
 			now += hd->align;
@@ -1050,13 +1104,14 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 				return -EINVAL;
 			}
 		}
-		if (!part->size) {
+		/* the size of the extended partition will be filled in later */
+		if (!part->size && part != hd->extended_partition) {
 			image_error(image, "part %s size must not be zero\n",
 					part->name);
 			return -EINVAL;
 		}
 		if (!part->logical) {
-			int ret = check_overlap(image, part);
+			ret = check_overlap(image, part);
 			if (ret)
 				return ret;
 		} else if (now > part->offset) {
@@ -1081,16 +1136,6 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 		}
 		else if (part->logical)
 			hd->file_size = part->offset - hd->align + 512;
-
-		if (has_extended && hd->extended_partition_index == partition_table_entries) {
-			struct partition *p = fake_partition("[Extended]", now - hd->align - part->size,
-							     0);
-			p->in_partition_table = true;
-			p->partition_type = PARTITION_TYPE_EXTENDED;
-
-			hd->extended_partition = p;
-			list_add_tail(&p->list, &part->list);
-		}
 
 		if (part->logical) {
 			hd->extended_partition->size = now - hd->extended_partition->offset;
@@ -1118,8 +1163,6 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 
 	if (hd->fill || ((hd->table_type & TYPE_GPT) && !hd->gpt_no_backup))
 		hd->file_size = image->size;
-
-	image->handler_priv = hd;
 
 	return 0;
 }
