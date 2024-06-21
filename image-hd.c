@@ -125,10 +125,12 @@ static void lba_to_chs(unsigned int lba, unsigned char *chs)
 	chs[2] = (c & 0xff);
 }
 
-static void hdimage_setup_chs(struct mbr_partition_entry *entry)
+static void hdimage_setup_chs(struct mbr_partition_entry *entry,
+			      unsigned long long offset_sectors)
 {
-	lba_to_chs(entry->relative_sectors, entry->first_chs);
-	lba_to_chs(entry->relative_sectors + entry->total_sectors - 1,
+	lba_to_chs(entry->relative_sectors + offset_sectors,
+		   entry->first_chs);
+	lba_to_chs(entry->relative_sectors + entry->total_sectors - 1 + offset_sectors,
 		   entry->last_chs);
 }
 
@@ -173,7 +175,7 @@ static int hdimage_insert_mbr(struct image *image, struct list_head *partitions)
 			entry->relative_sectors = (hd->extended_lba)/512;
 			entry->total_sectors = (image->size - hd->extended_lba)/512;
 		}
-		hdimage_setup_chs(entry);
+		hdimage_setup_chs(entry, 0);
 
 		if (part->extended)
 			break;
@@ -191,7 +193,7 @@ static int hdimage_insert_mbr(struct image *image, struct list_head *partitions)
 		entry->relative_sectors = 1;
 		entry->total_sectors = hd->gpt_location / 512 + GPT_SECTORS - 2;
 
-		hdimage_setup_chs(entry);
+		hdimage_setup_chs(entry, 0);
 	}
 
 	mbr.boot_signature = htole16(0xaa55);
@@ -226,7 +228,9 @@ static int hdimage_insert_ebr(struct image *image, struct partition *part)
 	entry->partition_type = part->partition_type;
 	entry->relative_sectors = hd->align/512;
 	entry->total_sectors = part->size/512;
-	hdimage_setup_chs(entry);
+	// absolute CHS address of the logical partition
+	// equals to absolute partition offset
+	hdimage_setup_chs(entry, (part->offset - hd->align) / 512);
 	struct partition *p = part;
 	list_for_each_entry_continue(p, &image->partitions, list) {
 		if (!p->extended)
@@ -236,7 +240,9 @@ static int hdimage_insert_ebr(struct image *image, struct partition *part)
 		entry->partition_type = 0x0F;
 		entry->relative_sectors = (p->offset - hd->align - hd->extended_lba)/512;
 		entry->total_sectors = (p->size + hd->align)/512;
-		hdimage_setup_chs(entry);
+		// absolute CHS address of the next EBR
+		// equals to relative address within extended partition + partition start
+		hdimage_setup_chs(entry, hd->extended_lba / 512);
 		break;
 	}
 
