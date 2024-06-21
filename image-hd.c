@@ -844,13 +844,47 @@ static int setup_logical_partitions(struct image *image)
 	return 0;
 }
 
+static int setup_uuid(struct image *image, cfg_t *cfg)
+{
+	struct hdimage *hd = image->handler_priv;
+	const char *disk_signature = cfg_getstr(cfg, "disk-signature");
+
+	hd->disk_uuid = cfg_getstr(cfg, "disk-uuid");
+	if (hd->disk_uuid) {
+		if (!(hd->table_type & TYPE_GPT)) {
+			image_error(image, "'disk-uuid' is only valid for gpt and hybrid partition-table-type\n");
+			return -EINVAL;
+		}
+		if (uuid_validate(hd->disk_uuid) == -1) {
+			image_error(image, "invalid disk UUID: %s\n", hd->disk_uuid);
+			return -EINVAL;
+		}
+	}
+	else {
+		hd->disk_uuid = uuid_random();
+	}
+
+	if (!disk_signature)
+		hd->disksig = 0;
+	else if (!strcmp(disk_signature, "random"))
+		hd->disksig = random();
+	else {
+		if (!(hd->table_type & TYPE_MBR)) {
+			image_error(image, "'disk-signature' is only valid for mbr and hybrid partition-table-type\n");
+			return -EINVAL;
+		}
+		hd->disksig = strtoul(disk_signature, NULL, 0);
+	}
+	return 0;
+}
+
 static int hdimage_setup(struct image *image, cfg_t *cfg)
 {
 	struct partition *part;
 	struct partition *autoresize_part = NULL;
 	unsigned int partition_table_entries = 0, hybrid_entries = 0;
 	unsigned long long now = 0;
-	const char *disk_signature, *table_type;
+	const char *table_type;
 	struct hdimage *hd = xzalloc(sizeof(*hd));
 	struct partition *gpt_backup = NULL;
 	int ret;
@@ -858,12 +892,10 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 	image->handler_priv = hd;
 	hd->align = cfg_getint_suffix(cfg, "align");
 	hd->extended_partition_index = cfg_getint(cfg, "extended-partition");
-	disk_signature = cfg_getstr(cfg, "disk-signature");
 	table_type = cfg_getstr(cfg, "partition-table-type");
 	hd->gpt_location = cfg_getint_suffix(cfg, "gpt-location");
 	hd->gpt_no_backup = cfg_getbool(cfg, "gpt-no-backup");
 	hd->fill = cfg_getbool(cfg, "fill");
-	hd->disk_uuid = cfg_getstr(cfg, "disk-uuid");
 
 	if (is_block_device(imageoutfile(image))) {
 		if (image->size) {
@@ -912,31 +944,9 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 	if (ret < 0)
 		return ret;
 
-	if (hd->disk_uuid) {
-		if (!(hd->table_type & TYPE_GPT)) {
-			image_error(image, "'disk-uuid' is only valid for gpt and hybrid partition-table-type\n");
-			return -EINVAL;
-		}
-		if (uuid_validate(hd->disk_uuid) == -1) {
-			image_error(image, "invalid disk UUID: %s\n", hd->disk_uuid);
-			return -EINVAL;
-		}
-	}
-	else {
-		hd->disk_uuid = uuid_random();
-	}
-
-	if (!disk_signature)
-		hd->disksig = 0;
-	else if (!strcmp(disk_signature, "random"))
-		hd->disksig = random();
-	else {
-		if (!(hd->table_type & TYPE_MBR)) {
-			image_error(image, "'disk-signature' is only valid for mbr and hybrid partition-table-type\n");
-			return -EINVAL;
-		}
-		hd->disksig = strtoul(disk_signature, NULL, 0);
-	}
+	ret = setup_uuid(image, cfg);
+	if (ret < 0)
+		return ret;
 
 	if (hd->gpt_location == 0) {
 		hd->gpt_location = 2*512;
