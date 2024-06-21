@@ -26,6 +26,10 @@ setup_data() {
 }
 
 run_genimage_impl() {
+	if [ ! -e "${1}" ]; then
+		echo "ERROR: genimage config file '${1}' missing!"
+		return 130
+	fi
 	if [ "$verbose" = "t" ]; then
 		vargs="--loglevel=3"
 	fi
