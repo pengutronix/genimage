@@ -912,19 +912,6 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 	if (ret < 0)
 		return ret;
 
-	list_for_each_entry(part, &image->partitions, list) {
-		if (hd->table_type == TYPE_NONE)
-			part->in_partition_table = false;
-
-		if (!part->align)
-			part->align = (part->in_partition_table || hd->table_type == TYPE_NONE) ? hd->align : 1;
-		if (part->in_partition_table && part->align % hd->align) {
-			image_error(image, "partition alignment (%lld) of partition %s "
-				    "must be multiple of image alignment (%lld)",
-				    part->align, part->name, hd->align);
-		}
-	}
-
 	if (hd->disk_uuid) {
 		if (!(hd->table_type & TYPE_GPT)) {
 			image_error(image, "'disk-uuid' is only valid for gpt and hybrid partition-table-type\n");
@@ -985,6 +972,17 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 
 	partition_table_entries = 0;
 	list_for_each_entry(part, &image->partitions, list) {
+		if (hd->table_type == TYPE_NONE)
+			part->in_partition_table = false;
+
+		if (!part->align)
+			part->align = (part->in_partition_table || hd->table_type == TYPE_NONE) ? hd->align : 1;
+		if (part->in_partition_table && part->align % hd->align) {
+			image_error(image, "partition alignment (%lld) of partition %s "
+				    "must be multiple of image alignment (%lld)",
+				    part->align, part->name, hd->align);
+		}
+
 		if (part->autoresize) {
 			if (autoresize_part) {
 				image_error(image, "'autoresize' is only supported "
