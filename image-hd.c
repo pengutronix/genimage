@@ -916,6 +916,40 @@ static int setup_part_autoresize(struct image *image, struct partition *part, bo
 	return 0;
 }
 
+static int setup_part_image(struct image *image, struct partition *part)
+{
+	struct hdimage *hd = image->handler_priv;
+	struct image *child;
+
+	if (!part->image)
+		return 0;
+
+	child = image_get(part->image);
+	if (!child) {
+		image_error(image, "could not find %s\n",
+				part->image);
+		return -EINVAL;
+	}
+	if (!part->size) {
+		if (part->in_partition_table)
+			part->size = roundup(child->size, part->align);
+		else
+			part->size = child->size;
+	}
+	if (child->size > part->size) {
+		image_error(image, "part %s size (%lld) too small for %s (%lld)\n",
+				part->name, part->size, child->file, child->size);
+		return -EINVAL;
+	}
+	if (part->offset + child->size > hd->file_size) {
+		size_t file_size = part->offset + child->size;
+		if (file_size > hd->file_size)
+			hd->file_size = file_size;
+	}
+
+	return 0;
+}
+
 static int hdimage_setup(struct image *image, cfg_t *cfg)
 {
 	struct partition *part;
@@ -1106,25 +1140,10 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 		if (ret < 0)
 			return ret;
 
-		if (part->image) {
-			struct image *child = image_get(part->image);
-			if (!child) {
-				image_error(image, "could not find %s\n",
-						part->image);
-				return -EINVAL;
-			}
-			if (!part->size) {
-				if (part->in_partition_table)
-					part->size = roundup(child->size, part->align);
-				else
-					part->size = child->size;
-			}
-			if (child->size > part->size) {
-				image_error(image, "part %s size (%lld) too small for %s (%lld)\n",
-						part->name, part->size, child->file, child->size);
-				return -EINVAL;
-			}
-		}
+		ret = setup_part_image(image, part);
+		if (ret < 0)
+			return ret;
+
 		/* the size of the extended partition will be filled in later */
 		if (!part->size && part != hd->extended_partition) {
 			image_error(image, "part %s size must not be zero\n",
@@ -1149,14 +1168,11 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 		if (part->offset + part->size > now)
 			now = part->offset + part->size;
 
-		if (part->image) {
-			struct image *child = image_get(part->image);
-			if (part->offset + child->size > hd->file_size) {
-				hd->file_size = part->offset + child->size;
-			}
+		if (part->logical) {
+			size_t file_size = part->offset - hd->align + 512;
+			if (file_size > hd->file_size)
+				hd->file_size = file_size;
 		}
-		else if (part->logical)
-			hd->file_size = part->offset - hd->align + 512;
 
 		if (part->logical) {
 			hd->extended_partition->size = now - hd->extended_partition->offset;
