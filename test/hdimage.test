@@ -77,7 +77,8 @@ test_expect_success fdisk-gpt,sfdisk-gpt "hdimage7" "
 	test_cmp '${testdir}/hdimage7.fdisk' hdimage7.fdisk
 "
 
-test_expect_success fdisk-gpt,sfdisk-gpt "hdimage-hybrid" "
+exec_test_set_prereq hexdump
+test_expect_success fdisk-gpt,sfdisk-gpt,hexdump "hdimage-hybrid" "
 	setup_test_images &&
 	run_genimage hdimage-hybrid.config &&
 	sfdisk_validate images/hybrid.hdimage &&
@@ -158,7 +159,7 @@ test_expect_success "bootloader-hole5" "
 	setup_gpt_files &&
 	OFFSET=128K run_genimage hole.config"
 
-test_expect_success "hdimage no-partition" "
+test_expect_success hexdump "hdimage no-partition" "
 	dd if=/dev/zero bs=1 count=100 | tr '\000' '\377' > input/block1.img &&
 	dd if=/dev/zero bs=1 count=50  | tr '\000' '\252' > input/block2.img &&
 	dd if=/dev/zero bs=1 count=75  | tr '\000' '\167' > input/block3.img &&
@@ -167,7 +168,7 @@ test_expect_success "hdimage no-partition" "
 	test_cmp 'hdimage-nopart.hexdump' '${testdir}/hdimage-nopart.hexdump'
 "
 
-test_expect_success "hdimage forced-primary" "
+test_expect_success sfdisk "hdimage forced-primary" "
   setup_test_images &&
 	run_genimage hdimage-forced-primary.config &&
 	sfdisk_validate images/test.hdimage &&
