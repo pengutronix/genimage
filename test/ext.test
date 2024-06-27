@@ -23,6 +23,11 @@ compare_label() {
 	fi
 }
 
+version_leq() {
+	first="$(printf "${1}\n${2}" | sort -V | head -n1)"
+	test "${first}" == "${1}"
+}
+
 check_ext() {
 	[ "$verbose" = "t" ] && set -x
 	# UUID is randomly generated
@@ -36,24 +41,35 @@ check_ext() {
 	dumpe2fs "${1}" | grep -v "^\($uuid\|$seed\|$csum1\|$csum2\)" > "dump" &&
 	# some architectures (including arm64) use unsigned char
 	sed -i 's/un\(signed_directory_hash\)/\1/' "dump" &&
-	# fixup for ext3 journal size with old tune2fs
-	sed -i 's/^\(Journal size:             \)1029k$/\11024k/' "dump" &&
-	# output format changed with some version
-	sed -i 's/^\(  Block bitmap at .*\),\( Inode bitmap.*\)$/\1\n \2/' "dump" &&
-	# convert to latest dump2fs output
-	sed -i  -e 's/^J\(ournal size:\)      /Total j\1/' \
-		-e 's/^Journal length:      \( *\)\(.*\)$/Total journal blocks:\1\2\nMax transaction length:   \2\nFast commit length:       0/' \
-		-e '/^Overhead clusters:/d' \
-		"dump" &&
 	if [ "${4}" = "genext2fs" ]; then
 		if [ "$(genext2fs --version)" = "genext2fs 1.4.1" ]; then
 			version=0
 		else
-			version=1
+			dumpe2fs_version="$(dumpe2fs -V |& sed -n 's/^dumpe2fs \([^ ]*\) .*/\1/p')"
+			if version_leq "${dumpe2fs_version}" "1.46.2"; then
+				# Debian Bullseye
+				version=1
+			else
+				version=2
+			fi
 		fi
 	else
-		version=0
+		mke2fs_version="$(mke2fs -V |& sed -n 's/^mke2fs \([^ ]*\) .*/\1/p')"
+		if version_leq "${mke2fs_version}" "1.45.5"; then
+			# Ubuntu 20.04
+			version=0
+		elif version_leq "${mke2fs_version}" "1.46.5"; then
+			# Ubuntu 22.04
+			version=1
+		elif version_leq "${mke2fs_version}" "1.47.0"; then
+			# Ubuntu 24.04
+			version=2
+		else
+			# at least 1.47.0
+			version=3
+		fi
 	fi
+	export TEST_CMP="diff --ignore-space-change -u" &&
 	test_cmp "${testdir}/${2}.${version}.dump" "dump" &&
 	e2fsck -nf "${1}" &&
 	# old versions of debugfs cannot dump '/'
