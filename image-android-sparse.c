@@ -114,7 +114,7 @@ static int android_sparse_generate(struct image *image)
 	struct image *inimage;
 	const char *infile;
 	struct sparse_header header;
-	struct sparse_chunk_header chunk_header;
+	struct sparse_chunk_header chunk_header = {};
 	struct extent *extents = NULL;
 	size_t extent_count, extent, block_count, block;
 	int in_fd = -1, out_fd = -1, ret;
