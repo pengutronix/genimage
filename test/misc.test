@@ -34,8 +34,26 @@ setup_rauc() {
 	echo "xtest2" > input/rauc2.content
 }
 
+version_lt() {
+	first="$(printf "${1}\n${2}" | sort -V | head -n1)"
+	test "${first}" == "${1}" && test "${1}" != "${2}"
+}
+
+rauc_cmp() {
+	if version_lt "${rauc_version}" "1.6"; then
+		test_cmp "${testdir}/${1}.raucb.info.1" "${1}.raucb.info"
+	elif version_lt "${rauc_version}" "1.9"; then
+		test_cmp "${testdir}/${1}.raucb.info.2" "${1}.raucb.info"
+	elif version_lt "${rauc_version}" "1.10"; then
+		test_cmp "${testdir}/${1}.raucb.info.3" "${1}.raucb.info"
+	else
+		test_cmp "${testdir}/${1}.raucb.info.4" "${1}.raucb.info"
+	fi
+}
+
 exec_test_set_prereq rauc
 test_expect_success rauc "rauc" "
+	rauc_version="$(rauc --version | sed 's/rauc //')"
 	setup_rauc &&
 	run_genimage rauc.config test.raucb &&
 	rauc info \
@@ -45,11 +63,7 @@ test_expect_success rauc "rauc" "
 		| sed -e 's;O = Test Org, CN = ;/O=Test Org/CN=;' \
 		      -e '/Bundle Format:[ \t]*plain$/d' \
 		> test.raucb.info &&
-	if ! grep -r 'Filename:' test.raucb.info; then
-		test_cmp '${testdir}/test.raucb.info' test.raucb.info
-	else
-		test_cmp '${testdir}/test.raucb.info.new' test.raucb.info
-	fi
+	rauc_cmp test
 	rauc info \
 		--keyring input/rauc-openssl-ca/ca.cert.pem \
 		--cert input/rauc-openssl-ca/ca.cert.pem \
@@ -57,11 +71,7 @@ test_expect_success rauc "rauc" "
 		| sed -e 's;O = Test Org, CN = ;/O=Test Org/CN=;' \
 		      -e '/Bundle Format:[ \t]*plain$/d' \
 		> test2.raucb.info &&
-	if ! grep -r 'Filename:' test2.raucb.info; then
-		test_cmp '${testdir}/test2.raucb.info' test2.raucb.info
-	else
-		test_cmp '${testdir}/test2.raucb.info.new' test2.raucb.info
-	fi
+	rauc_cmp test2
 "
 
 exec_test_set_prereq simg2img

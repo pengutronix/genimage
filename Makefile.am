@@ -143,10 +143,14 @@ EXTRA_DIST += \
 	test/sparse.config \
 	test/squashfs.config \
 	test/tar.config \
-	test/test.raucb.info \
-	test/test.raucb.info.new \
-	test/test2.raucb.info \
-	test/test2.raucb.info.new \
+	test/test.raucb.info.1 \
+	test/test.raucb.info.2 \
+	test/test.raucb.info.3 \
+	test/test.raucb.info.4 \
+	test/test2.raucb.info.1 \
+	test/test2.raucb.info.2 \
+	test/test2.raucb.info.3 \
+	test/test2.raucb.info.4 \
 	test/ubi.config \
 	test/ubifs.config \
 	test/vfat.config
