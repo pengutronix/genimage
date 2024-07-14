@@ -100,6 +100,7 @@ EXTRA_DIST += \
 	test/hdimage7.config \
 	test/hdimage7.fdisk \
 	test/hole.config \
+	test/hole-skip-optionals.config \
 	test/hdimage-hybrid.config \
 	test/hdimage-hybrid.fdisk \
 	test/hdimage-fail1.config \
