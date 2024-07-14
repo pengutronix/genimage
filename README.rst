@@ -425,6 +425,9 @@ Options:
 			up to the end of the last partition. This might make the file
 			bigger. This is necessary if the image will be processed by
 			such tools as libvirt, libguestfs or parted.
+:mbr-skip-optionals:	Boolean. If true, then the 6 bytes of optional fields in the MBR
+			are skipped, allowing an image occupying the first 446 bytes
+			instead of just the first 440 bytes to be written.
 
 iso
 ***
