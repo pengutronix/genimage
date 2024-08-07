@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022 Tomas Mudrunka <harviecz@gmail.com>
+ * Copyright (c) 2024 Fiona Klute <fiona.klute@gmx.de>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2
@@ -26,19 +27,22 @@ static int btrfs_generate(struct image *image)
 {
 	int ret;
 
-	char *label = cfg_getstr(image->imagesec, "label");
+	const char *label = cfg_getstr(image->imagesec, "label");
 
 	ret = prepare_image(image, image->size);
 	if(ret)
 		return ret;
 
 
-	ret = systemp(image, "%s %s %s %s '%s' '%s'",
+	ret = systemp(image, "%s %s %s %s %s%s%s '%s'",
 			get_opt("mkfsbtrfs"),
 			label ? "-L"  : "",
 			label ? label : "",
-			label ? "-r" : "",
-			mountpath(image), /* source dir */
+			/* initial filesystem content, if any */
+			image->empty ? "" : "-r",
+			image->empty ? "" : "'",
+			image->empty ? "" : mountpath(image),
+			image->empty ? "" : "'",
 			imageoutfile(image)); /* destination file */
 
 	if(ret || image->empty)
