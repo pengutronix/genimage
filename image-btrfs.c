@@ -28,13 +28,14 @@ static int btrfs_generate(struct image *image)
 	int ret;
 
 	const char *label = cfg_getstr(image->imagesec, "label");
+	const char *extraargs = cfg_getstr(image->imagesec, "extraargs");
 
 	ret = prepare_image(image, image->size);
 	if(ret)
 		return ret;
 
 
-	ret = systemp(image, "%s %s %s %s %s%s%s '%s'",
+	ret = systemp(image, "%s %s %s %s %s%s%s %s '%s'",
 			get_opt("mkfsbtrfs"),
 			label ? "-L"  : "",
 			label ? label : "",
@@ -43,6 +44,7 @@ static int btrfs_generate(struct image *image)
 			image->empty ? "" : "'",
 			image->empty ? "" : mountpath(image),
 			image->empty ? "" : "'",
+			extraargs,
 			imageoutfile(image)); /* destination file */
 
 	if(ret || image->empty)
@@ -54,6 +56,7 @@ static int btrfs_generate(struct image *image)
 
 static cfg_opt_t btrfs_opts[] = {
 	CFG_STR("label", NULL, CFGF_NONE),
+	CFG_STR("extraargs", "", CFGF_NONE),
 	CFG_END()
 };
 
