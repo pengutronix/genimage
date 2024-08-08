@@ -35,6 +35,15 @@ test_expect_success mkfs_f2fs,sload_f2fs,fsck_f2fs "f2fs" "
 	fsck.f2fs images/test.f2fs
 "
 
+exec_test_set_prereq btrfs
+exec_test_set_prereq mkfs.btrfs
+test_expect_success mkfs_btrfs,btrfs "btrfs" "
+	run_genimage_root btrfs.config test.btrfs
+	btrfs check images/test.btrfs
+	test \"\$(btrfs filesystem label images/test.btrfs)\" = btrfstest
+	btrfs filesystem show images/test.btrfs | grep \"uuid: 47e790af-a2e1-42ff-92c7-83f45f7b2228\"
+"
+
 exec_test_set_prereq mksquashfs
 test_expect_success mksquashfs "squashfs" "
 	run_genimage_root squashfs.config test.squashfs &&

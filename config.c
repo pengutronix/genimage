@@ -409,6 +409,11 @@ static struct config opts[] = {
 		.env = "GENIMAGE_MKFSF2FS",
 		.def = "mkfs.f2fs",
 	}, {
+		.name = "mkfsbtrfs",
+		.opt = CFG_STR("mkfsfbtrfs", NULL, CFGF_NONE),
+		.env = "GENIMAGE_MKFSBTRFS",
+		.def = "mkfs.btrfs",
+	}, {
 		.name = "sloadf2fs",
 		.opt = CFG_STR("sloadf2fs", NULL, CFGF_NONE),
 		.env = "GENIMAGE_SLOADF2FS",
