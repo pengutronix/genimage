@@ -41,6 +41,7 @@ static struct image_handler *handlers[] = {
 	&android_sparse_handler,
 	&cpio_handler,
 	&cramfs_handler,
+	&erofs_handler,
 	&ext2_handler,
 	&ext3_handler,
 	&ext4_handler,
