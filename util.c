@@ -187,6 +187,19 @@ void debug(const char *fmt, ...)
 	va_end(args);
 }
 
+static int fsync_close(struct image *image, int fd)
+{
+	int a, b;
+
+	a = fsync(fd);
+	if (a)
+		image_error(image, "fsync() failed: %s\n", strerror(errno));
+	b = close(fd);
+	if (b)
+		image_error(image, "close() failed: %s\n", strerror(errno));
+	return (a || b) ? -1 : 0;
+}
+
 /*
  * printf wrapper around 'system'
  */
@@ -519,7 +532,7 @@ int prepare_image(struct image *image, unsigned long long size)
 		 * than necessary.
 		 */
 		ret = ftruncate(fd, size);
-		close(fd);
+		fsync_close(image, fd);
 		if (ret < 0) {
 			ret = -errno;
 			image_error(image, "failed to truncate %s to %lld: %s\n",
@@ -634,7 +647,7 @@ fill:
 
 out:
 	if (fd >= 0)
-		close(fd);
+		fsync_close(image, fd);
 	if (in_fd >= 0)
 		close(in_fd);
 	free(extents);
@@ -671,7 +684,7 @@ int insert_data(struct image *image, const void *_data, const char *outfile,
 		data += now;
 	}
 err_out:
-	close(outf);
+	fsync_close(image, outf);
 
 	return ret;
 }
@@ -709,7 +722,7 @@ int extend_file(struct image *image, size_t size)
 	}
 	ret = 0;
 out:
-	close(f);
+	fsync_close(image, f);
 	return ret;
 }
 
