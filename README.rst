@@ -150,6 +150,7 @@ Partition options:
 			* ``F``, ``fat32``: FAT32 / Basic Data Partition (ebd0a0a2-b9e5-4433-87c0-68b6b72699c7)
 			* ``barebox-state`` (previously ``B``): Barebox State (4778ed65-bf42-45fa-9c5b-287a1dc4aab1)
 			* ``barebox-env``: Barebox Environment (6c3737f2-07f8-45d1-ad45-15d260aab24d)
+			* ``u-boot-env``: U-Boot Environment (3de21764-95bd-54bd-a5c3-4abe786f38a8)
 
                         Furthermore, for ``{arch}`` being one of ``alpha``,
                         ``arc``, ``arm``, ``arm64``, ``ia64``, ``loongarch64``,

@@ -279,6 +279,7 @@ static const struct gpt_partition_type_shortcut_t gpt_partition_type_shortcuts[]
 	{ "fat32"                       , "ebd0a0a2-b9e5-4433-87c0-68b6b72699c7" },
 	{ "barebox-state"               , "4778ed65-bf42-45fa-9c5b-287a1dc4aab1" },
 	{ "barebox-env"                 , "6c3737f2-07f8-45d1-ad45-15d260aab24d" },
+	{ "u-boot-env"                  , "3de21764-95bd-54bd-a5c3-4abe786f38a8" },
 	/* Discoverable Partitions Specification GUID, see
 	 * https://uapi-group.org/specifications/specs/discoverable_partitions_specification/
 	 */
