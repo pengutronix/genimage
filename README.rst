@@ -470,7 +470,8 @@ Options:
 
 :extraargs:		Extra arguments passed to mksquashfs
 :compression:		compression type for the image. Possible values are ``gzip``
-			(default), ``lzo``, ``xz`` or ``none``
+			(default), ``none`` and any other compressors supported by ``mksquashfs``
+			such as ``lzo``, ``lz4``, ``xz``, ``zstd`` or ``lzma``.
 :block-size:		Block size. Passed to the ``-b`` option of mksquashfs. Defaults
 			to 4096.
 
