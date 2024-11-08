@@ -483,7 +483,7 @@ static int hdimage_insert_gpt(struct image *image, struct list_head *partitions)
 	const char *outfile = imageoutfile(image);
 	struct gpt_header header;
 	struct gpt_partition_entry table[GPT_ENTRIES];
-	unsigned long long smallest_offset = ~0ULL;
+	unsigned long long smallest_offset = ~0ULL, first_usable_offset = 0;
 	struct partition *part;
 	unsigned i, j;
 	int ret;
@@ -526,10 +526,25 @@ static int hdimage_insert_gpt(struct image *image, struct list_head *partitions)
 
 		i++;
 	}
-	if (smallest_offset == ~0ULL)
-		smallest_offset = hd->gpt_location + (GPT_SECTORS - 1)*512;
-	header.first_usable_lba = htole64(smallest_offset / 512);
+	/*
+	 * Find the last non-partition data before the first partition.
+	 * This can be a bootloader or the GPT partition table.
+	 */
+	list_for_each_entry(part, partitions, list) {
+		unsigned long long end;
 
+		if (part->in_partition_table)
+			continue;
+
+		/* ignore the backup partition table at the end of the disk */
+		if (strstr(part->name, "GPT backup"))
+			continue;
+
+		end = part->offset + part->size;
+		if (end <= smallest_offset && end > first_usable_offset)
+			first_usable_offset = end;
+	}
+	header.first_usable_lba = htole64(roundup(first_usable_offset, 512) / 512);
 
 	header.table_crc = htole32(crc32(table, sizeof(table)));
 
