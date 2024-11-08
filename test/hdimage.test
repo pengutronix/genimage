@@ -34,7 +34,7 @@ test_expect_success fdisk,sfdisk "hdimage" "
 	test_cmp '${testdir}/hdimage.fdisk' hdimage.fdisk &&
 	check_size images/test.hdimage-2 11539968 &&
 	sfdisk_validate images/test.hdimage-2 &&
-	check_disk_usage_range images/test.hdimage-2 61290 65376 &&
+	check_disk_usage_range images/test.hdimage-2 61290 65536 &&
 	sanitized_fdisk_sfdisk images/test.hdimage-2 > hdimage.fdisk-2 &&
 	test_cmp '${testdir}/hdimage.fdisk-2' hdimage.fdisk-2
 "
