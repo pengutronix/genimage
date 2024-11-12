@@ -45,6 +45,7 @@ struct partition {
 	cfg_bool_t hidden;
 	cfg_bool_t no_automount;
 	cfg_bool_t fill;
+	unsigned char fill_value;
 	const char *image;
 	off_t imageoffset;
 	struct list_head list;

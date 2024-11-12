@@ -122,7 +122,8 @@ Partition options:
 :image:			The image file this partition shall be filled with
 :fill:			Boolean specifying that all bytes of the partition should be
 			explicitly initialized. Any bytes beyond the size of the specified
-			image will be set to 0.
+			image will be set to ``fill-value``.
+:fill-value:		Byte value used when ``fill`` is true, defaults to 0.
 :autoresize:		Boolean specifying that the partition should be resized
 			automatically. For UBI volumes this means that the
 			``autoresize`` flag is set. Only one volume can have this flag.
