@@ -129,6 +129,9 @@ Partition options:
 			For hd images this can be used for the last partition. If set
 			the partition will fill the remaining space of the image.
 :bootable:		Boolean specifying whether to set the bootable flag.
+:hidden:		Boolean specifying whether to set the hidden flag (only with GPT).
+:no-automount:		Boolean specifying whether to set the no-automount flag (only with GPT).
+:read-only:		Boolean specifying whether to set the read-only flag (only with GPT).
 :in-partition-table:	Boolean specifying whether to include this partition in
 			the partition table. Defaults to true.
 :forced-primary:	Force this partition to be a primary partition in the
