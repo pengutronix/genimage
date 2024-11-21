@@ -427,6 +427,24 @@ Options:
 			bigger. This is necessary if the image will be processed by
 			such tools as libvirt, libguestfs or parted.
 
+GPT partition flags
+~~~~~~~~~~~~~~~~~~~
+
+A GPT partition table will translate the following partition configurations to
+the respective GPT flags and set it in the GPT partiton table:
+
+====================== ==============================
+genimage configuration GPT FLAG
+====================== ==============================
+read-only              GPT_PE_FLAG_READ_ONLY (Bit 60)
+bootable               GPT_PE_FLAG_BOOTABLE (Bit 2)
+hidden                 GPT_PE_FLAG_HIDDEN (Bit 62)
+no-automount           GPT_PE_FLAG_NO_AUTO (Bit 63)
+====================== ==============================
+
+Other GPT Flags are currently not supported.
+
+
 iso
 ***
 Generates an ISO image.
