@@ -109,6 +109,26 @@ ct_assert(sizeof(struct gpt_partition_entry) == 128);
 #define GPT_PE_FLAG_HIDDEN	(1ULL << 62)
 #define GPT_PE_FLAG_NO_AUTO	(1ULL << 63)
 
+static unsigned long long roundup(unsigned long long value, unsigned long long align)
+{
+	return ((value - 1)/align + 1) * align;
+}
+
+static unsigned long long rounddown(unsigned long long value, unsigned long long align)
+{
+	return value - (value % align);
+}
+
+static unsigned long long min_ull(unsigned long long x, unsigned long long y)
+{
+	return x < y ? x : y;
+}
+
+static unsigned long long max_ull(unsigned long long x, unsigned long long y)
+{
+	return x > y ? x : y;
+}
+
 static unsigned long long partition_end(const struct partition *part)
 {
 	return part->offset + part->size;
@@ -463,7 +483,7 @@ static int hdimage_insert_gpt(struct image *image, struct list_head *partitions)
 	const char *outfile = imageoutfile(image);
 	struct gpt_header header;
 	struct gpt_partition_entry table[GPT_ENTRIES];
-	unsigned long long smallest_offset = ~0ULL;
+	unsigned long long smallest_offset = ~0ULL, first_usable_offset = 0;
 	struct partition *part;
 	unsigned i, j;
 	int ret;
@@ -506,10 +526,25 @@ static int hdimage_insert_gpt(struct image *image, struct list_head *partitions)
 
 		i++;
 	}
-	if (smallest_offset == ~0ULL)
-		smallest_offset = hd->gpt_location + (GPT_SECTORS - 1)*512;
-	header.first_usable_lba = htole64(smallest_offset / 512);
+	/*
+	 * Find the last non-partition data before the first partition.
+	 * This can be a bootloader or the GPT partition table.
+	 */
+	list_for_each_entry(part, partitions, list) {
+		unsigned long long end;
 
+		if (part->in_partition_table)
+			continue;
+
+		/* ignore the backup partition table at the end of the disk */
+		if (strstr(part->name, "GPT backup"))
+			continue;
+
+		end = part->offset + part->size;
+		if (end <= smallest_offset && end > first_usable_offset)
+			first_usable_offset = end;
+	}
+	header.first_usable_lba = htole64(roundup(first_usable_offset, 512) / 512);
 
 	header.table_crc = htole32(crc32(table, sizeof(table)));
 
@@ -657,26 +692,6 @@ static int hdimage_generate(struct image *image)
 		return reload_partitions(image);
 
 	return 0;
-}
-
-static unsigned long long roundup(unsigned long long value, unsigned long long align)
-{
-	return ((value - 1)/align + 1) * align;
-}
-
-static unsigned long long rounddown(unsigned long long value, unsigned long long align)
-{
-	return value - (value % align);
-}
-
-static unsigned long long min_ull(unsigned long long x, unsigned long long y)
-{
-	return x < y ? x : y;
-}
-
-static unsigned long long max_ull(unsigned long long x, unsigned long long y)
-{
-	return x > y ? x : y;
 }
 
 static bool image_has_hole_covering(const char *image,
