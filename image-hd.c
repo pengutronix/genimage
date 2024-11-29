@@ -100,7 +100,7 @@ struct gpt_partition_entry {
 } __attribute__((packed));
 ct_assert(sizeof(struct gpt_partition_entry) == 128);
 
-#define GPT_ENTRIES 		128
+#define GPT_ENTRIES		128
 #define GPT_SECTORS		(1 + GPT_ENTRIES * sizeof(struct gpt_partition_entry) / 512)
 #define GPT_REVISION_1_0	0x00010000
 
