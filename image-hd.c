@@ -957,11 +957,8 @@ static int setup_part_image(struct image *image, struct partition *part)
 				part->name, part->size, child->file, child->size);
 		return -EINVAL;
 	}
-	if (part->offset + child->size > hd->file_size) {
-		size_t file_size = part->offset + child->size;
-		if (file_size > hd->file_size)
-			hd->file_size = file_size;
-	}
+	if (part->offset + child->size > hd->file_size)
+		hd->file_size = part->offset + child->size;
 
 	return 0;
 }
