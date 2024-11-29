@@ -100,7 +100,7 @@ struct gpt_partition_entry {
 } __attribute__((packed));
 ct_assert(sizeof(struct gpt_partition_entry) == 128);
 
-#define GPT_ENTRIES 		128
+#define GPT_ENTRIES		128
 #define GPT_SECTORS		(1 + GPT_ENTRIES * sizeof(struct gpt_partition_entry) / 512)
 #define GPT_REVISION_1_0	0x00010000
 
@@ -515,7 +515,7 @@ static int hdimage_insert_gpt(struct image *image, struct list_head *partitions)
 		uuid_parse(part->partition_type_uuid, table[i].type_uuid);
 		uuid_parse(part->partition_uuid, table[i].uuid);
 		table[i].first_lba = htole64(part->offset/512);
-		table[i].last_lba = htole64((part->offset + part->size)/512 - 1);
+		table[i].last_lba = htole64((partition_end(part))/512 - 1);
 		table[i].flags =
 			(part->bootable ? GPT_PE_FLAG_BOOTABLE : 0) |
 			(part->read_only ? GPT_PE_FLAG_READ_ONLY : 0) |
@@ -540,7 +540,7 @@ static int hdimage_insert_gpt(struct image *image, struct list_head *partitions)
 		if (strstr(part->name, "GPT backup"))
 			continue;
 
-		end = part->offset + part->size;
+		end = partition_end(part);
 		if (end <= smallest_offset && end > first_usable_offset)
 			first_usable_offset = end;
 	}
@@ -721,10 +721,10 @@ static int check_overlap(struct image *image, struct partition *p)
 		if (p == q)
 			return 0;
 		/* We must have that p starts beyond where q ends... */
-		if (p->offset >= q->offset + q->size)
+		if (p->offset >= partition_end(q))
 			continue;
 		/* ...or vice versa. */
-		if (q->offset >= p->offset + p->size)
+		if (q->offset >= partition_end(p))
 			continue;
 
 		/*
@@ -735,7 +735,7 @@ static int check_overlap(struct image *image, struct partition *p)
 		 * specified.
 		 */
 		start = max_ull(p->offset, q->offset);
-		end = min_ull(p->offset + p->size, q->offset + q->size);
+		end = min_ull(partition_end(p), q->offset + q->size);
 
 		if (image_has_hole_covering(q->image, start - q->offset, end - q->offset))
 			continue;
@@ -957,11 +957,8 @@ static int setup_part_image(struct image *image, struct partition *part)
 				part->name, part->size, child->file, child->size);
 		return -EINVAL;
 	}
-	if (part->offset + child->size > hd->file_size) {
-		size_t file_size = part->offset + child->size;
-		if (file_size > hd->file_size)
-			hd->file_size = file_size;
-	}
+	if (part->offset + child->size > hd->file_size)
+		hd->file_size = part->offset + child->size;
 
 	return 0;
 }
@@ -1181,8 +1178,8 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 					part->name, part->size);
 			return -EINVAL;
 		}
-		if (part->offset + part->size > now)
-			now = part->offset + part->size;
+		if (partition_end(part) > now)
+			now = partition_end(part);
 
 		if (part->logical) {
 			size_t file_size = part->offset - hd->align + 512;
