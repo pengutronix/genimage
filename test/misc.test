@@ -104,6 +104,20 @@ test_expect_success fiptool "fip" "
 	fiptool info images/test.fip
 "
 
+exec_test_set_prereq mdadm
+test_expect_success mdadm "mdraid" "
+	run_genimage_root mdraid.config test.mdraid-a &&
+	LANG=C mdadm --examine images/test.mdraid-a | tee images/test.mdraid-a.txt &&
+	LANG=C mdadm --examine images/test.mdraid-b | tee images/test.mdraid-b.txt &&
+	grep 'Checksum.*correct$' images/test.mdraid-a.txt &&
+	grep 'State.*active$' images/test.mdraid-a.txt &&
+	grep 'Internal Bitmap.*sectors' images/test.mdraid-a.txt &&
+	grep 'Bad Block Log.*entries available' images/test.mdraid-a.txt &&
+	grep -Ev '(Device UUID|Checksum|Device Role) :' images/test.mdraid-a.txt | tail -n +2 > images/test.mdraid-a.arr.txt &&
+	grep -Ev '(Device UUID|Checksum|Device Role) :' images/test.mdraid-b.txt | tail -n +2 > images/test.mdraid-b.arr.txt &&
+	diff images/test.mdraid-a.arr.txt images/test.mdraid-b.arr.txt
+"
+
 test_done
 
 # vim: syntax=sh

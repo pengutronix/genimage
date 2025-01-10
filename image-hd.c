@@ -109,26 +109,6 @@ ct_assert(sizeof(struct gpt_partition_entry) == 128);
 #define GPT_PE_FLAG_HIDDEN	(1ULL << 62)
 #define GPT_PE_FLAG_NO_AUTO	(1ULL << 63)
 
-static unsigned long long roundup(unsigned long long value, unsigned long long align)
-{
-	return ((value - 1)/align + 1) * align;
-}
-
-static unsigned long long rounddown(unsigned long long value, unsigned long long align)
-{
-	return value - (value % align);
-}
-
-static unsigned long long min_ull(unsigned long long x, unsigned long long y)
-{
-	return x < y ? x : y;
-}
-
-static unsigned long long max_ull(unsigned long long x, unsigned long long y)
-{
-	return x > y ? x : y;
-}
-
 static unsigned long long partition_end(const struct partition *part)
 {
 	return part->offset + part->size;

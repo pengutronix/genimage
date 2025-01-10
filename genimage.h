@@ -19,6 +19,11 @@ void image_debug(struct image *image, const char *fmt, ...) __attribute__ ((form
 void xasprintf(char **strp, const char *fmt, ...) __attribute__ ((format(printf, 2, 3)));
 void xstrcatf(char **strp, const char *fmt, ...) __attribute__ ((format(printf, 2, 3)));
 
+unsigned long long roundup(unsigned long long value, unsigned long long align);
+unsigned long long rounddown(unsigned long long value, unsigned long long align);
+unsigned long long min_ull(unsigned long long x, unsigned long long y);
+unsigned long long max_ull(unsigned long long x, unsigned long long y);
+
 void disable_rootpath(void);
 const char *imagepath(void);
 const char *inputpath(void);
@@ -112,6 +117,7 @@ extern struct image_handler ext2_handler;
 extern struct image_handler ext3_handler;
 extern struct image_handler ext4_handler;
 extern struct image_handler f2fs_handler;
+extern struct image_handler mdraid_handler;
 extern struct image_handler btrfs_handler;
 extern struct image_handler file_handler;
 extern struct image_handler flash_handler;

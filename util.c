@@ -41,6 +41,26 @@
 #define AT_NO_AUTOMOUNT 0x800
 #endif
 
+unsigned long long roundup(unsigned long long value, unsigned long long align)
+{
+	return ((value - 1)/align + 1) * align;
+}
+
+unsigned long long rounddown(unsigned long long value, unsigned long long align)
+{
+	return value - (value % align);
+}
+
+unsigned long long min_ull(unsigned long long x, unsigned long long y)
+{
+	return x < y ? x : y;
+}
+
+unsigned long long max_ull(unsigned long long x, unsigned long long y)
+{
+	return x > y ? x : y;
+}
+
 static int loglevel(void)
 {
 	static int level = -1;

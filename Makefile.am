@@ -23,6 +23,7 @@ genimage_SOURCES = \
 	image-cramfs.c \
 	image-ext2.c \
 	image-f2fs.c \
+	image-mdraid.c \
 	image-btrfs.c \
 	image-file.c \
 	image-fip.c \
@@ -75,6 +76,7 @@ EXTRA_DIST += \
 	test/ext4test.1.dump \
 	test/ext4test.2.dump \
 	test/f2fs.config \
+	test/mdraid.config \
 	test/btrfs.config \
 	test/fip.config \
 	test/fit.its \
