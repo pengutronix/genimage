@@ -89,7 +89,7 @@ static int fit_generate(struct image *image)
 	}
 
 	ret = systemp(image, "%s -r %s -f '%s' '%s'",
-		get_opt("mkimage"), keyopt ? keyopt : "", itspath, imageoutfile(image));
+		      get_opt("mkimage"), keyopt ? keyopt : "", itspath, imageoutfile(image));
 
 	if (ret)
 		image_error(image, "Failed to create FIT image\n");

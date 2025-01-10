@@ -32,25 +32,25 @@ static int f2fs_generate(struct image *image)
 	extraargs = cfg_getstr(image->imagesec, "extraargs");
 
 	ret = prepare_image(image, image->size);
-	if(ret)
+	if (ret)
 		return ret;
 
 	ret = systemp(image, "%s %s %s%s%s %s '%s'",
-			get_opt("mkfsf2fs"),
-			label ? "-l"  : "",
-			label ? "'" : "",
-			label ? label : "",
-			label ? "'" : "",
-			extraargs,
-			imageoutfile(image));
+		      get_opt("mkfsf2fs"),
+		      label ? "-l" : "",
+		      label ? "'" : "",
+		      label ? label : "",
+		      label ? "'" : "",
+		      extraargs,
+		      imageoutfile(image));
 
-	if(ret || image->empty)
+	if (ret || image->empty)
 		return ret;
 
 	ret = systemp(image, "%s -f '%s' '%s'",
-			get_opt("sloadf2fs"),
-			mountpath(image),
-			imageoutfile(image));
+		      get_opt("sloadf2fs"),
+		      mountpath(image),
+		      imageoutfile(image));
 
 	return ret;
 }

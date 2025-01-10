@@ -43,13 +43,13 @@ static int flash_generate(struct image *image)
 		struct image *child = NULL;
 
 		image_info(image, "writing image partition '%s' (0x%llx@0x%llx)\n",
-			part->name, part->size, part->offset);
+			   part->name, part->size, part->offset);
 
 		if (part->offset > end) {
 			ret = insert_image(image, NULL, part->offset - end, end, 0xFF);
 			if (ret) {
 				image_error(image, "failed to pad image to size %lld\n",
-						part->offset);
+					    part->offset);
 				return ret;
 			}
 		}
@@ -60,7 +60,7 @@ static int flash_generate(struct image *image)
 		ret = insert_image(image, child, part->size, part->offset, 0xFF);
 		if (ret) {
 			image_error(image, "failed to write image partition '%s'\n",
-					part->name);
+				    part->name);
 			return ret;
 		}
 		end = part->offset + part->size;
@@ -99,20 +99,20 @@ static int flash_setup(struct image *image, cfg_t *cfg)
 		}
 		if (part->size % image->flash_type->pebsize) {
 			image_error(image, "part %s size (%lld) must be a "
-					"multiple of erase block size (%i bytes)\n",
-					part->name, part->size, image->flash_type->pebsize);
+					   "multiple of erase block size (%i bytes)\n",
+				    part->name, part->size, image->flash_type->pebsize);
 			return -EINVAL;
 		}
 		if (part->offset % image->flash_type->pebsize) {
 			image_error(image, "part %s offset (%lld) must be a"
-					"multiple of erase block size (%i bytes)\n",
-					part->name, part->offset, image->flash_type->pebsize);
+					   "multiple of erase block size (%i bytes)\n",
+				    part->name, part->offset, image->flash_type->pebsize);
 			return -EINVAL;
 		}
 		if (part->offset) {
 			if (partsize > part->offset) {
 				image_error(image, "part %s overlaps with previous partition\n",
-					part->name);
+					    part->name);
 				return -EINVAL;
 			}
 		} else {
@@ -122,12 +122,12 @@ static int flash_setup(struct image *image, cfg_t *cfg)
 			struct image *child = image_get(part->image);
 			if (!child) {
 				image_error(image, "could not find %s\n",
-						part->image);
+					    part->image);
 				return -EINVAL;
 			}
 			if (child->size > part->size) {
 				image_error(image, "part %s size (%lld) too small for %s (%lld)\n",
-						part->name, part->size, child->file, child->size);
+					    part->name, part->size, child->file, child->size);
 				return -EINVAL;
 			}
 		}
@@ -138,7 +138,7 @@ static int flash_setup(struct image *image, cfg_t *cfg)
 	if (partsize > flashsize) {
 err_exceed:
 		image_error(image, "size of partitions (%lld) exceeds flash size (%lld)\n",
-				partsize, flashsize);
+			    partsize, flashsize);
 		return -EINVAL;
 	}
 	if (!image->size)
@@ -158,4 +158,3 @@ struct image_handler flash_handler = {
 	.setup = flash_setup,
 	.opts = flash_opts,
 };
-

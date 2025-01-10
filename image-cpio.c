@@ -30,10 +30,10 @@ static int cpio_generate(struct image *image)
 	char *comp = cfg_getstr(image->imagesec, "compress");
 
 	ret = systemp(image, "(cd '%s' && find . | %s -H '%s' %s -o %s %s) > '%s'",
-			mountpath(image),
-			get_opt("cpio"),
-			format, extraargs, comp[0] != '\0' ? "|" : "", comp,
-			imageoutfile(image));
+		      mountpath(image),
+		      get_opt("cpio"),
+		      format, extraargs, comp[0] != '\0' ? "|" : "", comp,
+		      imageoutfile(image));
 
 	return ret;
 }
@@ -50,4 +50,3 @@ struct image_handler cpio_handler = {
 	.generate = cpio_generate,
 	.opts = cpio_opts,
 };
-

@@ -43,7 +43,7 @@
 
 unsigned long long roundup(unsigned long long value, unsigned long long align)
 {
-	return ((value - 1)/align + 1) * align;
+	return ((value - 1) / align + 1) * align;
 }
 
 unsigned long long rounddown(unsigned long long value, unsigned long long align)
@@ -93,11 +93,11 @@ void xasprintf(char **strp, const char *fmt, ...)
 {
 	va_list args;
 
-	va_start (args, fmt);
+	va_start(args, fmt);
 
 	xvasprintf(strp, fmt, args);
 
-	va_end (args);
+	va_end(args);
 }
 
 void xstrcatf(char **strp, const char *fmt, ...)
@@ -109,11 +109,11 @@ void xstrcatf(char **strp, const char *fmt, ...)
 	xvasprintf(&tmp, fmt, list);
 	va_end(list);
 	if (*strp) {
-	        *strp = xrealloc(*strp, strlen(*strp) + strlen(tmp) + 1);
-	        strcat(*strp, tmp);
-	        free(tmp);
+		*strp = xrealloc(*strp, strlen(*strp) + strlen(tmp) + 1);
+		strcat(*strp, tmp);
+		free(tmp);
 	} else {
-	        *strp = tmp;
+		*strp = tmp;
 	}
 }
 
@@ -129,24 +129,23 @@ static void image_log(struct image *image, int level, const char *fmt,
 	xvasprintf(&buf, fmt, args);
 
 	switch (level) {
-		case 0:
-			p = "ERROR";
-			break;
-		case 1:
-			p = "INFO";
-			break;
-		case 2:
-			p = "DEBUG";
-			break;
-		case 3:
-		default:
-			p = "VDEBUG";
-			break;
+	case 0:
+		p = "ERROR";
+		break;
+	case 1:
+		p = "INFO";
+		break;
+	case 2:
+		p = "DEBUG";
+		break;
+	case 3:
+	default:
+		p = "VDEBUG";
+		break;
 	}
 
 	if (image)
-		fprintf(stderr, "%s: %s(%s): %s", p, image->handler ?
-			image->handler->type : "unknown", image->file, buf);
+		fprintf(stderr, "%s: %s(%s): %s", p, image->handler ? image->handler->type : "unknown", image->file, buf);
 	else
 		fprintf(stderr, "%s: %s", p, buf);
 
@@ -232,11 +231,11 @@ int systemp(struct image *image, const char *fmt, ...)
 	int status;
 	pid_t pid;
 
-	va_start (args, fmt);
+	va_start(args, fmt);
 
 	xvasprintf(&buf, fmt, args);
 
-	va_end (args);
+	va_end(args);
 
 	if (!buf)
 		return -ENOMEM;
@@ -327,7 +326,7 @@ void *xrealloc(void *ptr, size_t size)
  * suffix for Gigabyte, Megabyte or Kilobyte
  */
 unsigned long long strtoul_suffix(const char *str, char **endp,
-		cfg_bool_t *percent)
+				  cfg_bool_t *percent)
 {
 	unsigned long long val;
 	char *end;
@@ -372,7 +371,8 @@ unsigned long long strtoul_suffix(const char *str, char **endp,
 	return val;
 }
 
-int is_block_device(const char *filename) {
+int is_block_device(const char *filename)
+{
 	struct stat s;
 	return stat(filename, &s) == 0 && ((s.st_mode & S_IFMT) == S_IFBLK);
 }
@@ -440,8 +440,8 @@ int map_file_extents(struct image *image, const char *filename, int f,
 	}
 
 	/* The last extent may extend beyond the end of file, limit it to the actual end */
-	if (*extent_count && (*extents)[i-1].end > size)
-		(*extents)[i-1].end = size;
+	if (*extent_count && (*extents)[i - 1].end > size)
+		(*extents)[i - 1].end = size;
 
 	free(fiemap);
 
@@ -660,7 +660,7 @@ int insert_image(struct image *image, struct image *sub,
 
 fill:
 	image_debug(image, "adding %llu %#hhx bytes at offset %llu\n",
-			size, byte, offset);
+		    size, byte, offset);
 	ret = write_bytes(fd, size, offset, byte);
 	if (ret)
 		image_error(image, "writing %llu bytes failed: %s\n", size, strerror(-ret));
@@ -854,7 +854,7 @@ int reload_partitions(struct image *image)
 	if (!is_block_device(outfile))
 		return 0;
 
-	fd = open(outfile, O_WRONLY|O_EXCL);
+	fd = open(outfile, O_WRONLY | O_EXCL);
 	if (fd < 0) {
 		int ret = -errno;
 		image_error(image, "open: %s\n", strerror(errno));
@@ -863,16 +863,16 @@ int reload_partitions(struct image *image)
 	/* no error because not all block devices support this */
 	if (ioctl(fd, BLKRRPART) < 0)
 		image_info(image, "failed to re-read partition table: %s\n",
-			strerror(errno));
+			   strerror(errno));
 	close(fd);
 #endif
 	return 0;
 }
 
-#define ROUND_UP(num,align) ((((num) + ((align) - 1)) & ~((align) - 1)))
+#define ROUND_UP(num, align) ((((num) + ((align)-1)) & ~((align)-1)))
 
 static unsigned long long dir_size(struct image *image, int dirfd,
-		const char *subdir, size_t blocksize)
+				   const char *subdir, size_t blocksize)
 {
 	struct dirent *d;
 	DIR *dir;
@@ -883,30 +883,30 @@ static unsigned long long dir_size(struct image *image, int dirfd,
 	fd = openat(dirfd, subdir, O_RDONLY);
 	if (fd < 0) {
 		image_error(image, "failed to open '%s': %s", subdir,
-				strerror(errno));
+			    strerror(errno));
 		return 0;
 	}
 
 	dir = fdopendir(dup(fd));
 	if (dir == NULL) {
 		image_error(image, "failed to opendir '%s': %s", subdir,
-				strerror(errno));
+			    strerror(errno));
 		close(fd);
 		return 0;
 	}
 	while ((d = readdir(dir)) != NULL) {
 		if (d->d_type == DT_DIR) {
 			if (d->d_name[0] == '.' && (d->d_name[1] == '\0' ||
-			    (d->d_name[1] == '.' && d->d_name[2] == '\0')))
+						    (d->d_name[1] == '.' && d->d_name[2] == '\0')))
 				continue;
 			size += dir_size(image, fd, d->d_name, blocksize);
 			continue;
 		}
 		if (d->d_type != DT_REG)
 			continue;
-		if (fstatat(fd,  d->d_name, &st, AT_NO_AUTOMOUNT) < 0) {
+		if (fstatat(fd, d->d_name, &st, AT_NO_AUTOMOUNT) < 0) {
 			image_error(image, "failed to stat '%s': %s",
-					d->d_name, strerror(errno));
+				    d->d_name, strerror(errno));
 			continue;
 		}
 		size += ROUND_UP(st.st_size, blocksize);

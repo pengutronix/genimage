@@ -40,7 +40,7 @@ static int file_generate(struct image *image)
 	if (!strcmp(f->infile, imageoutfile(image)))
 		return 0;
 
-	ret = systemp(image, "cp '%s' '%s'",  f->infile, imageoutfile(image));
+	ret = systemp(image, "cp '%s' '%s'", f->infile, imageoutfile(image));
 
 	return ret;
 }
@@ -65,7 +65,7 @@ static int file_setup(struct image *image, cfg_t *cfg)
 	if (ret) {
 		ret = -errno;
 		image_error(image, "stat(%s) failed: %s\n", f->infile,
-				strerror(errno));
+			    strerror(errno));
 		return ret;
 	}
 	if (!image->size)
@@ -113,4 +113,3 @@ struct image_handler file_handler = {
 	.parse = file_parse,
 	.opts = file_opts,
 };
-

@@ -9,15 +9,15 @@ struct image_handler;
 
 struct image *image_get(const char *filename);
 
-int systemp(struct image *image, const char *fmt, ...) __attribute__ ((format(printf, 2, 3)));
-void error(const char *fmt, ...) __attribute__ ((format(printf, 1, 2)));
-void info(const char *fmt, ...) __attribute__ ((format(printf, 1, 2)));
-void debug(const char *fmt, ...) __attribute__ ((format(printf, 1, 2)));
-void image_error(struct image *image, const char *fmt, ...) __attribute__ ((format(printf, 2, 3)));
-void image_info(struct image *image, const char *fmt, ...) __attribute__ ((format(printf, 2, 3)));
-void image_debug(struct image *image, const char *fmt, ...) __attribute__ ((format(printf, 2, 3)));
-void xasprintf(char **strp, const char *fmt, ...) __attribute__ ((format(printf, 2, 3)));
-void xstrcatf(char **strp, const char *fmt, ...) __attribute__ ((format(printf, 2, 3)));
+int systemp(struct image *image, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
+void error(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
+void info(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
+void debug(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
+void image_error(struct image *image, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
+void image_info(struct image *image, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
+void image_debug(struct image *image, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
+void xasprintf(char **strp, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
+void xstrcatf(char **strp, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
 
 unsigned long long roundup(unsigned long long value, unsigned long long align);
 unsigned long long rounddown(unsigned long long value, unsigned long long align);
@@ -134,9 +134,9 @@ extern struct image_handler vfat_handler;
 extern struct image_handler fit_handler;
 extern struct image_handler fip_handler;
 
-#define ARRAY_SIZE(arr)		(sizeof(arr) / sizeof((arr)[0]))
+#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 
-#define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
+#define offsetof(TYPE, MEMBER) ((size_t) & ((TYPE *)0)->MEMBER)
 
 /**
  * container_of - cast a member of a structure out to the containing structure
@@ -147,12 +147,12 @@ extern struct image_handler fip_handler;
  */
 #define container_of(ptr, type, member) ({			\
 	const typeof( ((type *)0)->member ) *__mptr = (ptr);	\
-	(type *)( (char *)__mptr - offsetof(type,member) );})
+	(type *)( (char *)__mptr - offsetof(type,member) ); })
 
 void *xzalloc(size_t n);
 void *xrealloc(void *ptr, size_t size);
 unsigned long long strtoul_suffix(const char *str, char **endp,
-		cfg_bool_t *percent);
+				  cfg_bool_t *percent);
 
 int init_config(void);
 cfg_opt_t *get_confuse_opts(void);
@@ -191,7 +191,7 @@ int parse_holes(struct image *image, cfg_t *cfg);
 
 unsigned long long cfg_getint_suffix(cfg_t *sec, const char *name);
 unsigned long long cfg_getint_suffix_percent(cfg_t *sec, const char *name,
-		cfg_bool_t *percent);
+					     cfg_bool_t *percent);
 
 static inline const char *imageoutfile(const struct image *image)
 {

@@ -45,7 +45,8 @@ static void show_help(const char *cmd)
 	       "configuration file.\n\n"
 	       "Valid options:           [ default value ]    (environment variable)\n"
 	       "  -h, --help\n"
-	       "  -v, --version\n", cmd);
+	       "  -v, --version\n",
+	       cmd);
 	list_for_each_entry(c, &optlist, list) {
 		char opt[20], def[20];
 		if (c->hidden)
@@ -147,7 +148,7 @@ unsigned long long cfg_getint_suffix(cfg_t *sec, const char *name)
  * Like cfg_getint_suffix() but allow '%' as suffix as well
  */
 unsigned long long cfg_getint_suffix_percent(cfg_t *sec, const char *name,
-		cfg_bool_t *percent)
+					     cfg_bool_t *percent)
 {
 	const char *str = cfg_getstr(sec, name);
 	unsigned long long val = 0;
@@ -216,15 +217,15 @@ int set_config_opts(int argc, char *argv[], cfg_t *cfg)
 	}
 	long_options[i].name = "help";
 	long_options[i].val = 'h';
-	long_options[i+1].name = "version";
-	long_options[i+1].val = 'v';
+	long_options[i + 1].name = "version";
+	long_options[i + 1].val = 'v';
 
 	optind = 1;
 	while (1) {
 		int option_index = 0;
 
 		n = getopt_long(argc, argv, "hv",
-			long_options, &option_index);
+				long_options, &option_index);
 		if (n == -1)
 			break;
 		switch (n) {
@@ -315,27 +316,32 @@ static struct config opts[] = {
 		.opt = CFG_STR("loglevel", NULL, CFGF_NONE),
 		.env = "GENIMAGE_LOGLEVEL",
 		.def = "1",
-	}, {
+	},
+	{
 		.name = "rootpath",
 		.opt = CFG_STR("rootpath", NULL, CFGF_NONE),
 		.env = "GENIMAGE_ROOTPATH",
 		.def = "root",
-	}, {
+	},
+	{
 		.name = "tmppath",
 		.opt = CFG_STR("tmppath", NULL, CFGF_NONE),
 		.env = "GENIMAGE_TMPPATH",
 		.def = "tmp",
-	}, {
+	},
+	{
 		.name = "inputpath",
 		.opt = CFG_STR("inputpath", NULL, CFGF_NONE),
 		.env = "GENIMAGE_INPUTPATH",
 		.def = "input",
-	}, {
+	},
+	{
 		.name = "outputpath",
 		.opt = CFG_STR("outputpath", NULL, CFGF_NONE),
 		.env = "GENIMAGE_OUTPUTPATH",
 		.def = "images",
-	}, {
+	},
+	{
 		.name = "includepath",
 		.opt = CFG_STR("includepath", NULL, CFGF_NONE),
 		.env = "GENIMAGE_INCLUDEPATH",
@@ -343,131 +349,157 @@ static struct config opts[] = {
 #ifndef HAVE_SEARCHPATH
 		.hidden = 1,
 #endif
-	}, {
+	},
+	{
 		.name = "cpio",
 		.opt = CFG_STR("cpio", NULL, CFGF_NONE),
 		.env = "GENIMAGE_CPIO",
 		.def = "cpio",
-	}, {
+	},
+	{
 		.name = "dd",
 		.opt = CFG_STR("dd", NULL, CFGF_NONE),
 		.env = "GENIMAGE_DD",
 		.def = "dd",
-	}, {
+	},
+	{
 		.name = "debugfs",
 		.opt = CFG_STR("debugfs", NULL, CFGF_NONE),
 		.env = "GENIMAGE_DEBUGFS",
 		.def = "debugfs",
-	}, {
+	},
+	{
 		.name = "e2fsck",
 		.opt = CFG_STR("e2fsck", NULL, CFGF_NONE),
 		.env = "GENIMAGE_E2FSCK",
 		.def = "e2fsck",
-	}, {
+	},
+	{
 		.name = "genext2fs",
 		.opt = CFG_STR("genext2fs", NULL, CFGF_NONE),
 		.env = "GENIMAGE_GENEXT2FS",
 		.def = "genext2fs",
-	}, {
+	},
+	{
 		.name = "genisoimage",
 		.opt = CFG_STR("genisoimage", NULL, CFGF_NONE),
 		.env = "GENIMAGE_GENISOIMAGE",
 		.def = "genisoimage",
-	}, {
+	},
+	{
 		.name = "mcopy",
 		.opt = CFG_STR("mcopy", NULL, CFGF_NONE),
 		.env = "GENIMAGE_MCOPY",
 		.def = "mcopy",
-	}, {
+	},
+	{
 		.name = "mmd",
 		.opt = CFG_STR("mmd", NULL, CFGF_NONE),
 		.env = "GENIMAGE_MMD",
 		.def = "mmd",
-	}, {
+	},
+	{
 		.name = "mkcramfs",
 		.opt = CFG_STR("mkcramfs", NULL, CFGF_NONE),
 		.env = "GENIMAGE_MKCRAMFS",
 		.def = "mkcramfs",
-	}, {
+	},
+	{
 		.name = "mkdosfs",
 		.opt = CFG_STR("mkdosfs", NULL, CFGF_NONE),
 		.env = "GENIMAGE_MKDOSFS",
 		.def = "mkdosfs",
-	}, {
+	},
+	{
 		.name = "mke2fs",
 		.opt = CFG_STR("mke2fs", NULL, CFGF_NONE),
 		.env = "GENIMAGE_MKE2FS",
 		.def = "mke2fs",
-	}, {
+	},
+	{
 		.name = "mkfsjffs2",
 		.opt = CFG_STR("mkfsjffs2", NULL, CFGF_NONE),
 		.env = "GENIMAGE_MKFJFFS2",
 		.def = "mkfs.jffs2",
-	}, {
+	},
+	{
 		.name = "mkfsf2fs",
 		.opt = CFG_STR("mkfsf2fs", NULL, CFGF_NONE),
 		.env = "GENIMAGE_MKFSF2FS",
 		.def = "mkfs.f2fs",
-	}, {
+	},
+	{
 		.name = "mkfsbtrfs",
 		.opt = CFG_STR("mkfsfbtrfs", NULL, CFGF_NONE),
 		.env = "GENIMAGE_MKFSBTRFS",
 		.def = "mkfs.btrfs",
-	}, {
+	},
+	{
 		.name = "sloadf2fs",
 		.opt = CFG_STR("sloadf2fs", NULL, CFGF_NONE),
 		.env = "GENIMAGE_SLOADF2FS",
 		.def = "sload.f2fs",
-	}, {
+	},
+	{
 		.name = "mkfsubifs",
 		.opt = CFG_STR("mkfsubifs", NULL, CFGF_NONE),
 		.env = "GENIMAGE_MKFSUBIFS",
 		.def = "mkfs.ubifs",
-	}, {
+	},
+	{
 		.name = "mksquashfs",
 		.opt = CFG_STR("mksquashfs", NULL, CFGF_NONE),
 		.env = "GENIMAGE_MKSQUASHFS",
 		.def = "mksquashfs",
-	}, {
+	},
+	{
 		.name = "qemu-img",
 		.opt = CFG_STR("qemu-img", NULL, CFGF_NONE),
 		.env = "GENIMAGE_QEMU",
 		.def = "qemu-img",
-	}, {
+	},
+	{
 		.name = "rauc",
 		.opt = CFG_STR("rauc", NULL, CFGF_NONE),
 		.env = "GENIMAGE_RAUC",
 		.def = "rauc",
-	}, {
+	},
+	{
 		.name = "tar",
 		.opt = CFG_STR("tar", NULL, CFGF_NONE),
 		.env = "GENIMAGE_TAR",
 		.def = "tar",
-	}, {
+	},
+	{
 		.name = "tune2fs",
 		.opt = CFG_STR("tune2fs", NULL, CFGF_NONE),
 		.env = "GENIMAGE_TUNE2FS",
 		.def = "tune2fs",
-	}, {
+	},
+	{
 		.name = "ubinize",
 		.opt = CFG_STR("ubinize", NULL, CFGF_NONE),
 		.env = "GENIMAGE_UBINIZE",
 		.def = "ubinize",
-	}, {
+	},
+	{
 		.name = "mkimage",
 		.opt = CFG_STR("mkimage", NULL, CFGF_NONE),
 		.env = "GENIMAGE_MKIMAGE",
 		.def = "mkimage",
-	}, {
+	},
+	{
 		.name = "fiptool",
 		.opt = CFG_STR("fiptool", NULL, CFGF_NONE),
 		.env = "GENIMAGE_FIPTOOL",
 		.def = "fiptool",
-	}, {
+	},
+	{
 		.name = "config",
 		.env = "GENIMAGE_CONFIG",
 		.def = "genimage.cfg",
-	}, {
+	},
+	{
 		.name = "configdump",
 		.env = "GENIMAGE_CONFIGDUMP",
 		.def = NULL,

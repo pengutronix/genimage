@@ -23,10 +23,10 @@
 
 #include "genimage.h"
 
-#define RAUC_CONTENT	0
-#define RAUC_KEY	1
-#define RAUC_CERT	2
-#define RAUC_KEYRING	3
+#define RAUC_CONTENT	  0
+#define RAUC_KEY	  1
+#define RAUC_CERT	  2
+#define RAUC_KEYRING	  3
 #define RAUC_INTERMEDIATE 4
 
 static const char *pkcs11_prefix = "pkcs11:";
@@ -102,7 +102,7 @@ static int rauc_generate(struct image *image)
 		if (tmp) {
 			*tmp = '\0';
 			ret = systemp(image, "mkdir -p '%s/%s'",
-					tmpdir, path);
+				      tmpdir, path);
 			if (ret)
 				goto out;
 		}
@@ -110,7 +110,7 @@ static int rauc_generate(struct image *image)
 		xasprintf(&tmptarget, "%s/%s", tmpdir, target);
 
 		image_info(image, "adding file '%s' as '%s' (offset=%lld)...\n",
-				child->file, target, (long long)part->imageoffset);
+			   child->file, target, (long long)part->imageoffset);
 
 		if (part->imageoffset) {
 			unlink(tmptarget);
@@ -127,7 +127,7 @@ static int rauc_generate(struct image *image)
 			 * replace both commands.
 			 */
 			ret = systemp(image, "dd if='%s' of='%s' iflag=skip_bytes skip=%lld",
-					file, tmptarget, (long long)part->imageoffset);
+				      file, tmptarget, (long long)part->imageoffset);
 
 		} else {
 			ret = systemp(image, "cp --remove-destination '%s' '%s'",
@@ -145,10 +145,10 @@ static int rauc_generate(struct image *image)
 	systemp(image, "rm -f '%s'", imageoutfile(image));
 
 	ret = systemp(image, "%s bundle '%s' --cert='%s' --key='%s' %s %s %s '%s'",
-			get_opt("rauc"), tmpdir, cert, key,
-			(keyringarg ? keyringarg : ""),
-			(intermediatearg ? intermediatearg : ""),
-			extraargs, imageoutfile(image));
+		      get_opt("rauc"), tmpdir, cert, key,
+		      (keyringarg ? keyringarg : ""),
+		      (intermediatearg ? intermediatearg : ""),
+		      extraargs, imageoutfile(image));
 
 out:
 	free(keyringarg);
@@ -205,7 +205,7 @@ static int rauc_parse(struct image *image, cfg_t *cfg)
 
 		part_image_intermediate = cfg_getnstr(cfg, "intermediate", i);
 		if (strncmp(pkcs11_prefix, part_image_intermediate,
-						strlen(pkcs11_prefix))) {
+			    strlen(pkcs11_prefix))) {
 			part = xzalloc(sizeof *part);
 			part->image = part_image_intermediate;
 			part->partition_type = RAUC_INTERMEDIATE;
@@ -224,7 +224,7 @@ static int rauc_parse(struct image *image, cfg_t *cfg)
 		list_add_tail(&part->list, &image->partitions);
 	}
 
-	for(i = 0; i < cfg_size(cfg, "files"); i++) {
+	for (i = 0; i < cfg_size(cfg, "files"); i++) {
 		part = xzalloc(sizeof *part);
 		part->image = cfg_getnstr(cfg, "files", i);
 		part->partition_type = RAUC_CONTENT;

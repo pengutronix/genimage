@@ -24,7 +24,6 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-
 #include "genimage.h"
 
 struct sparse {
@@ -43,10 +42,10 @@ struct sparse_header {
 	uint32_t crc32;
 } __attribute__((packed));
 
-#define SPARSE_RAW		htole16(0xCAC1)
-#define SPARSE_FILL		htole16(0xCAC2)
-#define SPARSE_DONT_CARE	htole16(0xCAC3)
-#define SPARSE_CRC32		htole16(0xCAC4)
+#define SPARSE_RAW	 htole16(0xCAC1)
+#define SPARSE_FILL	 htole16(0xCAC2)
+#define SPARSE_DONT_CARE htole16(0xCAC3)
+#define SPARSE_CRC32	 htole16(0xCAC4)
 
 struct sparse_chunk_header {
 	uint16_t chunk_type;
@@ -63,8 +62,7 @@ static int write_data(struct image *image, int fd, const void *data, size_t size
 	if (written < 0) {
 		ret = -errno;
 		image_error(image, "write %s: %s\n", imageoutfile(image), strerror(errno));
-	}
-	else if ((size_t)written != size) {
+	} else if ((size_t)written != size) {
 		image_error(image, "only %llu bytes written instead of %llu\n",
 			    (unsigned long long)written, (unsigned long long)size);
 		ret = -EINVAL;
@@ -181,7 +179,7 @@ static int android_sparse_generate(struct image *image)
 		size = extents[extent].end - extents[extent].start;
 		if (size > max) {
 			image_error(image, "extents size %llu larger and supported maximum %llu.\n",
-					(unsigned long long)size, (unsigned long long)max);
+				    (unsigned long long)size, (unsigned long long)max);
 			ret = -EINVAL;
 			goto out;
 		}
@@ -243,8 +241,7 @@ static int android_sparse_generate(struct image *image)
 				ret = -errno;
 				image_error(image, "read %s: %s\n", infile, strerror(errno));
 				goto out;
-			}
-			else if (r != now) {
+			} else if (r != now) {
 				ret = -EINVAL;
 				image_error(image, "short read %s %lld != %lld\n", infile,
 					    (long long)r, (long long)now);
@@ -254,13 +251,13 @@ static int android_sparse_generate(struct image *image)
 			/* The sparse format only allows image sizes that are a multiple of
 			   the block size. Pad the last block as needed. */
 			if ((uint32_t)r < sparse->block_size) {
-				memset(((char*)buf)+ r, 0, sparse->block_size - r);
+				memset(((char *)buf) + r, 0, sparse->block_size - r);
 				now = sparse->block_size;
 			}
 
 			crc32 = crc32_next(buf, sparse->block_size, crc32);
 
-			for (i = 1; i < sparse->block_size/4; ++i) {
+			for (i = 1; i < sparse->block_size / 4; ++i) {
 				if (buf[0] != buf[i]) {
 					fill = 0;
 					break;
@@ -288,8 +285,7 @@ static int android_sparse_generate(struct image *image)
 						goto out;
 				}
 				chunk_header.blocks++;
-			}
-			else {
+			} else {
 				if (chunk_header.chunk_type != SPARSE_RAW) {
 					header.input_chunks++;
 					ret = flush_header(image, out_fd, &chunk_header, pos);

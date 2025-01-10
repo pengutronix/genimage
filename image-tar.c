@@ -33,9 +33,9 @@ static int tar_generate(struct image *image)
 		comp = "j";
 
 	ret = systemp(image, "%s c%s -f '%s' -C '%s' .",
-			get_opt("tar"),
-			comp,
-			imageoutfile(image), mountpath(image));
+		      get_opt("tar"),
+		      comp,
+		      imageoutfile(image), mountpath(image));
 
 	return ret;
 }
@@ -49,4 +49,3 @@ struct image_handler tar_handler = {
 	.generate = tar_generate,
 	.opts = tar_opts,
 };
-
