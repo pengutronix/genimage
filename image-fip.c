@@ -57,6 +57,7 @@ static void fip_add_part(struct image *image,
 	list_add_tail(&part->list, &image->partitions);
 }
 
+/* clang-format off */
 static cfg_opt_t fip_opts[] = {
 	CFG_STR("extraargs",		"", CFGF_NONE),
 	CFG_STR_LIST("tos-fw",		NULL, CFGF_NONE),	/* Secure Payload BL32 (Trusted OS, Extra1, Extra 2) */
@@ -95,6 +96,7 @@ static cfg_opt_t fip_opts[] = {
 
 	CFG_END()
 };
+/* clang-format on */
 
 static const char *tos_fw[] = { "tos-fw", "tos-fw-extra1", "tos-fw-extra2" };
 

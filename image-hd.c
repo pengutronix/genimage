@@ -261,6 +261,7 @@ struct gpt_partition_type_shortcut_t
 	const char * guid;
 };
 
+/* clang-format off */
 static const struct gpt_partition_type_shortcut_t gpt_partition_type_shortcuts[] =
 {
 	{ "L"                           , "0fc63daf-8483-4772-8e79-3d69d8477de4" },
@@ -419,6 +420,7 @@ static const struct gpt_partition_type_shortcut_t gpt_partition_type_shortcuts[]
 
 	{ 0, 0 } /* sentinel */
 };
+/* clang-format on */
 
 static const char *
 gpt_partition_type_lookup(const char * shortcut)
