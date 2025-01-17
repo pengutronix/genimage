@@ -105,8 +105,8 @@ Here are all options for images:
 Additionally each image can have one of the following sections describing the
 type of the image:
 
-cpio, cramfs, ext2, ext3, ext4, file, flash, hdimage, iso, jffs2, qemu, squashfs,
-tar, ubi, ubifs, vfat.
+cpio, cramfs, ext2, ext3, ext4, f2fs, file, flash, hdimage, iso,
+jffs2, mdraid, qemu, squashfs, tar, ubi, ubifs, vfat.
 
 Partition options:
 
@@ -297,6 +297,15 @@ Options:
 :usage-type:		Specify the usage type for the filesystem. Only valid with mke2fs.
 			More details can be found in the mke2fs man-page.
 
+f2fs
+****
+Generates F2FS images.
+
+Options:
+
+:label:			Specify the volume-label.
+:extraargs:		Extra arguments passed to mkfs.f2fs
+
 file
 ****
 
@@ -471,6 +480,44 @@ read from.
 Options:
 
 :extraargs:		Extra arguments passed to mkfs.jffs2
+
+mdraid
+****
+Generates MD RAID images.
+
+Options:
+
+:label:			Text name of array (optional) eg: localhost:42
+:level:			RAID level, currently only level 1 (default) is supported
+:devices:		Number of devices in array (default 1)
+:role:			0 based index of this image in whole array. (autoassigned by default)
+:timestamp:		Unix timestamp of array creation (current time by default, has to match across array devices)
+:raid-uuid:		UUID of whole array (has to be identical across all disks in array, random by default)
+:disk-uuid:		UUID of disk (has to be unique for each array member disk, random by default)
+:image:			Image of data to be preloaded into array (optional)
+:parent:		Image to inherit array identity/config from (when creating extra members of existing array).
+			Effectively overrides all array-wide options mentioned here and replaces them with values from parent.
+
+For example here only the first image has configuration and the UUID/timestamp is generated on demand::
+
+  image mdraid-a.img {
+	  mdraid {
+		  level = 1
+		  devices = 2
+		  image = "mdraid-ext4.img"
+	  }
+  }
+
+Then to create second member to that array we just inherit config from the parent member::
+
+  image mdraid-b.img {
+	  mdraid {
+		  parent = "mdraid-a.img"
+	  }
+  }
+
+Default role number is 0 for the parent image and when other images inherit configuration from it, they are assigned roles from autoincrementing counter.
+
 
 qemu
 ****
@@ -683,6 +730,7 @@ variable.
 :mmd:		path to the mmd program (default mmd)
 :mkcramfs:	path to the mkcramfs program (default mkcramfs)
 :mkdosfs:	path to the mkdosfs program (default mkdosfs)
+:mkfsf2fs:	path to the mkfs.f2fs program (default mkfs.f2fs)
 :mkfsjffs2:	path to the mkfs.jffs2 program (default mkfs.jffs2)
 :mkfsubifs:	path to the mkfs.ubifs program (default mkfs.ubifs)
 :mksquashfs:	path to the mksquashfs program (default mksquashfs)
@@ -742,3 +790,6 @@ commits (e.g. using ``git commit -s``) looking as follows:
         Signed-off-by: Random J Developer <random@developer.example.org>
 
 with your identity and email address matching the commit meta data.
+
+Before creating pull request, please make sure your tree is passing
+all unit tests by running ``make distcheck``.

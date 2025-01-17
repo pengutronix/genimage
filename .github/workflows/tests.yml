@@ -9,13 +9,13 @@ jobs:
       matrix:
         include:
         - os: ubuntu-22.04
-          pkgs: device-tree-compiler rauc simg2img u-boot-tools f2fs-tools arm-trusted-firmware-tools
+          pkgs: device-tree-compiler rauc simg2img u-boot-tools f2fs-tools arm-trusted-firmware-tools mdadm
         - os: ubuntu-22.04
-          pkgs: device-tree-compiler rauc simg2img u-boot-tools f2fs-tools arm-trusted-firmware-tools
+          pkgs: device-tree-compiler rauc simg2img u-boot-tools f2fs-tools arm-trusted-firmware-tools mdadm
           fake: sudo rm /usr/include/linux/fiemap.h /usr/include/linux/fs.h
           env: ac_cv_func_fallocate=no
         - os: ubuntu-20.04
-          pkgs: device-tree-compiler rauc simg2img u-boot-tools f2fs-tools
+          pkgs: device-tree-compiler rauc simg2img u-boot-tools f2fs-tools mdadm
 
     steps:
     - name: Inspect environment
