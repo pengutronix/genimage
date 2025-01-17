@@ -398,8 +398,8 @@ int open_file(struct image *image, const char *filename, int extra_flags)
 }
 
 /* Build a file extent covering the whole file */
-static int whole_file_exent(size_t size, struct extent **extents,
-			    size_t *extent_count)
+int whole_file_exent(size_t size, struct extent **extents,
+		     size_t *extent_count)
 {
 	*extents = xzalloc(sizeof(struct extent));
 	(*extents)[0].start = 0;

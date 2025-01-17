@@ -175,6 +175,8 @@ struct extent {
 };
 
 int open_file(struct image *image, const char *filename, int extra_flags);
+int whole_file_exent(size_t size, struct extent **extents,
+		     size_t *extent_count);
 int map_file_extents(struct image *image, const char *filename, int fd,
 		     size_t size, struct extent **extents, size_t *extent_count);
 int is_block_device(const char *filename);
