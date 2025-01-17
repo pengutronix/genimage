@@ -46,7 +46,7 @@ static int flash_generate(struct image *image)
 			   part->name, part->size, part->offset);
 
 		if (part->offset > end) {
-			ret = insert_image(image, NULL, part->offset - end, end, 0xFF);
+			ret = insert_image(image, NULL, part->offset - end, end, 0xFF, cfg_false);
 			if (ret) {
 				image_error(image, "failed to pad image to size %lld\n",
 					    part->offset);
@@ -57,7 +57,7 @@ static int flash_generate(struct image *image)
 		if (part->image)
 			child = image_get(part->image);
 
-		ret = insert_image(image, child, part->size, part->offset, 0xFF);
+		ret = insert_image(image, child, part->size, part->offset, 0xFF, cfg_false);
 		if (ret) {
 			image_error(image, "failed to write image partition '%s'\n",
 				    part->name);
