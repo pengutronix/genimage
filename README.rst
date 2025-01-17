@@ -251,6 +251,8 @@ Options:
 :block-size:		The granularity that the sparse image uses to
 			find "don't care" or "fill" blocks. The supported
 			block sizes depend on the user. The default is 4k.
+:fill-holes:		If enabled, 'holes' are filled with zero instead of
+			"don't care". Disabled by default.
 
 cpio
 ****

@@ -146,6 +146,7 @@ EXTRA_DIST += \
 	test/rauc.config \
 	test/sharness.sh \
 	test/sparse.config \
+	test/sparse-fill.config \
 	test/squashfs.config \
 	test/tar.config \
 	test/test.raucb.info.1 \

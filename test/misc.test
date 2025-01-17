@@ -93,6 +93,17 @@ test_expect_success simg2img "android-sparse" "
 	simg2img images/test.sparse images/test.hdimage &&
 	simg2img images/interleaved.sparse input/interleaved &&
 	simg2img images/not-aligned.sparse input/not-aligned &&
+	md5sum -c md5sum &&
+
+	run_genimage sparse-fill.config &&
+	# simg2img will expand the partial block
+	truncate --size=12k input/not-aligned
+	md5sum images/test.hdimage input/interleaved input/not-aligned > md5sum &&
+	rm images/test.hdimage input/interleaved input/not-aligned &&
+	check_size_range images/interleaved.sparse 9732464 9732636 &&
+	simg2img images/test.sparse images/test.hdimage &&
+	simg2img images/interleaved.sparse input/interleaved &&
+	simg2img images/not-aligned.sparse input/not-aligned &&
 	md5sum -c md5sum
 "
 
