@@ -40,12 +40,12 @@ static int qemu_generate(struct image *image)
 
 		if (!part->image) {
 			image_debug(image, "skipping partition %s\n",
-				part->name);
+				    part->name);
 			continue;
 		}
 
 		image_info(image, "adding partition %s from %s ...\n",
-			part->name, part->image);
+			   part->name, part->image);
 
 		child = image_get(part->image);
 		infile = imageoutfile(child);
@@ -57,10 +57,10 @@ static int qemu_generate(struct image *image)
 	}
 
 	ret = systemp(image, "qemu-img convert %s -O %s %s '%s'",
-			qemu->extraargs,
-			qemu->format,
-			partitions,
-			imageoutfile(image));
+		      qemu->extraargs,
+		      qemu->format,
+		      partitions,
+		      imageoutfile(image));
 
 	return ret;
 }

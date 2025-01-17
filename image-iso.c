@@ -38,13 +38,13 @@ static int iso_generate(struct image *image)
 		boot = "";
 
 	ret = systemp(image, "%s -input-charset %s -R -hide-rr-moved %s -V '%s' %s -o '%s' '%s'",
-			get_opt("genisoimage"),
-			input_charset,
-			boot,
-			volume_id,
-			extraargs,
-			imageoutfile(image),
-			mountpath(image));
+		      get_opt("genisoimage"),
+		      input_charset,
+		      boot,
+		      volume_id,
+		      extraargs,
+		      imageoutfile(image),
+		      mountpath(image));
 	return ret;
 }
 

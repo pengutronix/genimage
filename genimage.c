@@ -79,12 +79,12 @@ static int image_set_handler(struct image *image, cfg_t *cfg)
 
 	if (num > 1) {
 		image_error(image, "multiple image types given\n");
-		exit (1);
+		exit(1);
 	}
 
 	if (num < 1) {
 		image_error(image, "no image type given\n");
-		exit (1);
+		exit(1);
 	}
 
 	image->imagesec = cfg_getsec(cfg, image->handler->type);
@@ -206,7 +206,7 @@ static int overwriteenv(const char *name, const char *value)
 {
 	int ret;
 
-	ret = setenv(name, value ? : "", 1);
+	ret = setenv(name, value ?: "", 1);
 	if (ret)
 		return -errno;
 
@@ -325,8 +325,8 @@ static int image_generate(struct image *image)
 	if (ret) {
 		struct stat s;
 		if (lstat(imageoutfile(image), &s) != 0 ||
-				((s.st_mode & S_IFMT) == S_IFREG) ||
-				((s.st_mode & S_IFMT) == S_IFLNK))
+		    ((s.st_mode & S_IFMT) == S_IFREG) ||
+		    ((s.st_mode & S_IFMT) == S_IFLNK))
 			systemp(image, "rm -f \"%s\"", imageoutfile(image));
 		return ret;
 	}
@@ -432,7 +432,7 @@ static int set_flash_type(void)
 			if (i->flash_type) {
 				if (i->flash_type != image->flash_type) {
 					image_error(i, "conflicting flash types: %s has flashtype %s whereas %s has flashtype %s\n",
-							i->file, i->flash_type->name, image->file, image->flash_type->name);
+						    i->file, i->flash_type->name, image->file, image->flash_type->name);
 					return -EINVAL;
 				}
 			} else {
@@ -565,7 +565,7 @@ static int collect_mountpoints(void)
 
 const char *mountpath(const struct image *image)
 {
-	if(image->srcpath)
+	if (image->srcpath)
 		return image->srcpath;
 
 	struct mountpoint *mp;
@@ -623,14 +623,14 @@ static void check_tmp_path(void)
 static void cleanup(void)
 {
 	switch (tmppath_generated) {
-		case TMPPATH_CREATED:
-			systemp(NULL, "rm -rf \"%s/\"", tmppath());
-			break;
-		case TMPPATH_CHECKED:
-			systemp(NULL, "rm -rf \"%s\"/*", tmppath());
-			break;
-		default:
-			break;
+	case TMPPATH_CREATED:
+		systemp(NULL, "rm -rf \"%s/\"", tmppath());
+		break;
+	case TMPPATH_CHECKED:
+		systemp(NULL, "rm -rf \"%s\"/*", tmppath());
+		break;
+	default:
+		break;
 	}
 }
 
@@ -681,7 +681,8 @@ int main(int argc, char *argv[])
 	unsigned int num_images;
 	int ret;
 	cfg_opt_t *imageopts = xzalloc((ARRAY_SIZE(image_common_opts) +
-				ARRAY_SIZE(handlers) + 1) * sizeof(cfg_opt_t));
+					ARRAY_SIZE(handlers) + 1) *
+				       sizeof(cfg_opt_t));
 	int start;
 	struct image *image;
 	const char *str;
@@ -740,7 +741,7 @@ int main(int argc, char *argv[])
 	ret = cfg_parse(cfg, get_opt("config"));
 	switch (ret) {
 	case 0:
-			break;
+		break;
 	case CFG_PARSE_ERROR:
 		goto cleanup;
 	case CFG_FILE_ERROR:
@@ -784,7 +785,7 @@ int main(int argc, char *argv[])
 		image->file = cfg_title(imagesec);
 		image->name = cfg_getstr(imagesec, "name");
 		image->size = cfg_getint_suffix_percent(imagesec, "size",
-				&image->size_is_percent);
+							&image->size_is_percent);
 		image->srcpath = cfg_getstr(imagesec, "srcpath");
 		image->mountpoint = cfg_getstr(imagesec, "mountpoint");
 		image->empty = cfg_getbool(imagesec, "empty");
@@ -795,8 +796,8 @@ int main(int argc, char *argv[])
 			image->outfile = strdup(image->file);
 		else
 			xasprintf(&image->outfile, "%s/%s",
-					image->temporary ? tmppath() : imagepath(),
-					image->file);
+				  image->temporary ? tmppath() : imagepath(),
+				  image->file);
 		if (image->mountpoint && *image->mountpoint == '/')
 			image->mountpoint++;
 		if (image->srcpath && image->mountpoint && (strlen(image->mountpoint) > 0)) {

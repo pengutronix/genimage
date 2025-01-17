@@ -77,14 +77,14 @@ static int ubi_generate(struct image *image)
 	fclose(fini);
 
 	ret = systemp(image, "%s -s %d -O %d -p %d -m %d -o '%s' '%s' %s",
-			get_opt("ubinize"),
-			image->flash_type->sub_page_size,
-			image->flash_type->vid_header_offset,
-			image->flash_type->pebsize,
-			image->flash_type->minimum_io_unit_size,
-			imageoutfile(image),
-			tempfile,
-			extraargs);
+		      get_opt("ubinize"),
+		      image->flash_type->sub_page_size,
+		      image->flash_type->vid_header_offset,
+		      image->flash_type->pebsize,
+		      image->flash_type->minimum_io_unit_size,
+		      imageoutfile(image),
+		      tempfile,
+		      extraargs);
 
 err_free:
 	free(tempfile);
@@ -128,4 +128,3 @@ struct image_handler ubi_handler = {
 	.setup = ubi_setup,
 	.opts = ubi_opts,
 };
-

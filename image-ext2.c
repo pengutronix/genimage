@@ -40,24 +40,24 @@ static int ext2_generate_genext2fs(struct image *image)
 	const char *label = cfg_getstr(image->imagesec, "label");
 
 	ret = systemp(image, "%s %s%s%s --size-in-blocks=%lld -i 16384 '%s' %s",
-			get_opt("genext2fs"),
-			image->empty ? "" : "-d '",
-			image->empty ? "" : mountpath(image),
-			image->empty ? "" : "'",
-			image->size / 1024, imageoutfile(image), extraargs);
+		      get_opt("genext2fs"),
+		      image->empty ? "" : "-d '",
+		      image->empty ? "" : mountpath(image),
+		      image->empty ? "" : "'",
+		      image->size / 1024, imageoutfile(image), extraargs);
 
 	if (ret)
 		return ret;
 
 	if (ext->features && ext->features[0] != '\0') {
 		ret = systemp(image, "%s -O '%s' '%s'", get_opt("tune2fs"),
-				ext->features, imageoutfile(image));
+			      ext->features, imageoutfile(image));
 		if (ret)
 			return ret;
 	}
 	if (label && label[0] != '\0') {
 		ret = systemp(image, "%s -L '%s' '%s'", get_opt("tune2fs"),
-				label, imageoutfile(image));
+			      label, imageoutfile(image));
 		if (ret)
 			return ret;
 	}
@@ -84,19 +84,19 @@ static int ext2_generate_mke2fs(struct image *image)
 		return ret;
 
 	return systemp(image, "%s%s -t %s%s -I 256 -E 'root_owner=%s,%s'%s %s%s%s %s %s%s%s %s%s%s '%s' %lldk",
-			ext->conf_env, get_opt("mke2fs"), image->handler->type,
-			ext->usage_type_args, root_owner, options, ext->size_features,
-			image->empty ? "" : "-d '",
-			image->empty ? "" : mountpath(image),
-			image->empty ? "" : "'",
-			extraargs,
-			label ? "-L '" : "",
-			label ? label : "",
-			label ? "'" : "",
-			features ? "-O '" : "",
-			features ? features : "",
-			features ? "'" : "",
-			imageoutfile(image), image->size / 1024);
+		       ext->conf_env, get_opt("mke2fs"), image->handler->type,
+		       ext->usage_type_args, root_owner, options, ext->size_features,
+		       image->empty ? "" : "-d '",
+		       image->empty ? "" : mountpath(image),
+		       image->empty ? "" : "'",
+		       extraargs,
+		       label ? "-L '" : "",
+		       label ? label : "",
+		       label ? "'" : "",
+		       features ? "-O '" : "",
+		       features ? features : "",
+		       features ? "'" : "",
+		       imageoutfile(image), image->size / 1024);
 }
 
 static int ext2_generate(struct image *image)
@@ -114,20 +114,20 @@ static int ext2_generate(struct image *image)
 		return ret;
 
 	ret = systemp(image, "%s -pvfD '%s'", get_opt("e2fsck"),
-			imageoutfile(image));
+		      imageoutfile(image));
 
 	/* e2fsck return 1 when the filesystem was successfully modified */
-	if  (ret > 2)
+	if (ret > 2)
 		return ret;
 
 	if (fs_timestamp) {
 		ret = systemp(image, "echo '"
-			"set_current_time %s\n"
-			"set_super_value mkfs_time %s\n"
-			"set_super_value lastcheck %s\n"
-			"set_super_value mtime 00000000' | %s -w '%s'",
-			fs_timestamp, fs_timestamp, fs_timestamp,
-			get_opt("debugfs"), imageoutfile(image));
+				     "set_current_time %s\n"
+				     "set_super_value mkfs_time %s\n"
+				     "set_super_value lastcheck %s\n"
+				     "set_super_value mtime 00000000' | %s -w '%s'",
+			      fs_timestamp, fs_timestamp, fs_timestamp,
+			      get_opt("debugfs"), imageoutfile(image));
 		if (ret)
 			return ret;
 	}
@@ -174,10 +174,10 @@ static int ext2_setup(struct image *image, cfg_t *cfg)
 			ret = stat(conf, &s);
 			if (ret) {
 				image_error(image, "mke2fs.conf(%s) does not exist: %s\n",
-						conf, strerror(errno));
+					    conf, strerror(errno));
 				return -errno;
 			}
-			xasprintf(&ext->conf_env,"MKE2FS_CONFIG=\"%s\" ", conf);
+			xasprintf(&ext->conf_env, "MKE2FS_CONFIG=\"%s\" ", conf);
 		} else
 			ext->conf_env = "";
 
@@ -187,10 +187,9 @@ static int ext2_setup(struct image *image, cfg_t *cfg)
 			ext->usage_type_args = "";
 
 		xasprintf(&ext->size_features, "%s%s",
-			is_large ? "" : " -O '^large_file'",
-			is_huge ? "" :  " -O '^huge_file'");
-	}
-	else {
+			  is_large ? "" : " -O '^large_file'",
+			  is_huge ? "" : " -O '^huge_file'");
+	} else {
 		if (conf) {
 			image_error(image, "'mke2fs.conf' is only used for 'mke2fs'\n");
 			return -EINVAL;
@@ -239,4 +238,3 @@ struct image_handler ext4_handler = {
 	.setup = ext2_setup,
 	.opts = ext_opts,
 };
-

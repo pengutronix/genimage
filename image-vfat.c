@@ -39,7 +39,7 @@ static int vfat_generate(struct image *image)
 		return ret;
 
 	ret = systemp(image, "%s %s %s '%s'", get_opt("mkdosfs"),
-			extraargs, label, imageoutfile(image));
+		      extraargs, label, imageoutfile(image));
 	if (ret)
 		return ret;
 
@@ -60,10 +60,10 @@ static int vfat_generate(struct image *image)
 		}
 
 		image_info(image, "adding file '%s' as '%s' ...\n",
-				child->file, *target ? target : child->file);
+			   child->file, *target ? target : child->file);
 		ret = systemp(image, "MTOOLS_SKIP_CHECK=1 %s -sp -i '%s' '%s' '::%s'",
-				get_opt("mcopy"), imageoutfile(image),
-				file, target);
+			      get_opt("mcopy"), imageoutfile(image),
+			      file, target);
 		if (ret)
 			return ret;
 	}
@@ -72,7 +72,7 @@ static int vfat_generate(struct image *image)
 
 	if (!image->empty)
 		ret = systemp(image, "MTOOLS_SKIP_CHECK=1 %s -sp -i '%s' '%s'/* ::",
-				get_opt("mcopy"), imageoutfile(image), mountpath(image));
+			      get_opt("mcopy"), imageoutfile(image), mountpath(image));
 	return ret;
 }
 
@@ -108,7 +108,7 @@ static int vfat_parse(struct image *image, cfg_t *cfg)
 		list_add_tail(&part->list, &image->partitions);
 	}
 
-	for(i = 0; i < cfg_size(cfg, "files"); i++) {
+	for (i = 0; i < cfg_size(cfg, "files"); i++) {
 		part = xzalloc(sizeof *part);
 		part->image = cfg_getnstr(cfg, "files", i);
 		part->name = "";

@@ -31,25 +31,23 @@ static int btrfs_generate(struct image *image)
 	const char *extraargs = cfg_getstr(image->imagesec, "extraargs");
 
 	ret = prepare_image(image, image->size);
-	if(ret)
+	if (ret)
 		return ret;
-
 
 	ret = systemp(image, "%s %s %s %s %s%s%s %s '%s'",
-			get_opt("mkfsbtrfs"),
-			label ? "-L"  : "",
-			label ? label : "",
-			/* initial filesystem content, if any */
-			image->empty ? "" : "-r",
-			image->empty ? "" : "'",
-			image->empty ? "" : mountpath(image),
-			image->empty ? "" : "'",
-			extraargs,
-			imageoutfile(image)); /* destination file */
+		      get_opt("mkfsbtrfs"),
+		      label ? "-L" : "",
+		      label ? label : "",
+		      /* initial filesystem content, if any */
+		      image->empty ? "" : "-r",
+		      image->empty ? "" : "'",
+		      image->empty ? "" : mountpath(image),
+		      image->empty ? "" : "'",
+		      extraargs,
+		      imageoutfile(image)); /* destination file */
 
-	if(ret || image->empty)
+	if (ret || image->empty)
 		return ret;
-
 
 	return ret;
 }

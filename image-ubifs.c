@@ -36,16 +36,16 @@ static int ubifs_generate(struct image *image)
 		max_leb_cnt = image->size / image->flash_type->lebsize;
 
 	ret = systemp(image, "%s %s%s%s %s -e %d -m %d -c %d -o '%s' %s",
-			get_opt("mkfsubifs"),
-			image->empty ? "" : "-d '",
-			image->empty ? "" : mountpath(image),
-			image->empty ? "" : "'",
-			space_fixup ? "-F" : "",
-			image->flash_type->lebsize,
-			image->flash_type->minimum_io_unit_size,
-			max_leb_cnt,
-			imageoutfile(image),
-			extraargs);
+		      get_opt("mkfsubifs"),
+		      image->empty ? "" : "-d '",
+		      image->empty ? "" : mountpath(image),
+		      image->empty ? "" : "'",
+		      space_fixup ? "-F" : "",
+		      image->flash_type->lebsize,
+		      image->flash_type->minimum_io_unit_size,
+		      max_leb_cnt,
+		      imageoutfile(image),
+		      extraargs);
 
 	return ret;
 }
@@ -58,7 +58,7 @@ static int ubifs_setup(struct image *image, cfg_t *cfg)
 	}
 	if (image->flash_type->lebsize <= 0) {
 		image_error(image, "invalid lebsize (%d) in %s\n",
-			image->flash_type->lebsize, image->flash_type->name);
+			    image->flash_type->lebsize, image->flash_type->name);
 		return -EINVAL;
 	}
 
@@ -78,4 +78,3 @@ struct image_handler ubifs_handler = {
 	.setup = ubifs_setup,
 	.opts = ubifs_opts,
 };
-
