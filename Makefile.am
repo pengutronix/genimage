@@ -121,6 +121,7 @@ EXTRA_DIST += \
 	test/hdimage-nopart.hexdump \
 	test/hdimage-forced-primary.config \
 	test/hdimage-forced-primary.fdisk \
+	test/hdimage-sparse.config \
 	test/include-aaa.fdisk \
 	test/include-bbb.fdisk \
 	test/include-ccc.fdisk \
@@ -145,6 +146,7 @@ EXTRA_DIST += \
 	test/rauc.config \
 	test/sharness.sh \
 	test/sparse.config \
+	test/sparse-fill.config \
 	test/squashfs.config \
 	test/tar.config \
 	test/test.raucb.info.1 \
