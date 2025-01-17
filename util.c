@@ -469,7 +469,7 @@ err_out:
  * more efficient operations (ftruncate and fallocate) if @byte is zero. This
  * only uses methods that do not affect the offset of fd.
  */
-static int write_bytes(int fd, size_t size, off_t offset, unsigned char byte)
+static int write_bytes(int fd, size_t size, off_t offset, unsigned char byte, cfg_bool_t sparse)
 {
 	struct stat st;
 	char buf[4096];
@@ -480,7 +480,7 @@ static int write_bytes(int fd, size_t size, off_t offset, unsigned char byte)
 	if (fstat(fd, &st) < 0)
 		return -errno;
 
-	if (S_ISREG(st.st_mode) && (byte == 0)) {
+	if (S_ISREG(st.st_mode) && (byte == 0) && sparse) {
 		if (offset + size > (size_t)st.st_size) {
 			if (ftruncate(fd, offset + size) < 0)
 				return -errno;
@@ -536,7 +536,7 @@ static int write_bytes(int fd, size_t size, off_t offset, unsigned char byte)
 int prepare_image(struct image *image, unsigned long long size)
 {
 	if (is_block_device(imageoutfile(image))) {
-		insert_image(image, NULL, 2048, 0, 0);
+		insert_image(image, NULL, 2048, 0, 0, cfg_false);
 	} else {
 		int ret;
 		/* for regular files, create the file or truncate it to zero
@@ -574,7 +574,7 @@ int prepare_image(struct image *image, unsigned long long size)
  */
 int insert_image(struct image *image, struct image *sub,
 		 unsigned long long size, unsigned long long offset,
-		 unsigned char byte)
+		 unsigned char byte, cfg_bool_t sparse)
 {
 	struct extent *extents = NULL;
 	size_t extent_count = 0;
@@ -618,7 +618,7 @@ int insert_image(struct image *image, struct image *sub,
 		 * have an extent that starts beyond size.
 		 */
 		len = min(len, size);
-		ret = write_bytes(fd, len, offset, 0); // Assumes 'holes' are always 0 bytes
+		ret = write_bytes(fd, len, offset, 0, sparse); // Assumes 'holes' are always 0 bytes
 		if (ret) {
 			image_error(image, "writing %zu bytes failed: %s\n", len, strerror(-ret));
 			goto out;
@@ -661,7 +661,7 @@ int insert_image(struct image *image, struct image *sub,
 fill:
 	image_debug(image, "adding %llu %#hhx bytes at offset %llu\n",
 		    size, byte, offset);
-	ret = write_bytes(fd, size, offset, byte);
+	ret = write_bytes(fd, size, offset, byte, sparse);
 	if (ret)
 		image_error(image, "writing %llu bytes failed: %s\n", size, strerror(-ret));
 

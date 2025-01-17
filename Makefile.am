@@ -121,6 +121,7 @@ EXTRA_DIST += \
 	test/hdimage-nopart.hexdump \
 	test/hdimage-forced-primary.config \
 	test/hdimage-forced-primary.fdisk \
+	test/hdimage-sparse.config \
 	test/include-aaa.fdisk \
 	test/include-bbb.fdisk \
 	test/include-ccc.fdisk \

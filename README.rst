@@ -123,6 +123,12 @@ Partition options:
 :fill:			Boolean specifying that all bytes of the partition should be
 			explicitly initialized. Any bytes beyond the size of the specified
 			image will be set to 0.
+:sparse:		If true (the default) 'holes' in the input images are preserved
+			and the remaining free space in the partition is also a 'hole'.
+			If false, the 'holes' in the input image are explicitly
+			filled with zeros when the image is copied. If ``fill``
+			is specified as well then the remaining free space is
+			also filled with zeros.
 :autoresize:		Boolean specifying that the partition should be resized
 			automatically. For UBI volumes this means that the
 			``autoresize`` flag is set. Only one volume can have this flag.
