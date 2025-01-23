@@ -1122,7 +1122,7 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 		}
 
 		if (part->offset % part->align) {
-			image_error(image, "part %s offset (%lld) must be a"
+			image_error(image, "part %s offset (%lld) must be a "
 					   "multiple of %lld bytes\n",
 				    part->name, part->offset, part->align);
 			return -EINVAL;

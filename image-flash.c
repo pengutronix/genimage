@@ -104,7 +104,7 @@ static int flash_setup(struct image *image, cfg_t *cfg)
 			return -EINVAL;
 		}
 		if (part->offset % image->flash_type->pebsize) {
-			image_error(image, "part %s offset (%lld) must be a"
+			image_error(image, "part %s offset (%lld) must be a "
 					   "multiple of erase block size (%i bytes)\n",
 				    part->name, part->offset, image->flash_type->pebsize);
 			return -EINVAL;
