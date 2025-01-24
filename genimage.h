@@ -50,6 +50,7 @@ struct partition {
 	cfg_bool_t hidden;
 	cfg_bool_t no_automount;
 	cfg_bool_t fill;
+	cfg_bool_t sparse;
 	const char *image;
 	off_t imageoffset;
 	struct list_head list;
@@ -174,6 +175,8 @@ struct extent {
 };
 
 int open_file(struct image *image, const char *filename, int extra_flags);
+int whole_file_exent(size_t size, struct extent **extents,
+		     size_t *extent_count);
 int map_file_extents(struct image *image, const char *filename, int fd,
 		     size_t size, struct extent **extents, size_t *extent_count);
 int is_block_device(const char *filename);
@@ -182,7 +185,7 @@ int block_device_size(struct image *image, const char *blkdev,
 int prepare_image(struct image *image, unsigned long long size);
 int insert_image(struct image *image, struct image *sub,
 		 unsigned long long size, unsigned long long offset,
-		 unsigned char byte);
+		 unsigned char byte, cfg_bool_t sparse);
 int insert_data(struct image *image, const void *data, const char *outfile,
 		size_t size, unsigned long long offset);
 int extend_file(struct image *image, size_t size);

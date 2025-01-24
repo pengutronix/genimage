@@ -28,6 +28,7 @@
 
 struct sparse {
 	uint32_t block_size;
+	cfg_bool_t fill_holes;
 };
 
 struct sparse_header {
@@ -147,9 +148,13 @@ static int android_sparse_generate(struct image *image)
 	block_count = (s.st_size - 1 + sparse->block_size) / sparse->block_size;
 	header.output_blocks = block_count;
 
-	ret = map_file_extents(inimage, infile, in_fd, s.st_size, &extents, &extent_count);
-	if (ret < 0)
-		goto out;
+	if (sparse->fill_holes)
+		whole_file_exent(s.st_size, &extents, &extent_count);
+	else {
+		ret = map_file_extents(inimage, infile, in_fd, s.st_size, &extents, &extent_count);
+		if (ret < 0)
+			goto out;
+	}
 
 	/* The extents may have a different granularity than the chosen block size.
 	   So all start and end of all extents must be aligned accordingly. The
@@ -391,6 +396,7 @@ static int android_sparse_setup(struct image *image, cfg_t *cfg)
 			    sparse->block_size);
 		return -EINVAL;
 	}
+	sparse->fill_holes = cfg_getbool(cfg, "fill-holes");
 
 	image->handler_priv = sparse;
 	return 0;
@@ -399,6 +405,7 @@ static int android_sparse_setup(struct image *image, cfg_t *cfg)
 static cfg_opt_t android_sparse_opts[] = {
 	CFG_STR("image", NULL, CFGF_NONE),
 	CFG_STR("block-size", "4k", CFGF_NONE),
+	CFG_BOOL("fill-holes", cfg_false, CFGF_NONE),
 	CFG_END()
 };
 

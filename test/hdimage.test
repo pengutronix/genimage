@@ -176,6 +176,14 @@ test_expect_success sfdisk "hdimage forced-primary" "
 	test_cmp '${testdir}/hdimage-forced-primary.fdisk' hdimage.fdisk
 "
 
+test_expect_success fdisk,sfdisk,mke2fs "hdimage sparse" "
+	setup_test_images &&
+	run_genimage_root hdimage-sparse.config test.hdimage &&
+	check_size images/test.hdimage 42991616 &&
+	sfdisk_validate images/test.hdimage &&
+	check_disk_usage_range images/test.hdimage 34000000 37000000
+"
+
 test_done
 
 # vim: syntax=sh

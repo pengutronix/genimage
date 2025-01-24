@@ -109,8 +109,6 @@ test_expect_success genext2fs,e2fsck "ext4" "
 	check_ext images/test.ext4 ext4test 4194304 genext2fs
 "
 
-# make sure mke2fs supports '-d root-directory'
-[ "$(mke2fs |& sed -n 's/.*\(-d \).*/\1/p')" = "-d " ] && test_set_prereq mke2fs
 test_expect_success mke2fs,e2fsck "mke2fs" "
 	run_genimage_root mke2fs.config mke2fs.ext4 &&
 	check_ext images/mke2fs.ext4 mke2fs 33554432 mke2fs
