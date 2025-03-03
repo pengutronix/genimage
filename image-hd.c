@@ -1063,6 +1063,11 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 				    part->name);
 			return -EINVAL;
 		}
+		if (part->partition_uuid && !(hd->table_type & TYPE_GPT)) {
+			image_error(image, "part %s: 'partition-uuid' is only valid for gpt and hybrid partition-table-type\n",
+				    part->name);
+			return -EINVAL;
+		}
 		if (part->partition_type && !(hd->table_type & TYPE_MBR)) {
 			image_error(image, "part %s: 'partition-type' is only valid for mbr and hybrid partition-table-type\n",
 				    part->name);
