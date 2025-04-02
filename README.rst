@@ -495,7 +495,9 @@ Generates MD RAID images.
 
 Options:
 
-:label:			Text name of array (optional) eg: localhost:42
+:label:			Optional hostname and name of array separated by colon, eg: ``any:42``.
+			Special hostname ``any`` can be used to make array local to machine with any hostname.
+			Name will be used by OS to name ``/dev/md/*`` device (as long as the hostname matches).
 :level:			RAID level, currently only level 1 (default) is supported
 :devices:		Number of devices in array (default 1)
 :role:			0 based index of this image in whole array. (autoassigned by default)
