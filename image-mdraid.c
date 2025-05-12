@@ -466,7 +466,7 @@ static int mdraid_setup(struct image *image, cfg_t *cfg)
 }
 
 static cfg_opt_t mdraid_opts[] = {
-	CFG_STR("label", "localhost:42", CFGF_NONE),
+	CFG_STR("label", "any:42", CFGF_NONE),
 	CFG_INT("level", 1, CFGF_NONE),
 	CFG_INT("devices", 1, CFGF_NONE),
 	CFG_INT("role", -1, CFGF_NONE),
