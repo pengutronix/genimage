@@ -14,8 +14,8 @@ jobs:
           pkgs: device-tree-compiler rauc simg2img u-boot-tools f2fs-tools arm-trusted-firmware-tools mdadm
           fake: sudo rm /usr/include/linux/fiemap.h /usr/include/linux/fs.h
           env: ac_cv_func_fallocate=no
-        - os: ubuntu-20.04
-          pkgs: device-tree-compiler rauc simg2img u-boot-tools f2fs-tools mdadm
+        - os: ubuntu-24.04
+          pkgs: device-tree-compiler rauc android-sdk-libsparse-utils u-boot-tools f2fs-tools arm-trusted-firmware-tools mdadm
 
     steps:
     - name: Inspect environment
