@@ -19,6 +19,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <sys/stat.h>
 
 #include "genimage.h"
 
@@ -42,6 +43,16 @@ static int fip_generate(struct image *image)
 		      args, extraargs, imageoutfile(image));
 
 	free(args);
+
+	if (ret == 0) {
+		struct stat statbuf;
+		ret = stat(imageoutfile(image), &statbuf);
+
+		if (ret)
+			return ret;
+
+		image->size = statbuf.st_size;
+	}
 
 	return ret;
 }
