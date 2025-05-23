@@ -115,6 +115,11 @@ test_expect_success fiptool "fip" "
 	fiptool info images/test.fip
 "
 
+test_expect_success fiptool "fip-size" "
+	setup_test_images &&
+	test_must_fail run_genimage fip-size.config test.fip
+"
+
 exec_test_set_prereq mdadm
 test_expect_success mdadm "mdraid" "
 	run_genimage_root mdraid.config test.mdraid-a &&
