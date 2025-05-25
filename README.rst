@@ -105,7 +105,7 @@ Here are all options for images:
 Additionally each image can have one of the following sections describing the
 type of the image:
 
-cpio, cramfs, erofs, ext2, ext3, ext4, f2fs, file, flash, hdimage, iso,
+cpio, cramfs, custom, erofs, ext2, ext3, ext4, f2fs, file, flash, hdimage, iso,
 jffs2, mdraid, qemu, squashfs, tar, ubi, ubifs, vfat.
 
 Partition options:
@@ -278,6 +278,24 @@ Generates cramfs images.
 Options:
 
 :extraargs:		Extra arguments passed to mkcramfs
+
+custom
+******
+Generate images with a custom command.
+
+:exec:			The command that creates the image.
+
+If the image size is set, then image is created with the configured size
+before the `exec` command is executed. Otherwise the file is removed and
+the size is queried after the command is executed.
+
+The image file that should be generated is defined in the environment
+variable $IMAGEOUTFILE. It can be used directly in the `exec` command.
+
+Warning: If the `exec` command is quoted with double-quotes and a variable
+is specified with curly braces then the variable is substituted when the
+config file is parsed. At that point IMAGEOUTFILE is not yet set. So use
+single quotes instead.
 
 erofs
 ******
