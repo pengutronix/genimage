@@ -79,6 +79,7 @@ EXTRA_DIST += \
 	test/mdraid.config \
 	test/btrfs.config \
 	test/fip.config \
+	test/fip-size.config \
 	test/fit.its \
 	test/fit.config \
 	test/flash-types.config \
