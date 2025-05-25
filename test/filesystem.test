@@ -72,6 +72,17 @@ test_expect_success dd,mkdosfs,mcopy "vfat" "
 	check_filelist
 "
 
+exec_test_set_prereq mkfs.erofs
+exec_test_set_prereq fsck.erofs
+test_expect_success mkfs_erofs,fsck_erofs "erofs" "
+	run_genimage_root erofs.config test.erofs &&
+	fsck.erofs -p images/test.erofs | tee erofs.log &&
+	test_must_fail grep -q 'Filesystem was changed' erofs.log &&
+	check_size images/test.erofs 4096 &&
+	dump.erofs -s -S --ls --path=/ images/test.erofs > erofs.dump &&
+	test_cmp ${testdir}/erofs.dump erofs.dump
+"
+
 test_done
 
 # vim: syntax=sh

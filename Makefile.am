@@ -21,6 +21,7 @@ genimage_SOURCES = \
 	image-android-sparse.c \
 	image-cpio.c \
 	image-cramfs.c \
+	image-erofs.c \
 	image-ext2.c \
 	image-f2fs.c \
 	image-mdraid.c \
@@ -56,6 +57,8 @@ EXTRA_DIST += \
 	test/test-setup.sh \
 	test/cpio.config \
 	test/cramfs.config \
+	test/erofs.config \
+	test/erofs.dump \
 	test/exec-check.sh \
 	test/exec-fail.config \
 	test/exec.config \
