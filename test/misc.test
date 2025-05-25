@@ -134,6 +134,12 @@ test_expect_success mdadm "mdraid" "
 	diff images/test.mdraid-a.arr.txt images/test.mdraid-b.arr.txt
 "
 
+test_expect_success "custom" "
+	run_genimage custom.config test.custom &&
+	echo 'Hello genimage!' > images/test.custom.expect &&
+	test_cmp images/test.custom.expect images/test.custom
+"
+
 test_done
 
 # vim: syntax=sh
