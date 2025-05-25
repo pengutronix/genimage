@@ -626,7 +626,7 @@ static int hdimage_generate(struct image *image)
 		}
 
 		ret = insert_image(image, child, part->fill ? part->size : child->size,
-				   part->offset, 0, part->sparse);
+				   part->offset, 0, 0, part->sparse);
 		if (ret) {
 			image_error(image, "failed to write image partition '%s'\n",
 				    part->name);
