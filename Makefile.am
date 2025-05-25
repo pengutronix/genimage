@@ -126,6 +126,7 @@ EXTRA_DIST += \
 	test/hdimage-forced-primary.config \
 	test/hdimage-forced-primary.fdisk \
 	test/hdimage-sparse.config \
+	test/hdimage-imageoffset.config \
 	test/include-aaa.fdisk \
 	test/include-bbb.fdisk \
 	test/include-ccc.fdisk \

@@ -52,7 +52,7 @@ struct partition {
 	cfg_bool_t fill;
 	cfg_bool_t sparse;
 	const char *image;
-	off_t imageoffset;
+	unsigned long long imageoffset;
 	struct list_head list;
 	int autoresize;
 	int in_partition_table;

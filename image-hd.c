@@ -594,6 +594,7 @@ static int hdimage_generate(struct image *image)
 
 	list_for_each_entry(part, &image->partitions, list) {
 		struct image *child;
+		unsigned long long data_size;
 
 		image_info(image, "adding %s partition '%s'%s%s%s%s ...\n",
 			   part->logical ? "logical" : "primary",
@@ -619,14 +620,21 @@ static int hdimage_generate(struct image *image)
 		if (child->size == 0 && !part->fill)
 			continue;
 
-		if (child->size > part->size) {
+		if (part->imageoffset > child->size) {
+			image_error(image, "size %lld of %s is too small for imageoffset %lld\n",
+				    child->size, child->name, part->imageoffset);
+			return -E2BIG;
+		}
+		data_size = child->size - part->imageoffset;
+
+		if (data_size > part->size) {
 			image_error(image, "part %s size (%lld) too small for %s (%lld)\n",
-				    part->name, part->size, child->file, child->size);
+				    part->name, part->size, child->file, data_size);
 			return -E2BIG;
 		}
 
-		ret = insert_image(image, child, part->fill ? part->size : child->size,
-				   part->offset, 0, 0, part->sparse);
+		ret = insert_image(image, child, part->fill ? part->size : data_size,
+				   part->offset, part->imageoffset, 0, part->sparse);
 		if (ret) {
 			image_error(image, "failed to write image partition '%s'\n",
 				    part->name);
@@ -917,6 +925,7 @@ static int setup_part_image(struct image *image, struct partition *part)
 {
 	struct hdimage *hd = image->handler_priv;
 	struct image *child;
+	unsigned long long data_size = 0;
 
 	if (!part->image)
 		return 0;
@@ -927,19 +936,27 @@ static int setup_part_image(struct image *image, struct partition *part)
 			    part->image);
 		return -EINVAL;
 	}
+	if (child->size) {
+		if (part->imageoffset > child->size) {
+			image_error(image, "size %lld of %s is too small for imageoffset %lld\n",
+				    child->size, child->name, part->imageoffset);
+			return -E2BIG;
+		}
+		data_size = child->size - part->imageoffset;
+	}
 	if (!part->size) {
 		if (part->in_partition_table)
-			part->size = roundup(child->size, part->align);
+			part->size = roundup(data_size, part->align);
 		else
-			part->size = child->size;
+			part->size = data_size;
 	}
-	if (child->size > part->size) {
+	if (data_size > part->size) {
 		image_error(image, "part %s size (%lld) too small for %s (%lld)\n",
-			    part->name, part->size, child->file, child->size);
+			    part->name, part->size, child->file, data_size);
 		return -EINVAL;
 	}
-	if (part->offset + child->size > hd->file_size)
-		hd->file_size = part->offset + child->size;
+	if (part->offset + data_size > hd->file_size)
+		hd->file_size = part->offset + data_size;
 
 	return 0;
 }
