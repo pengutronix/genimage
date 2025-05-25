@@ -375,7 +375,7 @@ static int mdraid_generate(struct image *image)
 	}
 	/* Write data */
 	if (md->img_data) {
-		ret = insert_image(image, md->img_data, md->img_data->size, DATA_OFFSET_BYTES, 0, cfg_true);
+		ret = insert_image(image, md->img_data, md->img_data->size, DATA_OFFSET_BYTES, 0, 0, cfg_true);
 		if (ret)
 			return ret;
 	}

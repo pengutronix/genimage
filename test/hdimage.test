@@ -184,6 +184,13 @@ test_expect_success fdisk,sfdisk,mke2fs "hdimage sparse" "
 	check_disk_usage_range images/test.hdimage 34000000 37000000
 "
 
+test_expect_success "hdimage imageoffset" "
+	echo '0123456789abcdef' |  dd of=input/offset.img seek=4 bs=1k &&
+	run_genimage hdimage-imageoffset.config test.hdimage &&
+	echo '0123456789abcdef' > images/test.hdimage.expect &&
+	test_cmp images/test.hdimage.expect images/test.hdimage
+"
+
 test_done
 
 # vim: syntax=sh
