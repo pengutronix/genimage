@@ -255,11 +255,6 @@ static int hdimage_insert_ebr(struct image *image, struct partition *part)
 	return 0;
 }
 
-struct gpt_partition_type_shortcut_t {
-	const char *shortcut;
-	const char *guid;
-};
-
 /* clang-format off */
 static const struct gpt_partition_type_shortcut_t gpt_partition_type_shortcuts[] =
 {
@@ -424,7 +419,14 @@ static const struct gpt_partition_type_shortcut_t gpt_partition_type_shortcuts[]
 static const char *
 gpt_partition_type_lookup(const char *shortcut)
 {
-	const struct gpt_partition_type_shortcut_t *s;
+	const struct gpt_partition_type_shortcut_t *s, *config_shortcuts;
+
+	config_shortcuts = get_gpt_shortcuts();
+	for (s = config_shortcuts; s && s->shortcut; s++) {
+		if (strcasecmp(s->shortcut, shortcut) == 0) {
+			return s->guid;
+		}
+	}
 	for (s = gpt_partition_type_shortcuts; s->shortcut; s++) {
 		if (strcasecmp(s->shortcut, shortcut) == 0) {
 			return s->guid;
