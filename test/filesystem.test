@@ -77,7 +77,10 @@ exec_test_set_prereq fsck.erofs
 test_expect_success mkfs_erofs,fsck_erofs "erofs" "
 	run_genimage_root erofs.config test.erofs &&
 	fsck.erofs -p images/test.erofs | tee erofs.log &&
-	test_must_fail grep -q 'Filesystem was changed' erofs.log
+	test_must_fail grep -q 'Filesystem was changed' erofs.log &&
+	check_size images/test.erofs 4096 &&
+	dump.erofs -s -S --ls --path=/ images/test.erofs > erofs.dump &&
+	test_cmp ${testdir}/erofs.dump erofs.dump
 "
 
 test_done
