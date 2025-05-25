@@ -161,26 +161,26 @@ Partition options:
 			* ``barebox-env``: Barebox Environment (6c3737f2-07f8-45d1-ad45-15d260aab24d)
 			* ``u-boot-env``: U-Boot Environment (3de21764-95bd-54bd-a5c3-4abe786f38a8)
 
-                        Furthermore, for ``{arch}`` being one of ``alpha``,
-                        ``arc``, ``arm``, ``arm64``, ``ia64``, ``loongarch64``,
-                        ``mips``, ``mips64``, ``mips-le``, ``mips64-le``, ``parisc``, ``ppc``,
-                        ``ppc64``, ``ppc64-le``, ``riscv32``, ``riscv64``,
-                        ``s390``, ``s390x``, ``tilegx``, ``x86``, ``x86-64``,
-                        the following shortcuts from the `Discoverable
-                        Partitions Specification <dps-spec_>`_ are accepted (see the spec
-                        for the respective UUIDs):
+			Furthermore, for ``{arch}`` being one of ``alpha``,
+			``arc``, ``arm``, ``arm64``, ``ia64``, ``loongarch64``,
+			``mips``, ``mips64``, ``mips-le``, ``mips64-le``, ``parisc``, ``ppc``,
+			``ppc64``, ``ppc64-le``, ``riscv32``, ``riscv64``,
+			``s390``, ``s390x``, ``tilegx``, ``x86``, ``x86-64``,
+			the following shortcuts from the `Discoverable
+			Partitions Specification <dps-spec_>`_ are accepted (see the spec
+			for the respective UUIDs):
 
-                        * ``root-{arch}``: Root Partition
-                        * ``usr-{arch}``: /usr Partition
-                        * ``root-{arch}-verity``: Root Verity Partition
-                        * ``usr-{arch}-verity``: /usr Verity Partition
-                        * ``root-{arch}-verity-sig``: Root Verity Signature Partition
-                        * ``usr-{arch}-verity-sig``: /usr Verity Signature Partition
-                        * ``xbootldr``: Extended Boot Loader Partition
-                        * ``srv``: Server Data Partition
-                        * ``var``: Variable Data Partition
-                        * ``tmp``: Temporary Data Partition
-                        * ``user-home``: Per-user Home Partition
+			* ``root-{arch}``: Root Partition
+			* ``usr-{arch}``: /usr Partition
+			* ``root-{arch}-verity``: Root Verity Partition
+			* ``usr-{arch}-verity``: /usr Verity Partition
+			* ``root-{arch}-verity-sig``: Root Verity Signature Partition
+			* ``usr-{arch}-verity-sig``: /usr Verity Signature Partition
+			* ``xbootldr``: Extended Boot Loader Partition
+			* ``srv``: Server Data Partition
+			* ``var``: Variable Data Partition
+			* ``tmp``: Temporary Data Partition
+			* ``user-home``: Per-user Home Partition
 
 			Defaults to ``L``.
 
