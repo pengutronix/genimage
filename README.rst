@@ -96,6 +96,8 @@ Here are all options for images:
 		after the main image is created. This defaults to
 		false.
 :exec-pre:	Custom command to run before generating the image.
+		Available variables are documented in the `Environment
+		Variables`_ section below.
 :exec-post:	Custom command to run after generating the image.
 :flashtype:	refers to a flash section. Optional for non flash like images
 		like hd images
@@ -291,6 +293,7 @@ the size is queried after the command is executed.
 
 The image file that should be generated is defined in the environment
 variable $IMAGEOUTFILE. It can be used directly in the `exec` command.
+For move variable, see the `Environment Variables`_ section below.
 
 Warning: If the `exec` command is quoted with double-quotes and a variable
 is specified with curly braces then the variable is substituted when the
@@ -789,6 +792,37 @@ To include a ``"foo.cfg"`` config file, use the following statement::
     include("foo.cfg")
 
 This allows to re-use, for example flash configuration files, across different image configurations.
+
+Environment Variables
+---------------------
+
+The following environment variables are defined when the commands that
+create images are executed. This includes the ``exec-pre``, ``exec-post``
+commands and the ``exec`` command of the custom image type.
+
+Common Variables for all Images
+*******************************
+
+==============	=============================================
+**OUTPUTPATH**	Directory where images are created
+**INPUTPATH**	Directory where input images are searched
+**ROOTPATH**	Root directory of the content for the images
+**TMPPATH**	Directory where temporary files are created
+==============	=============================================
+
+Image Specific Variables
+************************
+
+===================	=============================================
+**IMAGE**		File name relative to $OUTPUTPATH
+**IMAGEOUTFILE**	Full path of the file
+**IMAGENAME**		Name of the image
+**IMAGESIZE**		Configured size
+**IMAGEMOUNTPOINT**	Absolute 'mountpoint' to use. It defines with
+			directory relative to $ROOTPATH should be used
+**IMAGEMOUNTPATH**	Full path to the data to use. This is effectively
+			$ROOTPATH/$IMAGEMOUNTPOINT
+===================	=============================================
 
 License and Developing
 ======================
