@@ -182,6 +182,14 @@ Partition options:
 			* ``tmp``: Temporary Data Partition
 			* ``user-home``: Per-user Home Partition
 
+			Custom shortcuts can be defined in the global ``config`` section::
+
+			  config {
+				gpt-shortcuts {
+					forty-two = "2a422a42-2a42-2a42-2a42-2a422a422a42"
+				}
+			  }
+
 			Defaults to ``L``.
 
 .. _dps-spec: https://uapi-group.org/specifications/specs/discoverable_partitions_specification/

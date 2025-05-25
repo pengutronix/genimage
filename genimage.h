@@ -109,6 +109,11 @@ struct flash_type {
 	struct list_head list;
 };
 
+struct gpt_partition_type_shortcut_t {
+	const char *shortcut;
+	const char *guid;
+};
+
 struct flash_type *flash_type_get(const char *name);
 
 extern struct image_handler android_sparse_handler;
@@ -159,6 +164,7 @@ unsigned long long strtoul_suffix(const char *str, char **endp,
 int init_config(void);
 cfg_opt_t *get_confuse_opts(void);
 const char *get_opt(const char *name);
+const struct gpt_partition_type_shortcut_t *get_gpt_shortcuts(void);
 int set_config_opts(int argc, char *argv[], cfg_t *cfg);
 
 static inline size_t min(size_t a, size_t b)

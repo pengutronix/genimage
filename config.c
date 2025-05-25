@@ -26,6 +26,8 @@
 
 static LIST_HEAD(optlist);
 
+static struct gpt_partition_type_shortcut_t *config_gpt_shortcuts;
+
 struct config {
 	const char *name;
 	cfg_opt_t opt;
@@ -96,6 +98,11 @@ static int set_opt(const char *name, const char *value)
 	return -EINVAL;
 }
 
+const struct gpt_partition_type_shortcut_t *get_gpt_shortcuts(void)
+{
+	return config_gpt_shortcuts;
+}
+
 /*
  * convert all options from the options list to a cfg_opt_t
  * array suitable for confuse
@@ -107,6 +114,7 @@ cfg_opt_t *get_confuse_opts(void)
 	cfg_opt_t *options;
 	int i = 0;
 	cfg_opt_t cfg_end[] = {
+		CFG_SEC("gpt-shortcuts", NULL, CFGF_KEYSTRVAL),
 		CFG_END()
 	};
 
@@ -115,7 +123,7 @@ cfg_opt_t *get_confuse_opts(void)
 			num_opts++;
 	}
 
-	options = xzalloc(sizeof(cfg_opt_t) * (num_opts + 1));
+	options = xzalloc(sizeof(cfg_opt_t) * (num_opts + sizeof(cfg_end) / sizeof(cfg_opt_t)));
 
 	list_for_each_entry(c, &optlist, list) {
 		if (c->opt.name) {
@@ -124,7 +132,7 @@ cfg_opt_t *get_confuse_opts(void)
 		}
 	}
 
-	memcpy(&options[i], cfg_end, sizeof(cfg_opt_t));
+	memcpy(&options[i], cfg_end, sizeof(cfg_end));
 
 	return options;
 }
@@ -173,7 +181,7 @@ unsigned long long cfg_getint_suffix_percent(cfg_t *sec, const char *name,
 int set_config_opts(int argc, char *argv[], cfg_t *cfg)
 {
 	struct config *c;
-	cfg_t *cfgsec = NULL;
+	cfg_t *cfgsec = NULL, *cfggpt;
 	int num_opts = 0, n, i;
 	static struct option *long_options = NULL;
 	int ret = 0;
@@ -200,6 +208,17 @@ int set_config_opts(int argc, char *argv[], cfg_t *cfg)
 			str = cfg_getstr(cfgsec, c->opt.name);
 			if (str)
 				set_opt(c->name, str);
+		}
+	}
+
+	if (cfgsec && (cfggpt = cfg_getsec(cfgsec, "gpt-shortcuts"))) {
+		int count = cfg_num(cfggpt);
+
+		config_gpt_shortcuts = xzalloc((count + 1) * sizeof(struct gpt_partition_type_shortcut_t));
+		for (i = 0; i < count; ++i) {
+			cfg_opt_t *opt = cfg_getnopt(cfggpt, i);
+			config_gpt_shortcuts[i].shortcut = cfg_opt_name(opt);
+			config_gpt_shortcuts[i].guid = cfg_opt_getstr(opt);
 		}
 	}
 
