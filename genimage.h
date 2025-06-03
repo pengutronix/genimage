@@ -52,7 +52,7 @@ struct partition {
 	cfg_bool_t fill;
 	cfg_bool_t sparse;
 	const char *image;
-	off_t imageoffset;
+	unsigned long long imageoffset;
 	struct list_head list;
 	int autoresize;
 	int in_partition_table;
@@ -192,6 +192,7 @@ int block_device_size(struct image *image, const char *blkdev,
 int prepare_image(struct image *image, unsigned long long size);
 int insert_image(struct image *image, struct image *sub,
 		 unsigned long long size, unsigned long long offset,
+		 unsigned long long imageoffset,
 		 unsigned char byte, cfg_bool_t sparse);
 int insert_data(struct image *image, const void *data, const char *outfile,
 		size_t size, unsigned long long offset);

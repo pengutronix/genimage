@@ -536,7 +536,7 @@ static int write_bytes(int fd, size_t size, off_t offset, unsigned char byte, cf
 int prepare_image(struct image *image, unsigned long long size)
 {
 	if (is_block_device(imageoutfile(image))) {
-		insert_image(image, NULL, 2048, 0, 0, cfg_false);
+		insert_image(image, NULL, 2048, 0, 0, 0, cfg_false);
 	} else {
 		int ret;
 		/* for regular files, create the file or truncate it to zero
@@ -574,6 +574,7 @@ int prepare_image(struct image *image, unsigned long long size)
  */
 int insert_image(struct image *image, struct image *sub,
 		 unsigned long long size, unsigned long long offset,
+		 unsigned long long imageoffset,
 		 unsigned char byte, cfg_bool_t sparse)
 {
 	struct extent *extents = NULL;
@@ -603,29 +604,34 @@ int insert_image(struct image *image, struct image *sub,
 		image_error(image, "open %s: %s", infile, strerror(errno));
 		goto out;
 	}
-	ret = map_file_extents(image, infile, in_fd, size, &extents, &extent_count);
+	ret = map_file_extents(image, infile, in_fd, size + imageoffset, &extents, &extent_count);
 	if (ret)
 		goto out;
-	image_debug(image, "copying %llu bytes from %s at offset %llu\n",
-		    size, infile, offset);
-	in_pos = 0;
+	image_debug(image, "copying %llu bytes from %s from offset %llu to offset %llu\n",
+		    size, infile, imageoffset, offset);
+	in_pos = imageoffset;
 	for (e = 0; e < extent_count && size > 0; e++) {
 		const struct extent *ext = &extents[e];
-		size_t len = ext->start - in_pos;
 
-		/*
-		 * If the input file is larger than size, it might
-		 * have an extent that starts beyond size.
-		 */
-		len = min(len, size);
-		ret = write_bytes(fd, len, offset, 0, sparse); // Assumes 'holes' are always 0 bytes
-		if (ret) {
-			image_error(image, "writing %zu bytes failed: %s\n", len, strerror(-ret));
-			goto out;
+		if (in_pos < ext->start) {
+			size_t len = ext->start - in_pos;
+
+			/*
+			 * If the input file is larger than size, it might
+			 * have an extent that starts beyond size.
+			 */
+			len = min(len, size);
+			/* Assumes 'holes' are always 0 bytes */
+			ret = write_bytes(fd, len, offset, 0, sparse);
+			if (ret) {
+				image_error(image, "writing %zu bytes failed: %s\n",
+					    len, strerror(-ret));
+				goto out;
+			}
+			size -= len;
+			offset += len;
+			in_pos += len;
 		}
-		size -= len;
-		offset += len;
-		in_pos += len;
 		while (in_pos < ext->end && size > 0) {
 			char buf[4096];
 			size_t now;
