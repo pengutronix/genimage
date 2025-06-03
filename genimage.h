@@ -119,6 +119,7 @@ struct flash_type *flash_type_get(const char *name);
 extern struct image_handler android_sparse_handler;
 extern struct image_handler cpio_handler;
 extern struct image_handler cramfs_handler;
+extern struct image_handler custom_handler;
 extern struct image_handler erofs_handler;
 extern struct image_handler ext2_handler;
 extern struct image_handler ext3_handler;
