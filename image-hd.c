@@ -947,7 +947,7 @@ static int setup_part_image(struct image *image, struct partition *part)
 static int hdimage_setup(struct image *image, cfg_t *cfg)
 {
 	struct partition *part;
-	unsigned int partition_table_entries = 0, hybrid_entries = 0;
+	unsigned int hybrid_entries = 0;
 	unsigned long long now = 0;
 	const char *table_type;
 	struct hdimage *hd = xzalloc(sizeof(*hd));
@@ -1047,7 +1047,6 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 		}
 	}
 
-	partition_table_entries = 0;
 	list_for_each_entry(part, &image->partitions, list) {
 		if (hd->table_type == TYPE_NONE)
 			part->in_partition_table = false;
@@ -1110,8 +1109,6 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 			if (part->partition_type)
 				++hybrid_entries;
 		}
-		if (part->in_partition_table)
-			++partition_table_entries;
 		if (part->logical) {
 			/* reserve space for extended boot record */
 			now += hd->align;
