@@ -535,10 +535,19 @@ static int write_bytes(int fd, size_t size, off_t offset, unsigned char byte, cf
  */
 int prepare_image(struct image *image, unsigned long long size)
 {
+	int ret;
+
 	if (is_block_device(imageoutfile(image))) {
 		insert_image(image, NULL, 2048, 0, 0, 0, cfg_false);
+	} else if (size == 0) {
+		ret = unlink(imageoutfile(image));
+		if (ret < 0 && errno != ENOENT) {
+			ret = -errno;
+			image_error(image, "failed to remove %s: %s\n",
+				    imageoutfile(image), strerror(-ret));
+			return ret;
+		}
 	} else {
-		int ret;
 		/* for regular files, create the file or truncate it to zero
 		 * size to remove all existing content */
 		int fd = open_file(image, imageoutfile(image), O_TRUNC);
