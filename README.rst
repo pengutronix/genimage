@@ -289,7 +289,7 @@ Generates cramfs images.
 
 Options:
 
-:extraargs:		Extra arguments passed to mkcramfs
+:extraargs:		Extra arguments passed to mkfs.cramfs
 
 custom
 ******
@@ -776,7 +776,7 @@ variable.
 :genisoimage:	path to the genisoimage program (default genisoimage)
 :mcopy:		path to the mcopy program (default mcopy)
 :mmd:		path to the mmd program (default mmd)
-:mkcramfs:	path to the mkcramfs program (default mkcramfs)
+:mkcramfs:	path to the mkcramfs program (default mkfs.cramfs)
 :mkdosfs:	path to the mkdosfs program (default mkdosfs)
 :mkfserofs:	path to the mkfs.erofs program (default mkfs.erofs)
 :mkfsf2fs:	path to the mkfs.f2fs program (default mkfs.f2fs)

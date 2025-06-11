@@ -15,8 +15,8 @@ test_expect_success cpio "cpio" "
 	check_filelist
 "
 
-exec_test_set_prereq mkcramfs
-test_expect_success mkcramfs "cramfs" "
+exec_test_set_prereq mkfs.cramfs
+test_expect_success mkfs_cramfs "cramfs" "
 	run_genimage_root cramfs.config test.cramfs &&
 	check_size images/test.cramfs 4096
 "
