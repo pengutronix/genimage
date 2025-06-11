@@ -421,7 +421,7 @@ static struct config opts[] = {
 		.name = "mkcramfs",
 		.opt = CFG_STR("mkcramfs", NULL, CFGF_NONE),
 		.env = "GENIMAGE_MKCRAMFS",
-		.def = "mkcramfs",
+		.def = "mkfs.cramfs",
 	},
 	{
 		.name = "mkdosfs",
