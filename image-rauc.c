@@ -110,7 +110,7 @@ static int rauc_generate(struct image *image)
 		xasprintf(&tmptarget, "%s/%s", tmpdir, target);
 
 		image_info(image, "adding file '%s' as '%s' (offset=%lld)...\n",
-			   child->file, target, (long long)part->imageoffset);
+			   child->file, target, part->imageoffset);
 
 		if (part->imageoffset) {
 			unlink(tmptarget);
@@ -127,7 +127,7 @@ static int rauc_generate(struct image *image)
 			 * replace both commands.
 			 */
 			ret = systemp(image, "dd if='%s' of='%s' iflag=skip_bytes skip=%lld",
-				      file, tmptarget, (long long)part->imageoffset);
+				      file, tmptarget, part->imageoffset);
 
 		} else {
 			ret = systemp(image, "cp --remove-destination '%s' '%s'",
