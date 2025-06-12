@@ -1,5 +1,5 @@
 Filesystem magic number:                      0xE0F5E1E2
-Filesystem blocks:                            1
+Filesystem blocks:                            2
 Filesystem inode metadata start block:        0
 Filesystem shared xattr metadata start block: 0
 Filesystem root nid:                          36
@@ -78,14 +78,14 @@ others           	24            100.00% |#######################################
 File : /
 Size: 95  On-disk size: 95  directory
 NID: 36   Links: 6   Layout: 2   Compression ratio: 100.00%
-Inode size: 32   Extent size: 0   Xattr size: 0
+Inode size: 64   Extent size: 0   Xattr size: 0
 Uid: 0   Gid: 0  Access: 0755/rwxr-xr-x
-Timestamp: 635747-12-21 11:06:40.000000000
+Timestamp: 2011-11-11 00:00:00.000000000
 
        NID TYPE  FILENAME
         36    2  .
         36    2  ..
-        40    2  bar
-        59    2  baz
-        78    2  foo
-        97    2  with spaces
+        41    2  bar
+        70    2  baz
+        99    2  foo
+       130    2  with spaces
