@@ -1,0 +1,93 @@
+Filesystem magic number:                      0xE0F5E1E2
+Filesystem blocksize:                         4096
+Filesystem blocks:                            2
+Filesystem inode metadata start block:        0
+Filesystem shared xattr metadata start block: 0
+Filesystem root nid:                          36
+Filesystem lz4_max_distance:                  0
+Filesystem sb_size:                           128
+Filesystem inode count:                       41
+Filesystem created:                           Thu Dec 21 11:06:40 635747
+Filesystem features:                          sb_csum mtime 
+Filesystem UUID:                              83d9e40a-fb96-469e-abb9-24fb3c3bd0ff
+Filesystem total file count:		41
+Filesystem unknown type count:		0
+Filesystem regular file count:		24
+Filesystem directory count:		17
+Filesystem char dev count:		0
+Filesystem block dev count:		0
+Filesystem FIFO file count:		0
+Filesystem SOCK file count:		0
+Filesystem symlink file count:		0
+Filesystem compressed files:            0
+Filesystem uncompressed files:          41
+Filesystem total original file size:    0 Bytes
+Filesystem total file size:             0 Bytes
+Filesystem compress rate:               -nan%
+
+Original file size distribution:
+>=(KB) .. <(KB)        count            ratio |distribution                                      |
+     0 .. 1     	24            100.00% |##################################################|
+     1 .. 2     	0               0.00% |                                                  |
+     2 .. 4     	0               0.00% |                                                  |
+     4 .. 8     	0               0.00% |                                                  |
+     8 .. 16    	0               0.00% |                                                  |
+    16 .. 32    	0               0.00% |                                                  |
+    32 .. 64    	0               0.00% |                                                  |
+    64 .. 128   	0               0.00% |                                                  |
+   128 .. 256   	0               0.00% |                                                  |
+   256 .. 512   	0               0.00% |                                                  |
+   512 .. 1024  	0               0.00% |                                                  |
+  1024 .. 2048  	0               0.00% |                                                  |
+  2048 .. 4096  	0               0.00% |                                                  |
+  4096 .. 8192  	0               0.00% |                                                  |
+  8192 .. 16384 	0               0.00% |                                                  |
+ 16384 .. 32768 	0               0.00% |                                                  |
+ 32768 ..       	0               0.00% |                                                  |
+
+On-disk file size distribution:
+>=(KB) .. <(KB)        count            ratio |distribution                                      |
+     0 .. 1     	24            100.00% |##################################################|
+     1 .. 2     	0               0.00% |                                                  |
+     2 .. 4     	0               0.00% |                                                  |
+     4 .. 8     	0               0.00% |                                                  |
+     8 .. 16    	0               0.00% |                                                  |
+    16 .. 32    	0               0.00% |                                                  |
+    32 .. 64    	0               0.00% |                                                  |
+    64 .. 128   	0               0.00% |                                                  |
+   128 .. 256   	0               0.00% |                                                  |
+   256 .. 512   	0               0.00% |                                                  |
+   512 .. 1024  	0               0.00% |                                                  |
+  1024 .. 2048  	0               0.00% |                                                  |
+  2048 .. 4096  	0               0.00% |                                                  |
+  4096 .. 8192  	0               0.00% |                                                  |
+  8192 .. 16384 	0               0.00% |                                                  |
+ 16384 .. 32768 	0               0.00% |                                                  |
+ 32768 ..       	0               0.00% |                                                  |
+
+File type distribution:
+type                   count            ratio |distribution                                      |
+.txt             	0               0.00% |                                                  |
+.so              	0               0.00% |                                                  |
+.xml             	0               0.00% |                                                  |
+.apk             	0               0.00% |                                                  |
+.odex            	0               0.00% |                                                  |
+.vdex            	0               0.00% |                                                  |
+.oat             	0               0.00% |                                                  |
+.rc              	0               0.00% |                                                  |
+.otf             	0               0.00% |                                                  |
+others           	24            100.00% |##################################################|
+Path : /
+Size: 95  On-disk size: 95  directory
+NID: 36   Links: 6   Layout: 2   Compression ratio: 100.00%
+Inode size: 64   Xattr size: 0
+Uid: 0   Gid: 0  Access: 0755/rwxr-xr-x
+Timestamp: 2011-11-11 00:00:00.000000000
+
+       NID TYPE  FILENAME
+        36    2  .
+        36    2  ..
+        41    2  bar
+        46    2  baz
+        51    2  foo
+        56    2  with spaces

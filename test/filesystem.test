@@ -75,12 +75,17 @@ test_expect_success dd,mkdosfs,mcopy "vfat" "
 exec_test_set_prereq mkfs.erofs
 exec_test_set_prereq fsck.erofs
 test_expect_success mkfs_erofs,fsck_erofs "erofs" "
+	if mkfs.erofs --help |& grep -q -- --mkfs-time; then
+		dump=\"${testdir}/erofs.dump.new\"
+	else
+		dump=\"${testdir}/erofs.dump.old\"
+	fi
 	SOURCE_DATE_EPOCH=20000101000000 run_genimage_root erofs.config test.erofs &&
 	fsck.erofs -p images/test.erofs | tee erofs.log &&
 	test_must_fail grep -q 'Filesystem was changed' erofs.log &&
 	check_size images/test.erofs 8192 &&
 	dump.erofs -s -S --ls --path=/ images/test.erofs > erofs.dump &&
-	test_cmp ${testdir}/erofs.dump erofs.dump
+	test_cmp \"\${dump}\" erofs.dump
 "
 
 test_done
