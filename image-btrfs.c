@@ -20,11 +20,13 @@
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <sys/stat.h>
 
 #include "genimage.h"
 
 static int btrfs_generate(struct image *image)
 {
+	struct stat s;
 	int ret;
 
 	const char *label = cfg_getstr(image->imagesec, "label");
@@ -48,6 +50,19 @@ static int btrfs_generate(struct image *image)
 
 	if (ret || image->empty)
 		return ret;
+
+	ret = stat(imageoutfile(image), &s);
+	if (ret) {
+		image_error(image, "stat(%s) failed: %s\n", imageoutfile(image), strerror(errno));
+		return ret;
+	}
+	if (image->size && image->size != (unsigned long long)s.st_size) {
+		image_error(image, "Created image is bigger than configured image size: %llu > %llu\n",
+			    (unsigned long long)s.st_size, image->size);
+		return -E2BIG;
+	}
+	if (!image->size)
+		image->size = s.st_size;
 
 	return ret;
 }
