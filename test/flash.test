@@ -10,6 +10,13 @@ test_expect_success "flash" "
 	md5sum -c '${testdir}/flash.md5'
 "
 
+test_expect_success dd "flash-fill" "
+	setup_test_images &&
+	run_genimage flash-fill.config test.flash &&
+	check_size 'images/test.flash' 3145728 &&
+	md5sum  -c '${testdir}/flash-fill.md5'
+"
+
 exec_test_set_prereq mkfs.jffs2
 test_expect_success mkfs_jffs2 "jffs2" "
 	run_genimage_root jffs2.config test.jffs2 &&

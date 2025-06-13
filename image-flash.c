@@ -65,6 +65,14 @@ static int flash_generate(struct image *image)
 		}
 		end = part->offset + part->size;
 	}
+	if (image->size > end) {
+		ret = insert_image(image, NULL, image->size - end, end, 0, 0xFF, cfg_false);
+		if (ret) {
+			image_error(image, "failed to pad image to size %lld\n",
+				    image->size);
+			return ret;
+		}
+	}
 
 	return 0;
 }

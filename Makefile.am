@@ -91,6 +91,8 @@ EXTRA_DIST += \
 	test/flash-types.config \
 	test/flash.config \
 	test/flash.md5 \
+	test/flash-fill.config \
+	test/flash-fill.md5 \
 	test/gpt-overlap1.config \
 	test/gpt-overlap2.config \
 	test/gpt-overlap3.config \
