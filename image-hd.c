@@ -47,6 +47,7 @@ struct hdimage {
 	unsigned long long gpt_location;
 	cfg_bool_t gpt_no_backup;
 	cfg_bool_t fill;
+	cfg_bool_t mbr_skip_optionals;
 	unsigned long long file_size;
 };
 
@@ -64,9 +65,14 @@ struct mbr_partition_entry {
 } __attribute__((packed));
 ct_assert(sizeof(struct mbr_partition_entry) == 16);
 
-struct mbr_tail {
+struct mbr_tail_optionals {
 	uint32_t disk_signature;
 	uint16_t copy_protect;
+} __attribute__((packed));
+ct_assert(sizeof(struct mbr_tail_optionals) == 6);
+
+struct mbr_tail {
+	struct mbr_tail_optionals optionals;
 	struct mbr_partition_entry part_entry[4];
 	uint16_t boot_signature;
 } __attribute__((packed));
@@ -141,6 +147,9 @@ static int hdimage_insert_mbr(struct image *image, struct list_head *partitions)
 	struct hdimage *hd = image->handler_priv;
 	struct mbr_tail mbr;
 	struct partition *part;
+	unsigned long long mbr_offset;
+	const void *mbr_data;
+	size_t mbr_size;
 	int ret, i = 0;
 
 	if (hd->table_type == TYPE_HYBRID) {
@@ -150,7 +159,7 @@ static int hdimage_insert_mbr(struct image *image, struct list_head *partitions)
 	}
 
 	memset(&mbr, 0, sizeof(mbr));
-	memcpy(&mbr.disk_signature, &hd->disksig, sizeof(hd->disksig));
+	memcpy(&mbr.optionals.disk_signature, &hd->disksig, sizeof(hd->disksig));
 
 	list_for_each_entry(part, partitions, list) {
 		struct mbr_partition_entry *entry;
@@ -192,7 +201,16 @@ static int hdimage_insert_mbr(struct image *image, struct list_head *partitions)
 
 	mbr.boot_signature = htole16(0xaa55);
 
-	ret = insert_data(image, &mbr, imageoutfile(image), sizeof(mbr), 440);
+	mbr_offset = 440;
+	mbr_size = sizeof(mbr);
+	mbr_data = &mbr;
+	if (hd->mbr_skip_optionals) {
+		mbr_offset += sizeof(struct mbr_tail_optionals);
+		mbr_size -= sizeof(struct mbr_tail_optionals);
+		mbr_data = &mbr.part_entry[0];
+	}
+
+	ret = insert_data(image, mbr_data, imageoutfile(image), mbr_size, mbr_offset);
 	if (ret) {
 		if (hd->table_type == TYPE_HYBRID) {
 			image_error(image, "failed to write hybrid MBR\n");
@@ -979,6 +997,7 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 	hd->gpt_location = cfg_getint_suffix(cfg, "gpt-location");
 	hd->gpt_no_backup = cfg_getbool(cfg, "gpt-no-backup");
 	hd->fill = cfg_getbool(cfg, "fill");
+	hd->mbr_skip_optionals = cfg_getbool(cfg, "mbr-skip-optionals");
 
 	if (is_block_device(imageoutfile(image))) {
 		if (image->size) {
@@ -1041,8 +1060,19 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 	}
 
 	if (hd->table_type != TYPE_NONE) {
-		struct partition *mbr = fake_partition("[MBR]", 512 - sizeof(struct mbr_tail),
-						       sizeof(struct mbr_tail));
+		struct partition *mbr;
+		unsigned long long mbr_offset;
+		unsigned long long mbr_size;
+
+		mbr_offset = 512 - sizeof(struct mbr_tail);
+		mbr_size = sizeof(struct mbr_tail);
+
+		if (hd->mbr_skip_optionals) {
+			mbr_offset += sizeof(struct mbr_tail_optionals);
+			mbr_size -= sizeof(struct mbr_tail_optionals);
+		}
+
+		mbr = fake_partition("[MBR]", mbr_offset, mbr_size);
 
 		list_add_tail(&mbr->list, &image->partitions);
 		now = partition_end(mbr);
@@ -1228,6 +1258,7 @@ static cfg_opt_t hdimage_opts[] = {
 	CFG_STR("gpt-location", NULL, CFGF_NONE),
 	CFG_BOOL("gpt-no-backup", cfg_false, CFGF_NONE),
 	CFG_BOOL("fill", cfg_false, CFGF_NONE),
+	CFG_BOOL("mbr-skip-optionals", cfg_false, CFGF_NONE),
 	CFG_END()
 };
 
