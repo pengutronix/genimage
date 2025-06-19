@@ -4,10 +4,18 @@ test_description="Flash Image Tests"
 . "$(dirname "${0}")/test-setup.sh"
 
 exec_test_set_prereq dd
-test_expect_success "flash" "
+test_expect_success dd "flash" "
 	setup_test_images &&
 	run_genimage flash.config test.flash &&
+	check_size 'images/test.flash' 2097152 &&
 	md5sum -c '${testdir}/flash.md5'
+"
+
+test_expect_success dd "flash-fill" "
+	setup_test_images &&
+	run_genimage flash-fill.config test.flash &&
+	check_size 'images/test.flash' 3145728 &&
+	md5sum  -c '${testdir}/flash-fill.md5'
 "
 
 exec_test_set_prereq mkfs.jffs2
