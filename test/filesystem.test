@@ -38,10 +38,10 @@ test_expect_success mkfs_f2fs,sload_f2fs,fsck_f2fs "f2fs" "
 exec_test_set_prereq btrfs
 exec_test_set_prereq mkfs.btrfs
 test_expect_success mkfs_btrfs,btrfs "btrfs" "
-	run_genimage_root btrfs.config test.btrfs
-	btrfs check images/test.btrfs
-	test \"\$(btrfs filesystem label images/test.btrfs)\" = btrfstest
-	btrfs filesystem show images/test.btrfs | grep \"uuid: 47e790af-a2e1-42ff-92c7-83f45f7b2228\"
+	run_genimage_root btrfs.config test.btrfs &&
+	btrfs check images/test.btrfs &&
+	test \"\$(btrfs filesystem label images/test.btrfs)\" = btrfstest &&
+	btrfs filesystem show images/test.btrfs | grep -q \"uuid: 47e790af-a2e1-42ff-92c7-83f45f7b2228\"
 "
 
 exec_test_set_prereq mksquashfs
