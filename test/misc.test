@@ -47,7 +47,7 @@ rauc_cmp() {
 	elif version_lt "${rauc_version}" "1.10"; then
 		test_cmp "${testdir}/${1}.raucb.info.3" "${1}.raucb.info"
 	else
-		test_cmp "${testdir}/${1}.raucb.info.4" "${1}.raucb.info"
+		TEST_CMP="diff -wu" test_cmp "${testdir}/${1}.raucb.info.4" "${1}.raucb.info"
 	fi
 }
 
