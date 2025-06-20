@@ -86,7 +86,7 @@ test_expect_success mkfs_erofs,fsck_erofs "erofs" "
 	fsck.erofs -p images/test.erofs | tee erofs.log &&
 	test_must_fail grep -q 'Filesystem was changed' erofs.log &&
 	check_size images/test.erofs 8192 &&
-	dump.erofs -s -S --ls --path=/ images/test.erofs > erofs.dump &&
+	dump.erofs -s -S --ls --path=/ images/test.erofs | sed 's/-nan/nan/' > erofs.dump &&
 	test_cmp \"\${dump}\" erofs.dump
 "
 

@@ -20,7 +20,7 @@ Filesystem compressed files:            0
 Filesystem uncompressed files:          41
 Filesystem total original file size:    0 Bytes
 Filesystem total file size:             0 Bytes
-Filesystem compress rate:               -nan%
+Filesystem compress rate:               nan%
 
 Original file size distribution:
 >=(KB) .. <(KB)        count            ratio |distribution                                      |
