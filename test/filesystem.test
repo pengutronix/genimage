@@ -77,10 +77,12 @@ exec_test_set_prereq fsck.erofs
 test_expect_success mkfs_erofs,fsck_erofs "erofs" "
 	if mkfs.erofs --help |& grep -q -- --mkfs-time; then
 		dump=\"${testdir}/erofs.dump.new\"
+		config=erofs.new.config
 	else
 		dump=\"${testdir}/erofs.dump.old\"
+		config=erofs.old.config
 	fi
-	SOURCE_DATE_EPOCH=946684800 run_genimage_root erofs.config test.erofs &&
+	SOURCE_DATE_EPOCH=946684800 run_genimage_root \"\${config}\" test.erofs &&
 	fsck.erofs -p images/test.erofs | tee erofs.log &&
 	test_must_fail grep -q 'Filesystem was changed' erofs.log &&
 	check_size images/test.erofs 8192 &&

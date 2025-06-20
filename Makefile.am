@@ -59,7 +59,8 @@ EXTRA_DIST += \
 	test/cpio.config \
 	test/cramfs.config \
 	test/custom.config \
-	test/erofs.config \
+	test/erofs.old.config \
+	test/erofs.new.config \
 	test/erofs.dump.old \
 	test/erofs.dump.new \
 	test/exec-check.sh \
