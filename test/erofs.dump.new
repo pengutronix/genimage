@@ -7,7 +7,7 @@ Filesystem root nid:                          36
 Filesystem lz4_max_distance:                  0
 Filesystem sb_size:                           128
 Filesystem inode count:                       41
-Filesystem created:                           Thu Dec 21 11:06:40 635747
+Filesystem created:                           Sat Jan  1 00:00:00 2000
 Filesystem features:                          sb_csum mtime 
 Filesystem UUID:                              83d9e40a-fb96-469e-abb9-24fb3c3bd0ff
 Filesystem total file count:		41
@@ -82,7 +82,7 @@ Size: 95  On-disk size: 95  directory
 NID: 36   Links: 6   Layout: 2   Compression ratio: 100.00%
 Inode size: 64   Xattr size: 0
 Uid: 0   Gid: 0  Access: 0755/rwxr-xr-x
-Timestamp: 2011-11-11 00:00:00.000000000
+Timestamp: 2000-01-01 00:00:00.000000000
 
        NID TYPE  FILENAME
         36    2  .
