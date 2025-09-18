@@ -40,6 +40,7 @@ genimage_SOURCES = \
 	image-tar.c \
 	image-ubi.c \
 	image-ubifs.c \
+	image-verity.c \
 	image-vfat.c
 
 genimage_CFLAGS = \

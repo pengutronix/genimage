@@ -520,6 +520,12 @@ static struct config opts[] = {
 		.def = "fiptool",
 	},
 	{
+		.name = "veritysetup",
+		.opt = CFG_STR("veritysetup", NULL, CFGF_NONE),
+		.env = "GENIMAGE_VERITYSETUP",
+		.def = "veritysetup",
+	},
+	{
 		.name = "config",
 		.env = "GENIMAGE_CONFIG",
 		.def = "genimage.cfg",
