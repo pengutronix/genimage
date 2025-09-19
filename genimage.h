@@ -139,6 +139,7 @@ extern struct image_handler tar_handler;
 extern struct image_handler ubi_handler;
 extern struct image_handler ubifs_handler;
 extern struct image_handler verity_handler;
+extern struct image_handler verity_sig_handler;
 extern struct image_handler vfat_handler;
 extern struct image_handler fit_handler;
 extern struct image_handler fip_handler;

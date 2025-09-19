@@ -460,6 +460,12 @@ static struct config opts[] = {
 		.def = "mkfs.btrfs",
 	},
 	{
+		.name = "openssl",
+		.opt = CFG_STR("openssl", NULL, CFGF_NONE),
+		.env = "GENIMAGE_OPENSSL",
+		.def = "openssl",
+	},
+	{
 		.name = "sloadf2fs",
 		.opt = CFG_STR("sloadf2fs", NULL, CFGF_NONE),
 		.env = "GENIMAGE_SLOADF2FS",
