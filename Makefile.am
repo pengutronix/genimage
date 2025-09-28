@@ -171,6 +171,7 @@ EXTRA_DIST += \
 	test/test2.raucb.info.4 \
 	test/ubi.config \
 	test/ubifs.config \
+	test/verity.config \
 	test/vfat.config
 
 

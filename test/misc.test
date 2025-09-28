@@ -144,6 +144,32 @@ test_expect_success "custom" "
 	test_cmp images/test.custom.expect images/test.custom
 "
 
+exec_test_set_prereq base64
+exec_test_set_prereq dd
+exec_test_set_prereq jq
+exec_test_set_prereq openssl
+exec_test_set_prereq veritysetup
+test_expect_success base64,dd,jq,openssl,veritysetup "verity" "
+	setup_signing_ca &&
+	dd if=/dev/urandom bs=1M count=1 of=input/test.verity-data &&
+	run_genimage verity.config &&
+	tr -d '\0' <images/test.verity-sig | \
+		jq -r .rootHash | tr -d '\n' >images/test.verity-root-hash &&
+	tr -d '\0' <images/test.verity-sig | \
+		jq -r .signature | base64 -d >images/test.verity-sig.p7b &&
+	openssl cms -verify \
+		-CAfile input/signing-ca/ca.cert.pem \
+		-certfile input/signing-ca/signing.cert.pem \
+		-inform DER -in images/test.verity-sig.p7b \
+		-content images/test.verity-root-hash &&
+	# openssl writes -content to stdout, which does not contain a newline
+	# which confuses the TAP parser, so we print an extra newline here
+	echo &&
+	veritysetup --root-hash-file images/test.verity-root-hash verify \
+		input/test.verity-data \
+		images/test.verity-hash
+"
+
 test_done
 
 # vim: syntax=sh
