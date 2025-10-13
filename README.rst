@@ -791,7 +791,8 @@ variable.
 
 :loglevel:	default: 1
 		genimage log level.
-
+:randomseed:	default: none
+		Random number generator seed (optional).
 :outputpath:	default: images
 		Mandatory path where all images are written to (must exist).
 :inputpath:	default: input

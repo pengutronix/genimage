@@ -490,6 +490,12 @@ static struct config opts[] = {
 		.def = "qemu-img",
 	},
 	{
+		.name = "randomseed",
+		.opt = CFG_STR("randomseed", NULL, CFGF_NONE),
+		.env = "GENIMAGE_RANDOMSEED",
+		.def = NULL,
+	},
+	{
 		.name = "rauc",
 		.opt = CFG_STR("rauc", NULL, CFGF_NONE),
 		.env = "GENIMAGE_RAUC",

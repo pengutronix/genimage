@@ -225,4 +225,8 @@ uint32_t crc32_next(const void *data, size_t len, uint32_t last_crc);
 
 #define ct_assert(e) _Static_assert(e, #e)
 
+void random32_init(void);
+void random32_enable_prng(const char *seed, size_t length);
+uint32_t random32(void);
+
 #endif /* __PTX_IMAGE_H */

@@ -871,7 +871,7 @@ static int setup_uuid(struct image *image, cfg_t *cfg)
 	if (!disk_signature)
 		hd->disksig = 0;
 	else if (!strcmp(disk_signature, "random"))
-		hd->disksig = random();
+		hd->disksig = random32();
 	else {
 		if (!(hd->table_type & TYPE_MBR)) {
 			image_error(image, "'disk-signature' is only valid for mbr and hybrid partition-table-type\n");
