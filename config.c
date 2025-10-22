@@ -460,6 +460,12 @@ static struct config opts[] = {
 		.def = "mkfs.btrfs",
 	},
 	{
+		.name = "openssl",
+		.opt = CFG_STR("openssl", NULL, CFGF_NONE),
+		.env = "GENIMAGE_OPENSSL",
+		.def = "openssl",
+	},
+	{
 		.name = "sloadf2fs",
 		.opt = CFG_STR("sloadf2fs", NULL, CFGF_NONE),
 		.env = "GENIMAGE_SLOADF2FS",
@@ -518,6 +524,12 @@ static struct config opts[] = {
 		.opt = CFG_STR("fiptool", NULL, CFGF_NONE),
 		.env = "GENIMAGE_FIPTOOL",
 		.def = "fiptool",
+	},
+	{
+		.name = "veritysetup",
+		.opt = CFG_STR("veritysetup", NULL, CFGF_NONE),
+		.env = "GENIMAGE_VERITYSETUP",
+		.def = "veritysetup",
 	},
 	{
 		.name = "config",

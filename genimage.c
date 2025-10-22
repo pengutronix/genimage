@@ -62,6 +62,8 @@ static struct image_handler *handlers[] = {
 	&tar_handler,
 	&ubi_handler,
 	&ubifs_handler,
+	&verity_handler,
+	&verity_sig_handler,
 	&vfat_handler,
 };
 

@@ -26,12 +26,16 @@ test_expect_success mkimage,dtc "fit" "
 	run_genimage fit.config test.fit
 "
 
+setup_signing_ca() {
+	cp -r "${testdir}"/signing-ca input/
+}
+
 setup_rauc() {
 	rm -rf input &&
 	mkdir input &&
-	cp -r "${testdir}"/rauc-openssl-ca input/ &&
 	echo "test" > input/rauc.content &&
-	echo "xtest2" > input/rauc2.content
+	echo "xtest2" > input/rauc2.content &&
+	setup_signing_ca
 }
 
 version_lt() {
@@ -57,16 +61,16 @@ test_expect_success rauc "rauc" "
 	setup_rauc &&
 	run_genimage rauc.config test.raucb &&
 	rauc info \
-		--keyring input/rauc-openssl-ca/ca.cert.pem \
-		--cert input/rauc-openssl-ca/ca.cert.pem \
+		--keyring input/signing-ca/ca.cert.pem \
+		--cert input/signing-ca/ca.cert.pem \
 		images/test.raucb | grep -v cms_get_enveloped_type \
 		| sed -e 's;O = Test Org, CN = ;/O=Test Org/CN=;' \
 		      -e '/Bundle Format:[ \t]*plain$/d' \
 		> test.raucb.info &&
 	rauc_cmp test
 	rauc info \
-		--keyring input/rauc-openssl-ca/ca.cert.pem \
-		--cert input/rauc-openssl-ca/ca.cert.pem \
+		--keyring input/signing-ca/ca.cert.pem \
+		--cert input/signing-ca/ca.cert.pem \
 		images/test2.raucb | grep -v cms_get_enveloped_type \
 		| sed -e 's;O = Test Org, CN = ;/O=Test Org/CN=;' \
 		      -e '/Bundle Format:[ \t]*plain$/d' \
@@ -138,6 +142,32 @@ test_expect_success "custom" "
 	run_genimage custom.config test.custom &&
 	echo 'Hello genimage!' > images/test.custom.expect &&
 	test_cmp images/test.custom.expect images/test.custom
+"
+
+exec_test_set_prereq base64
+exec_test_set_prereq dd
+exec_test_set_prereq jq
+exec_test_set_prereq openssl
+exec_test_set_prereq veritysetup
+test_expect_success base64,dd,jq,openssl,veritysetup "verity" "
+	setup_signing_ca &&
+	dd if=/dev/urandom bs=1M count=1 of=input/test.verity-data &&
+	run_genimage verity.config &&
+	tr -d '\0' <images/test.verity-sig | \
+		jq -r .rootHash | tr -d '\n' >images/test.verity-root-hash &&
+	tr -d '\0' <images/test.verity-sig | \
+		jq -r .signature | base64 -d >images/test.verity-sig.p7b &&
+	openssl cms -verify \
+		-CAfile input/signing-ca/ca.cert.pem \
+		-certfile input/signing-ca/signing.cert.pem \
+		-inform DER -in images/test.verity-sig.p7b \
+		-content images/test.verity-root-hash &&
+	# openssl writes -content to stdout, which does not contain a newline
+	# which confuses the TAP parser, so we print an extra newline here
+	echo &&
+	veritysetup --root-hash-file images/test.verity-root-hash verify \
+		input/test.verity-data \
+		images/test.verity-hash
 "
 
 test_done

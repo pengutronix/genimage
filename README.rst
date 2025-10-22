@@ -108,7 +108,7 @@ Additionally each image can have one of the following sections describing the
 type of the image:
 
 cpio, cramfs, custom, erofs, ext2, ext3, ext4, f2fs, file, flash, hdimage, iso,
-jffs2, mdraid, qemu, squashfs, tar, ubi, ubifs, vfat.
+jffs2, mdraid, qemu, squashfs, tar, ubi, ubifs, verity, verity-sig, vfat.
 
 Partition options:
 
@@ -637,6 +637,49 @@ Options:
 :max-size:		Maximum size of the UBIFS image
 :space-fixup:           Instructs the file-system free space to be freed up on first mount.
 
+verity
+******
+Generates a dm-verity hash tree from an existing image.
+
+Options:
+
+:extraargs:		Extra arguments passed to ``veritysetup format``
+:image:			Image from which to construct the hash tree
+
+The input image is typically a read-only filesystem image (SquashFS/EROFS)::
+
+  image rootfs.verity {
+	verity {
+		image = "rootfs.squashfs"
+	}
+  }
+
+
+verity-sig
+**********
+Generates a signature of the root hash of a ``verity`` image that is
+compatible with the Discoverable Partition Specification (DPS).
+
+Options:
+
+:image:			``verity`` image whose root hash should be signed
+
+:cert:			Path to the X509 certificate, file or PKCS#11 URI, whose
+			associated public key can be used to verify this signature.
+:key:			Path to the private key, file or PKCS#11 URI, used to create this
+			signature.
+
+Continuing from the previous example, a signature image can be created by referencing the
+verity image::
+
+  image rootfs.verity-sig {
+	verity-sig {
+		image = "rootfs.verity"
+		cert = "mycert.crt"
+		key = "pkcs11:token=mytoken;object=csk"
+	}
+  }
+
 vfat
 ****
 Generates a VFAT image.
@@ -783,10 +826,12 @@ variable.
 :mkfsjffs2:	path to the mkfs.jffs2 program (default mkfs.jffs2)
 :mkfsubifs:	path to the mkfs.ubifs program (default mkfs.ubifs)
 :mksquashfs:	path to the mksquashfs program (default mksquashfs)
+:openssl:	path to the openssl program (default openssl)
 :qemu-img:	path to the qemu-img program (default qemu-img)
 :tar:		path to the tar program (default tar)
 :tune2fs:	path to the tune2fs program (default tune2fs)
 :ubinize:	path to the ubinize program (default ubinize)
+:veritysetup:	path to the veritysetup program (default veritysetup)
 :fiptool:	path to the fiptool utility (default fiptool)
 
 
