@@ -26,12 +26,16 @@ test_expect_success mkimage,dtc "fit" "
 	run_genimage fit.config test.fit
 "
 
+setup_signing_ca() {
+	cp -r "${testdir}"/signing-ca input/
+}
+
 setup_rauc() {
 	rm -rf input &&
 	mkdir input &&
-	cp -r "${testdir}"/rauc-openssl-ca input/ &&
 	echo "test" > input/rauc.content &&
-	echo "xtest2" > input/rauc2.content
+	echo "xtest2" > input/rauc2.content &&
+	setup_signing_ca
 }
 
 version_lt() {
@@ -57,16 +61,16 @@ test_expect_success rauc "rauc" "
 	setup_rauc &&
 	run_genimage rauc.config test.raucb &&
 	rauc info \
-		--keyring input/rauc-openssl-ca/ca.cert.pem \
-		--cert input/rauc-openssl-ca/ca.cert.pem \
+		--keyring input/signing-ca/ca.cert.pem \
+		--cert input/signing-ca/ca.cert.pem \
 		images/test.raucb | grep -v cms_get_enveloped_type \
 		| sed -e 's;O = Test Org, CN = ;/O=Test Org/CN=;' \
 		      -e '/Bundle Format:[ \t]*plain$/d' \
 		> test.raucb.info &&
 	rauc_cmp test
 	rauc info \
-		--keyring input/rauc-openssl-ca/ca.cert.pem \
-		--cert input/rauc-openssl-ca/ca.cert.pem \
+		--keyring input/signing-ca/ca.cert.pem \
+		--cert input/signing-ca/ca.cert.pem \
 		images/test2.raucb | grep -v cms_get_enveloped_type \
 		| sed -e 's;O = Test Org, CN = ;/O=Test Org/CN=;' \
 		      -e '/Bundle Format:[ \t]*plain$/d' \

@@ -152,11 +152,11 @@ EXTRA_DIST += \
 	test/mke2fs.3.dump \
 	test/qemu.config \
 	test/qemu.qcow.gz \
-	test/rauc-openssl-ca/ca.cert.pem \
-	test/rauc-openssl-ca/rauc.cert.pem \
-	test/rauc-openssl-ca/rauc.key.pem \
 	test/rauc.config \
 	test/sharness.sh \
+	test/signing-ca/ca.cert.pem \
+	test/signing-ca/signing.cert.pem \
+	test/signing-ca/signing.key.pem \
 	test/sparse.config \
 	test/sparse-fill.config \
 	test/squashfs.config \
