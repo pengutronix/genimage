@@ -143,6 +143,30 @@ test_expect_success "custom" "
 	echo 'Hello genimage!' > images/test.custom.expect &&
 	test_cmp images/test.custom.expect images/test.custom
 "
+test_expect_success "disable random-seed" "
+	extra_opts="--randomseed=" &&
+	run_genimage randomseed.config randomseed.img &&
+	hexdump -C images/randomseed.img > randomseed.expected &&
+	unset extra_opts &&
+	test_must_fail diff -q $SHARNESS_TEST_SRCDIR/randomseed.expected randomseed.expected
+"
+
+test_expect_success "enable random-seed" "
+	run_genimage randomseed.config randomseed.img &&
+		hexdump -C images/randomseed.img > randomseed.expected &&
+	diff -q $SHARNESS_TEST_SRCDIR/randomseed.expected randomseed.expected
+"
+
+test_expect_success "use different random-seeds" "
+		extra_opts="--randomseed=2" &&
+		run_genimage randomseed.config randomseed.img &&
+		hexdump -C images/randomseed.img > randomseed.expected.1 &&
+		extra_opts="--randomseed=3" &&
+		run_genimage randomseed.config randomseed.img &&
+		hexdump -C images/randomseed.img > randomseed.expected.2 &&
+		unset extra_opts &&
+		test_must_fail diff -q randomseed.expected.1 randomseed.expected.2
+"
 
 exec_test_set_prereq base64
 exec_test_set_prereq dd

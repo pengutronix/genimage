@@ -18,6 +18,7 @@ genimage_SOURCES = \
 	config.c \
 	util.c \
 	crc32.c \
+	random32.c \
 	image-android-sparse.c \
 	image-cpio.c \
 	image-cramfs.c \
@@ -152,6 +153,8 @@ EXTRA_DIST += \
 	test/mke2fs.3.dump \
 	test/qemu.config \
 	test/qemu.qcow.gz \
+	test/randomseed.config \
+	test/randomseed.expected \
 	test/rauc.config \
 	test/sharness.sh \
 	test/signing-ca/ca.cert.pem \

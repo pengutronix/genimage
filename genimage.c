@@ -21,7 +21,6 @@
 #include <errno.h>
 #include <libgen.h>
 #include <sys/stat.h>
-#include <sys/time.h>
 #include <sys/types.h>
 #include <dirent.h>
 
@@ -700,11 +699,6 @@ int main(int argc, char *argv[])
 	cfg_opt_t image_end[] = {
 		CFG_END()
 	};
-	struct timeval tv;
-
-	/* Seed the rng */
-	gettimeofday(&tv, NULL);
-	srandom(tv.tv_usec);
 
 	memcpy(imageopts, image_common_opts, sizeof(image_common_opts));
 
@@ -759,6 +753,13 @@ int main(int argc, char *argv[])
 
 	/* again, with config file this time */
 	set_config_opts(argc, argv, cfg);
+
+	str = get_opt("randomseed");
+	if (!str || (*str == '\0')) {
+		random32_init();
+	} else {
+		random32_enable_prng(str, strnlen(str, 4096));
+	}
 
 	str = get_opt("configdump");
 	if (str) {
