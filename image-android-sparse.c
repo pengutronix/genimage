@@ -15,7 +15,15 @@
  */
 
 #include <confuse.h>
+#ifdef __APPLE__
+#include <libkern/OSByteOrder.h>
+#define htole16(x) OSSwapHostToLittleInt16(x)
+#define htole32(x) OSSwapHostToLittleInt32(x)
+#define le16toh(x) OSSwapLittleToHostInt16(x)
+#define le32toh(x) OSSwapLittleToHostInt32(x)
+#else
 #include <endian.h>
+#endif
 #include <errno.h>
 #include <fcntl.h>
 #include <stdlib.h>
