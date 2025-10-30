@@ -116,15 +116,24 @@ static unsigned long long partition_end(const struct partition *part)
 
 static void lba_to_chs(unsigned int lba, unsigned char *chs)
 {
-	const unsigned int hpc = 255;
-	const unsigned int spt = 63;
-	unsigned int s, c;
+	const unsigned int heads_per_cyl = 255;
+	const unsigned int sect_per_track = 63;
 
-	chs[0] = (lba / spt) % hpc;
-	c = (lba / (spt * hpc));
-	s = (lba > 0) ? (lba % spt + 1) : 0;
-	chs[1] = ((c & 0x300) >> 2) | (s & 0xff);
-	chs[2] = (c & 0xff);
+	if (lba > (1024 * heads_per_cyl * sect_per_track - 1)) {
+		chs[0] = 0xFE;
+		chs[1] = 0xFF;
+		chs[2] = 0xFF;
+		return;
+	}
+
+	unsigned int cylinder = lba / (heads_per_cyl * sect_per_track);
+	unsigned int remainder = lba % (heads_per_cyl * sect_per_track);
+	unsigned int head = remainder / sect_per_track;
+	unsigned int sector = (remainder % sect_per_track) + 1;
+
+	chs[0] = head & 0xFF;
+	chs[1] = (sector & 0x3F) + ((cylinder & 0x300) >> 2);
+	chs[2] = cylinder & 0xFF;
 }
 
 static void hdimage_setup_chs(struct mbr_partition_entry *entry,
@@ -185,7 +194,7 @@ static int hdimage_insert_mbr(struct image *image, struct list_head *partitions)
 
 		entry->partition_type = 0xee;
 		entry->relative_sectors = 1;
-		entry->total_sectors = hd->gpt_location / 512 + GPT_SECTORS - 2;
+		entry->total_sectors = GPT_SECTORS;
 
 		hdimage_setup_chs(entry, 0);
 	}
