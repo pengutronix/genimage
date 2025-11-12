@@ -831,7 +831,11 @@ int main(int argc, char *argv[])
 			struct image *child;
 
 			if (!part->image) {
-				if (part->in_partition_table)
+				/* allow image-less partitions that are present
+				 * in the partition table and partitions that
+				 * should be filled with zeros (sparse = false)
+				 */
+				if (part->in_partition_table || !part->sparse)
 					continue;
 				image_error(image, "no input file given\n");
 				ret = -EINVAL;
