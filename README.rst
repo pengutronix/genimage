@@ -130,8 +130,10 @@ Partition options:
 :sparse:		If true (the default) 'holes' in the input images are preserved
 			and the remaining free space in the partition is also a 'hole'.
 			If false, the 'holes' in the input image are explicitly
-			filled with zeros when the image is copied. If ``fill``
-			is specified as well then the remaining free space is
+			filled with zeros when the image is copied.
+			If the partition has no image, the whole partition content is a
+			'hole'.
+			If ``fill`` is specified as well then the remaining free space is
 			also filled with zeros.
 :autoresize:		Boolean specifying that the partition should be resized
 			automatically. For UBI volumes this means that the
