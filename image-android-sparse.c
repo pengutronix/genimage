@@ -121,6 +121,7 @@ static int android_sparse_generate(struct image *image)
 	off_t offset;
 	unsigned int i;
 	uint32_t *buf, *zeros, crc32 = 0;
+	uint32_t max_raw_blocks = (UINT32_MAX - sizeof(struct sparse_chunk_header)) / sparse->block_size;
 	struct stat s;
 
 	memset(&header, 0, sizeof(header));
@@ -161,7 +162,6 @@ static int android_sparse_generate(struct image *image)
 	   So all start and end of all extents must be aligned accordingly. The
 	   extents may overlap now, so merge them if necessary. */
 	for (extent = 0; extent < extent_count; ++extent) {
-		size_t size, max;
 		int j;
 
 		extents[extent].start = extents[extent].start / sparse->block_size *
@@ -178,16 +178,6 @@ static int android_sparse_generate(struct image *image)
 			extents[j].end = extents[extent].end;
 			extents[extent].start = 0;
 			extents[extent].end = 0;
-		}
-
-		/* TODO: split extents that are too big */
-		max = (~(uint32_t)0) - sizeof(struct sparse_chunk_header);
-		size = extents[extent].end - extents[extent].start;
-		if (size > max) {
-			image_error(image, "extents size %llu larger and supported maximum %llu.\n",
-				    (unsigned long long)size, (unsigned long long)max);
-			ret = -EINVAL;
-			goto out;
 		}
 	}
 
@@ -292,7 +282,8 @@ static int android_sparse_generate(struct image *image)
 				}
 				chunk_header.blocks++;
 			} else {
-				if (chunk_header.chunk_type != SPARSE_RAW) {
+				if (chunk_header.chunk_type != SPARSE_RAW ||
+				    chunk_header.blocks >= max_raw_blocks) {
 					header.input_chunks++;
 					ret = flush_header(image, out_fd, &chunk_header, pos);
 					if (ret < 0)
