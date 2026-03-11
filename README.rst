@@ -100,9 +100,10 @@ Here are all options for images:
 		Variables`_ section below.
 :exec-post:	Custom command to run after generating the image.
 :flashtype:	refers to a flash section. Optional for non flash like images
-		like hd images
+		like hd images.
 :partition:	can be given multiple times and refers to a partition described
-		below
+		below. The section title will be use as the partition label
+		(only with GPT).
 
 Additionally each image can have one of the following sections describing the
 type of the image:
