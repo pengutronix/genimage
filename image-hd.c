@@ -1063,6 +1063,7 @@ static int hdimage_setup(struct image *image, cfg_t *cfg)
 			gpt_backup = fake_partition("[GPT backup]", backup_offset, backup_size);
 			list_add_tail(&gpt_backup->list, &image->partitions);
 		}
+		hd->file_size = now;
 	}
 
 	list_for_each_entry(part, &image->partitions, list) {
