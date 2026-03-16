@@ -952,9 +952,11 @@ int parse_holes(struct image *image, cfg_t *cfg)
 	image->holes = xzalloc(image->n_holes * sizeof(*image->holes));
 	for (i = 0; i < image->n_holes; i++) {
 		const char *s = cfg_getnstr(cfg, "holes", i);
-		char *start, *end;
 		int len;
 
+#ifdef __GLIBC__
+		/* Use GNU extension %m for automatic memory allocation */
+		char *start, *end;
 		if (sscanf(s, " ( %m[0-9skKMG] ; %m[0-9skKMG] ) %n", &start, &end, &len) != 2 ||
 		    len != (int)strlen(s)) {
 			image_error(image, "invalid hole specification '%s', use '(<start>;<end>)'\n",
@@ -966,6 +968,19 @@ int parse_holes(struct image *image, cfg_t *cfg)
 		image->holes[i].end = strtoul_suffix(end, NULL, NULL);
 		free(start);
 		free(end);
+#else
+		/* Use fixed-size buffers for non-glibc systems (macOS/BSD) */
+		char start[64], end[64];
+		if (sscanf(s, " ( %63[0-9skKMG] ; %63[0-9skKMG] ) %n", start, end, &len) != 2 ||
+		    len != (int)strlen(s)) {
+			image_error(image, "invalid hole specification '%s', use '(<start>;<end>)'\n",
+				    s);
+			return -EINVAL;
+		}
+
+		image->holes[i].start = strtoul_suffix(start, NULL, NULL);
+		image->holes[i].end = strtoul_suffix(end, NULL, NULL);
+#endif
 		image_debug(image, "added hole (%llu, %llu)\n", image->holes[i].start, image->holes[i].end);
 	}
 	return 0;
