@@ -271,7 +271,7 @@ int systemp(struct image *image, const char *fmt, ...)
 		if (!shell || shell[0] == 0x0)
 			shell = "/bin/sh";
 
-		execl(shell, shell, "-c", buf, NULL);
+		execl(shell, shell, "-o", "pipefail", "-c", buf, NULL);
 		ret = -errno;
 		error("Cannot execute %s: %s\n", buf, strerror(errno));
 		goto err_out;
