@@ -15,8 +15,8 @@ test_expect_success cpio "cpio" "
 	check_filelist
 "
 
-test_expect_failure "cpio missing" "
-	GENIMAGE_CPIO=/usr/bin/cpio-not-available run_genimage_root cpio.config test.cpio
+test_expect_success "cpio missing" "
+	GENIMAGE_CPIO=/usr/bin/cpio-not-available test_must_fail run_genimage_root cpio.config test.cpio
 "
 
 exec_test_set_prereq mkfs.cramfs
