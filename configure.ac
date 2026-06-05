@@ -1,6 +1,6 @@
 AC_PREREQ(2.60)
 AC_INIT([genimage],
-        [19],
+        [20],
         [oss-tools@pengutronix.de],
         [genimage],
         [http://www.pengutronix.de/genimage/])
