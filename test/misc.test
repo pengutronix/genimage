@@ -148,7 +148,8 @@ test_expect_success "pipefail" "
 	test_must_fail run_genimage pipefail.config
 "
 
-test_expect_success "disable random-seed" "
+exec_test_set_prereq hexdump
+test_expect_success hexdump "disable random-seed" "
 	extra_opts="--randomseed=" &&
 	run_genimage randomseed.config randomseed.img &&
 	hexdump -C images/randomseed.img > randomseed.expected &&
@@ -156,13 +157,13 @@ test_expect_success "disable random-seed" "
 	test_must_fail diff -q $SHARNESS_TEST_SRCDIR/randomseed.expected randomseed.expected
 "
 
-test_expect_success "enable random-seed" "
+test_expect_success hexdump "enable random-seed" "
 	run_genimage randomseed.config randomseed.img &&
 		hexdump -C images/randomseed.img > randomseed.expected &&
 	diff -q $SHARNESS_TEST_SRCDIR/randomseed.expected randomseed.expected
 "
 
-test_expect_success "use different random-seeds" "
+test_expect_success hexdump "use different random-seeds" "
 		extra_opts="--randomseed=2" &&
 		run_genimage randomseed.config randomseed.img &&
 		hexdump -C images/randomseed.img > randomseed.expected.1 &&
