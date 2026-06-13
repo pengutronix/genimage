@@ -56,7 +56,7 @@ rauc_cmp() {
 }
 
 exec_test_set_prereq rauc
-test_expect_success rauc "rauc" "
+test_expect_success rauc,mksquashfs "rauc" "
 	rauc_version="$(rauc --version | sed 's/rauc //')"
 	setup_rauc &&
 	run_genimage rauc.config test.raucb &&

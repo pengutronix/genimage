@@ -48,7 +48,6 @@ test_expect_success mkfs_btrfs,btrfs "btrfs" "
 	btrfs filesystem show images/test.btrfs | grep -q \"uuid: 47e790af-a2e1-42ff-92c7-83f45f7b2228\"
 "
 
-exec_test_set_prereq mksquashfs
 test_expect_success mksquashfs "squashfs" "
 	run_genimage_root squashfs.config test.squashfs &&
 	check_size_range images/test.squashfs 4000 4100 &&
