@@ -50,14 +50,16 @@ rauc_cmp() {
 		test_cmp "${testdir}/${1}.raucb.info.2" "${1}.raucb.info"
 	elif version_lt "${rauc_version}" "1.10"; then
 		test_cmp "${testdir}/${1}.raucb.info.3" "${1}.raucb.info"
-	else
+	elif version_lt "${rauc_version}" "1.15"; then
 		TEST_CMP="diff -wu" test_cmp "${testdir}/${1}.raucb.info.4" "${1}.raucb.info"
+	else
+		TEST_CMP="diff -wu" test_cmp "${testdir}/${1}.raucb.info.5" "${1}.raucb.info"
 	fi
 }
 
 exec_test_set_prereq rauc
 test_expect_success rauc,mksquashfs "rauc" "
-	rauc_version="$(rauc --version | sed 's/rauc //')"
+	rauc_version=\"$(rauc --version | sed -E 's/rauc v?//')\"
 	setup_rauc &&
 	run_genimage rauc.config test.raucb &&
 	rauc info \
@@ -66,15 +68,15 @@ test_expect_success rauc,mksquashfs "rauc" "
 		images/test.raucb | grep -v cms_get_enveloped_type \
 		| sed -e 's;O = Test Org, CN = ;/O=Test Org/CN=;' \
 		      -e '/Bundle Format:[ \t]*plain$/d' \
-		> test.raucb.info &&
-	rauc_cmp test
+		> test.raucb.info
 	rauc info \
 		--keyring input/signing-ca/ca.cert.pem \
 		--cert input/signing-ca/ca.cert.pem \
 		images/test2.raucb | grep -v cms_get_enveloped_type \
 		| sed -e 's;O = Test Org, CN = ;/O=Test Org/CN=;' \
 		      -e '/Bundle Format:[ \t]*plain$/d' \
-		> test2.raucb.info &&
+		> test2.raucb.info
+	rauc_cmp test &&
 	rauc_cmp test2
 "
 

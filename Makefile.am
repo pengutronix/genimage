@@ -169,10 +169,12 @@ EXTRA_DIST += \
 	test/test.raucb.info.2 \
 	test/test.raucb.info.3 \
 	test/test.raucb.info.4 \
+	test/test.raucb.info.5 \
 	test/test2.raucb.info.1 \
 	test/test2.raucb.info.2 \
 	test/test2.raucb.info.3 \
 	test/test2.raucb.info.4 \
+	test/test2.raucb.info.5 \
 	test/ubi.config \
 	test/ubifs.config \
 	test/verity.config \
