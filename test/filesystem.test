@@ -75,21 +75,32 @@ test_expect_success dd,mkdosfs,mcopy "vfat" "
 	check_filelist
 "
 
+prepare_erofs() {
+	erofs_version="$(mkfs.erofs --version | sed -n 's/^mkfs.erofs.* \(.*\)/\1/p')"
+	config=erofs.new.config
+	size=4096
+	if ! mkfs.erofs --help |& grep -q -- --mkfs-time; then
+		dump="${testdir}/erofs.dump.0"
+		config=erofs.old.config
+		size=8192
+	elif version_leq "${erofs_version}" "1.8.9"; then
+		dump="${testdir}/erofs.dump.1"
+		size=8192
+	else
+		dump="${testdir}/erofs.dump.2"
+	fi
+}
+
 exec_test_set_prereq mkfs.erofs
 exec_test_set_prereq fsck.erofs
 test_expect_success mkfs_erofs,fsck_erofs "erofs" "
-	if mkfs.erofs --help |& grep -q -- --mkfs-time; then
-		dump=\"${testdir}/erofs.dump.new\"
-		config=erofs.new.config
-	else
-		dump=\"${testdir}/erofs.dump.old\"
-		config=erofs.old.config
-	fi
+	prepare_erofs &&
 	SOURCE_DATE_EPOCH=946684800 run_genimage_root \"\${config}\" test.erofs &&
 	fsck.erofs -p images/test.erofs | tee erofs.log &&
 	test_must_fail grep -q 'Filesystem was changed' erofs.log &&
-	check_size images/test.erofs 8192 &&
-	dump.erofs -s -S --ls --path=/ images/test.erofs | sed 's/-nan/nan/' > erofs.dump &&
+	check_size images/test.erofs \"\${size}\" &&
+	dump.erofs -s -S --ls --path=/ images/test.erofs | sed 's/-nan/nan/' | \
+		grep -vE '(Filesystem .*features:|Required upstream Linux)' > erofs.dump &&
 	test_cmp \"\${dump}\" erofs.dump
 "
 

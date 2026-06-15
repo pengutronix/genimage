@@ -23,11 +23,6 @@ compare_label() {
 	fi
 }
 
-version_leq() {
-	first="$(printf "${1}\n${2}" | sort -V | head -n1)"
-	test "${first}" == "${1}"
-}
-
 check_ext() {
 	[ "$verbose" = "t" ] && set -x
 	# UUID is randomly generated

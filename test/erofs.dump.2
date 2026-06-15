@@ -1,6 +1,6 @@
 Filesystem magic number:                      0xE0F5E1E2
 Filesystem blocksize:                         4096
-Filesystem blocks:                            2
+Filesystem blocks:                            1
 Filesystem inode metadata start block:        0
 Filesystem shared xattr metadata start block: 0
 Filesystem root nid:                          36
@@ -8,7 +8,6 @@ Filesystem lz4_max_distance:                  0
 Filesystem sb_size:                           128
 Filesystem inode count:                       41
 Filesystem created:                           Sat Jan  1 00:00:00 2000
-Filesystem features:                          sb_csum mtime 
 Filesystem UUID:                              83d9e40a-fb96-469e-abb9-24fb3c3bd0ff
 Filesystem total file count:		41
 Filesystem unknown type count:		0
@@ -80,14 +79,14 @@ others           	24            100.00% |#######################################
 Path : /
 Size: 95  On-disk size: 95  directory
 NID: 36   Links: 6   Layout: 2   Compression ratio: 100.00%
-Inode size: 64   Xattr size: 0
+Inode size: 32   Xattr size: 0
 Uid: 0   Gid: 0  Access: 0755/rwxr-xr-x
 Timestamp: 2000-01-01 00:00:00.000000000
 
        NID TYPE  FILENAME
         36    2  .
         36    2  ..
-        41    2  bar
-        46    2  baz
-        51    2  foo
-        56    2  with spaces
+        40    2  bar
+        44    2  baz
+        48    2  foo
+        52    2  with spaces
