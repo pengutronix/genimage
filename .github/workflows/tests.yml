@@ -9,13 +9,13 @@ jobs:
       matrix:
         include:
         - os: ubuntu-22.04
-          pkgs: device-tree-compiler rauc simg2img u-boot-tools f2fs-tools arm-trusted-firmware-tools mdadm
+          pkgs: simg2img
         - os: ubuntu-22.04
-          pkgs: device-tree-compiler rauc simg2img u-boot-tools f2fs-tools arm-trusted-firmware-tools mdadm
+          pkgs: simg2img
           fake: sudo rm /usr/include/linux/fiemap.h /usr/include/linux/fs.h
           env: ac_cv_func_fallocate=no
         - os: ubuntu-24.04
-          pkgs: device-tree-compiler rauc android-sdk-libsparse-utils u-boot-tools f2fs-tools arm-trusted-firmware-tools mdadm erofs-utils
+          pkgs: android-sdk-libsparse-utils erofs-utils
 
     steps:
     - name: Inspect environment
@@ -29,7 +29,7 @@ jobs:
     - name: Install required packages
       run: |
         sudo apt-get update
-        sudo apt-get install btrfs-progs dosfstools fakeroot genext2fs genisoimage libconfuse-dev mtd-utils mtools qemu-utils qemu-utils squashfs-tools ${{ matrix.pkgs }}
+        sudo apt-get install arm-trusted-firmware-tools btrfs-progs device-tree-compiler dosfstools f2fs-tools fakeroot genext2fs genisoimage libconfuse-dev mdadm mtd-utils mtools qemu-utils qemu-utils rauc squashfs-tools u-boot-tools ${{ matrix.pkgs }}
         ${{ matrix.fake }}
 
     - name: Build & Test (with ${{ matrix.options }})
