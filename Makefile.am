@@ -63,8 +63,9 @@ EXTRA_DIST += \
 	test/custom.config \
 	test/erofs.old.config \
 	test/erofs.new.config \
-	test/erofs.dump.old \
-	test/erofs.dump.new \
+	test/erofs.dump.0 \
+	test/erofs.dump.1 \
+	test/erofs.dump.2 \
 	test/exec-check.sh \
 	test/exec-fail.config \
 	test/exec.config \
@@ -169,10 +170,12 @@ EXTRA_DIST += \
 	test/test.raucb.info.2 \
 	test/test.raucb.info.3 \
 	test/test.raucb.info.4 \
+	test/test.raucb.info.5 \
 	test/test2.raucb.info.1 \
 	test/test2.raucb.info.2 \
 	test/test2.raucb.info.3 \
 	test/test2.raucb.info.4 \
+	test/test2.raucb.info.5 \
 	test/ubi.config \
 	test/ubifs.config \
 	test/verity.config \

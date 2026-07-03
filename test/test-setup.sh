@@ -113,10 +113,16 @@ exec_test_set_prereq() {
 	command -v "${1}" > /dev/null && test_set_prereq "${1/./_}"
 }
 
+version_leq() {
+	first="$(printf "${1}\n${2}" | sort -V | head -n1)"
+	test "${first}" == "${1}"
+}
+
 set -o pipefail
 
 setup_data
 
+exec_test_set_prereq mksquashfs
 sfdisk -h | grep -q gpt && test_set_prereq sfdisk-gpt
 fdisk -h | grep -q gpt && test_set_prereq fdisk-gpt
 # make sure mke2fs supports '-d root-directory'

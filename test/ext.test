@@ -23,11 +23,6 @@ compare_label() {
 	fi
 }
 
-version_leq() {
-	first="$(printf "${1}\n${2}" | sort -V | head -n1)"
-	test "${first}" == "${1}"
-}
-
 check_ext() {
 	[ "$verbose" = "t" ] && set -x
 	# UUID is randomly generated
@@ -42,6 +37,8 @@ check_ext() {
 	# some architectures (including arm64) use unsigned char
 	sed -i 's/un\(signed_directory_hash\)/\1/' "dump" &&
 	if [ "${4}" = "genext2fs" ]; then
+		# genext2fs 1.6.0 added filesystem feature sparse_super unconditionally
+		sed -i -e 's/  sparse_super/  (none)/' -e 's/ sparse_super//' "dump" &&
 		if [ "$(genext2fs --version)" = "genext2fs 1.4.1" ]; then
 			version=0
 		else
