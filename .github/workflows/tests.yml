@@ -16,6 +16,8 @@ jobs:
           env: ac_cv_func_fallocate=no
         - os: ubuntu-24.04
           pkgs: android-sdk-libsparse-utils erofs-utils
+        - os: ubuntu-26.04
+          pkgs: android-sdk-libsparse-utils erofs-utils
 
     steps:
     - name: Inspect environment
