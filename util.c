@@ -818,7 +818,7 @@ char *uuid_random(void)
 {
 	char *uuid;
 
-	xasprintf(&uuid, "%04ux%04ux-%04ux-%04ux-%04ux-%04ux%04ux%04ux",
+	xasprintf(&uuid, "%04x%04x-%04x-%04x-%04x-%04x%04x%04x",
 		  random32() & 0xffff, random32() & 0xffff,
 		  random32() & 0xffff,
 		  (random32() & 0x0fff) | 0x4000,
