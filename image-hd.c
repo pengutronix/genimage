@@ -270,6 +270,8 @@ static const struct gpt_partition_type_shortcut_t gpt_partition_type_shortcuts[]
 	{ "raid"                        , "a19d880f-05fc-4d3b-a006-743f0f84911e" },
 	{ "V"                           , "e6d6d379-f507-44c2-a23c-238f2a3df928" },
 	{ "lvm"                         , "e6d6d379-f507-44c2-a23c-238f2a3df928" },
+	{ "K"                           , "ca7d7ccb-63ed-4c53-861c-1742536059cc" },
+	{ "luks"                        , "ca7d7ccb-63ed-4c53-861c-1742536059cc" },
 	{ "F"                           , "ebd0a0a2-b9e5-4433-87c0-68b6b72699c7" },
 	{ "fat32"                       , "ebd0a0a2-b9e5-4433-87c0-68b6b72699c7" },
 	{ "barebox-state"               , "4778ed65-bf42-45fa-9c5b-287a1dc4aab1" },
