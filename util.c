@@ -938,6 +938,40 @@ unsigned long long image_dir_size(struct image *image)
 	return dir_size(image, AT_FDCWD, mountpath(image), 4096);
 }
 
+unsigned long long image_file_size(struct image *image)
+{
+	long long size = 0;
+	size_t blocksize = 4096;
+	struct partition *part;
+
+	int fd = open(inputpath(), O_RDONLY);
+	list_for_each_entry(part, &image->partitions, list) {
+		struct image *child;
+		if (part->image) {
+			child = image_get(part->image);
+			if (child && child->file) {
+				int fd_child = openat(fd, child->file, O_RDONLY);
+				if (fd_child != -1) {
+					struct stat st;
+					if (fstat(fd_child, &st) != -1) {
+						size_t sz = 0;
+						if S_ISREG(st.st_mode)
+							sz = ROUND_UP(st.st_size, blocksize);
+						else if S_ISDIR(st.st_mode)
+							sz = dir_size(image, fd, child->file, blocksize);
+						else
+							image_info(image, "non-regular file: %s: size not calculated\n", child->file);
+						size += sz;
+					}
+				}
+			}
+		}
+	}
+	close(fd);
+
+	return size;
+}
+
 int parse_holes(struct image *image, cfg_t *cfg)
 {
 	int i;
