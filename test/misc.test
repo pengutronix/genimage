@@ -131,13 +131,25 @@ test_expect_success mdadm "mdraid" "
 	run_genimage_root mdraid.config test.mdraid-a &&
 	LANG=C mdadm --examine images/test.mdraid-a | tee images/test.mdraid-a.txt &&
 	LANG=C mdadm --examine images/test.mdraid-b | tee images/test.mdraid-b.txt &&
+	grep 'Version : 1.2$' images/test.mdraid-a.txt &&
 	grep 'Checksum.*correct$' images/test.mdraid-a.txt &&
 	grep 'State.*active$' images/test.mdraid-a.txt &&
 	grep 'Internal Bitmap.*sectors' images/test.mdraid-a.txt &&
 	grep 'Bad Block Log.*entries available' images/test.mdraid-a.txt &&
 	grep -Ev '(Device UUID|Checksum|Device Role) :' images/test.mdraid-a.txt | tail -n +2 > images/test.mdraid-a.arr.txt &&
 	grep -Ev '(Device UUID|Checksum|Device Role) :' images/test.mdraid-b.txt | tail -n +2 > images/test.mdraid-b.arr.txt &&
-	diff images/test.mdraid-a.arr.txt images/test.mdraid-b.arr.txt
+	diff images/test.mdraid-a.arr.txt images/test.mdraid-b.arr.txt &&
+	LANG=C mdadm --examine images/test.mdraid-1.0-a | tee images/test.mdraid-1.0-a.txt &&
+	LANG=C mdadm --examine images/test.mdraid-1.0-b | tee images/test.mdraid-1.0-b.txt &&
+	grep 'Version : 1.0$' images/test.mdraid-1.0-a.txt &&
+	grep 'Checksum.*correct$' images/test.mdraid-1.0-a.txt &&
+	grep 'State.*active$' images/test.mdraid-1.0-a.txt &&
+	grep 'Internal Bitmap.*sectors' images/test.mdraid-1.0-a.txt &&
+	grep 'Bad Block Log.*entries available' images/test.mdraid-1.0-a.txt &&
+	grep 'Super Offset : 10224 sectors' images/test.mdraid-1.0-a.txt &&
+	grep -Ev '(Device UUID|Checksum|Device Role) :' images/test.mdraid-1.0-a.txt | tail -n +2 > images/test.mdraid-1.0-a.arr.txt &&
+	grep -Ev '(Device UUID|Checksum|Device Role) :' images/test.mdraid-1.0-b.txt | tail -n +2 > images/test.mdraid-1.0-b.arr.txt &&
+	diff images/test.mdraid-1.0-a.arr.txt images/test.mdraid-1.0-b.arr.txt
 "
 
 test_expect_success "custom" "
