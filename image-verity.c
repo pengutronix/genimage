@@ -17,10 +17,14 @@
 #include <confuse.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <limits.h>
+#include <math.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <strings.h>
 #include <unistd.h>
 #include <sys/sendfile.h>
 #include <sys/stat.h>
@@ -31,6 +35,70 @@
 #define VERITY_SIG_KEY	1
 
 static const char *pkcs11_prefix = "pkcs11:";
+
+typedef struct verity_hash_s {
+	const char *name;
+	unsigned int digest_size;
+} verity_hash_alg_t;
+
+static const verity_hash_alg_t verity_hashes[] = {
+	{ .name = "sha256", .digest_size = 32 },
+	{ .name = "sha512", .digest_size = 64 }
+};
+
+static int verity_parse_hash(const char *data, const verity_hash_alg_t **hash)
+{
+	for (size_t i = 0; i < ARRAY_SIZE(verity_hashes); i++) {
+		if (strcmp(verity_hashes[i].name, data) == 0) {
+			if (hash)
+				*hash = &verity_hashes[i];
+			return 0;
+		}
+	}
+
+	return -EINVAL;
+}
+
+enum verity_mode {
+	VERITY_MODE_VERITY_CONCAT,
+	VERITY_MODE_IMAGE_CONCAT,
+	VERITY_MODE_SEPARATED,
+};
+
+static const char *verity_modes[] = {
+	[VERITY_MODE_VERITY_CONCAT] = "verity-concat",
+	[VERITY_MODE_IMAGE_CONCAT] = "image-concat",
+	[VERITY_MODE_SEPARATED] = "separated",
+};
+
+static int verity_parse_mode(const char *data, enum verity_mode *mode)
+{
+	for (enum verity_mode i = 0; i < ARRAY_SIZE(verity_modes); i++) {
+		if (strcasecmp(verity_modes[i], data) == 0) {
+			if (mode)
+				*mode = i;
+
+			return 0;
+		}
+	}
+
+	return -EINVAL;
+}
+
+typedef struct verity_img_s {
+	/* Hash algorithm. Currently supported sha256 and sha512 */
+	const verity_hash_alg_t *hash;
+	/* Data block sizes. Should be 512 byte aligned and <= kernel pagesize */
+	uint32_t data_block_size;
+	uint32_t hash_block_size;
+	/* Image generation mode */
+	enum verity_mode mode;
+	/* JSON manifest file generation */
+	bool manifest;
+	/* FEC parameters */
+	uint8_t fec_roots;
+	bool fec;
+} verity_img_t;
 
 static char *verity_tmp_path(const char *verity, const char *suffix)
 {
@@ -305,8 +373,96 @@ struct image_handler verity_sig_handler = {
 	.opts = verity_sig_opts,
 };
 
+static size_t verity_get_hash_size(struct image *image, size_t data_size, bool superblock)
+{
+	/*
+	 * TODO: improve for further support
+	 * Estimates how many hashes can be fitted in a page assuming sha256
+	 */
+	verity_img_t *ve = image->handler_priv;
+	const double hashes_block = ve->hash_block_size / ve->hash->digest_size;
+	size_t ds, h;
+
+	h = superblock ? 1 : 0;
+	ds = (size_t)ceil((double)data_size / (double)ve->hash_block_size);
+	while (ds > 1) {
+		ds = (size_t)ceil((double)ds / hashes_block);
+		h += ds;
+	}
+
+	return h * ve->hash_block_size;
+}
+
+static ssize_t verity_write_manifest_json(struct image *image, const char *rh,
+					  const char *extra_args, size_t fec_offset, size_t hash_offset)
+{
+	verity_img_t *ve = image->handler_priv;
+	char *manifest_file = NULL;
+	ssize_t size;
+	FILE *json;
+	int ret;
+
+	if (asprintf(&manifest_file, "%s.json", imageoutfile(image)) < 0)
+		return -errno;
+
+	json = fopen(manifest_file, "w+");
+	if (!json) {
+		image_error(image, "Unable to open output: %s\n", manifest_file);
+		ret = -errno;
+		goto out;
+	}
+
+	fputs("{", json);
+	ret = verity_sig_write_json_rh(json, rh);
+	if (ret < 0)
+		goto out;
+
+	fputs(",", json);
+	fprintf(json, "\"dataBlockSize\":%u", ve->data_block_size);
+	fputs(",", json);
+	fprintf(json, "\"hashBlockSize\":%u", ve->hash_block_size);
+	fputs(",", json);
+	fprintf(json, "\"mode\":\"%s\"", verity_modes[ve->mode]);
+	fputs(",", json);
+	fprintf(json, "\"hash\":\"%s\"", ve->hash->name);
+
+	if (hash_offset) {
+		fputs(",", json);
+		fprintf(json, "\"hashOffset\":%ld", hash_offset);
+	}
+
+	if (ve->fec) {
+		fputs(",", json);
+		fprintf(json, "\"fecRoots\":%u", ve->fec_roots);
+		fputs(",", json);
+		fprintf(json, "\"fecOffset\":%ld", fec_offset);
+	}
+
+	if (extra_args) {
+		fputs(",", json);
+		fprintf(json, "\"extraArgs\":\"%s\"", extra_args);
+	}
+
+	fputs("}", json);
+	size = ftell(json);
+
+out:
+	if (ret) {
+		image_error(image, "Error while writing output: %s\n", manifest_file);
+		size = ret;
+	}
+
+	free(manifest_file);
+	fclose(json);
+
+	return size;
+}
+
 static int verity_generate(struct image *image)
 {
+	char *hash_args, *fec_args = NULL, *rh;
+	size_t hash_offset = 0, fec_offset = 0;
+	verity_img_t *ve = image->handler_priv;
 	const char *data, *extraargs;
 	struct partition *part;
 	struct stat sb;
@@ -319,39 +475,179 @@ static int verity_generate(struct image *image)
 	part = list_first_entry(&image->partitions, struct partition, list);
 	data = imageoutfile(image_get(part->image));
 
+	/* Additional options */
 	extraargs = cfg_getstr(image->imagesec, "extraargs");
+	rh = verity_tmp_path(image->file, "root-hash");
 
-	/* As a side-effect of creating the hash tree, request that
-	 * veritysetup emits the resulting root-hash into a file in
-	 * tmppath(), where 'verity-sig' images that reference this
-	 * 'verity' can find it.
-	 */
-	ret = systemp(image, "%s format --root-hash-file '%s' %s '%s' '%s'",
-		      get_opt("veritysetup"),
-		      verity_tmp_path(image->file, "root-hash"),
-		      extraargs ? extraargs : "", data, imageoutfile(image));
-	if (ret)
-		return ret;
-
-	if (stat(imageoutfile(image), &sb))
+	/* Base image metadata is used for various calculations */
+	if (stat(data, &sb))
 		return -errno;
+
+	switch (ve->mode) {
+	case VERITY_MODE_VERITY_CONCAT:
+		ret = asprintf(&hash_args, "--hash %s --hash-block-size %u",
+			       ve->hash->name, ve->hash_block_size);
+		if (ret < 0) {
+			image_error(image, "Error generating hash arguments\n");
+			ret = -errno;
+			goto out;
+		}
+
+		if (ve->fec) {
+			fec_offset = verity_get_hash_size(image, sb.st_size, true);
+			ret = asprintf(&fec_args, "--fec-device %s --fec-roots %u --fec-offset %ld",
+				       imageoutfile(image), ve->fec_roots, fec_offset);
+			if (ret < 0) {
+				image_error(image, "Error generating FEC arguments\n");
+				ret = -errno;
+				goto out;
+			}
+		}
+		break;
+
+	case VERITY_MODE_IMAGE_CONCAT:
+		hash_offset = sb.st_size;
+
+		ret = insert_image(image, image_get(part->image), sb.st_size, 0, 0, 0, cfg_false);
+		if (ret) {
+			image_error(image, "Error copying base image\n");
+			return ret;
+		}
+
+		ret = asprintf(&hash_args, "--hash %s --hash-block-size %u --hash-offset %ld",
+			       ve->hash->name, ve->hash_block_size, hash_offset);
+		if (ret < 0) {
+			image_error(image, "Error generating hash arguments\n");
+			ret = -errno;
+			goto out;
+		}
+
+		if (ve->fec) {
+			fec_offset = verity_get_hash_size(image, sb.st_size, true);
+			fec_offset += hash_offset;
+
+			ret = asprintf(&fec_args, "--fec-device %s --fec-roots %u --fec-offset %ld",
+				       imageoutfile(image), ve->fec_roots, fec_offset);
+			if (ret < 0) {
+				image_error(image, "Error generating FEC arguments\n");
+				ret = -errno;
+				goto out;
+			}
+		}
+		break;
+
+	case VERITY_MODE_SEPARATED:
+		ret = asprintf(&hash_args, "--hash %s --hash-block-size %u",
+			       ve->hash->name, ve->hash_block_size);
+		if (ret < 0) {
+			image_error(image, "Error generating hash arguments\n");
+			ret = -errno;
+			goto out;
+		}
+		if (ve->fec) {
+			ret = asprintf(&fec_args, "--fec-device %s.fec --fec-roots %u",
+				       imageoutfile(image), ve->fec_roots);
+			if (ret < 0) {
+				image_error(image, "Error generating FEC arguments\n");
+				ret = -errno;
+				goto out;
+			}
+		}
+		break;
+
+	default:
+		image_error(image, "Unsupported mode '%s'\n", cfg_getstr(image->imagesec, "mode"));
+		return -EINVAL;
+	}
+
+	// /* As a side-effect of creating the hash tree, request that
+	//  * veritysetup emits the resulting root-hash into a file in
+	//  * tmppath(), where 'verity-sig' images that reference this
+	//  * 'verity' can find it.
+	//  */
+	ret = systemp(image, "%s format --data-block-size %u --root-hash-file '%s' %s %s %s '%s' '%s'",
+		      get_opt("veritysetup"), ve->data_block_size, rh, hash_args,
+		      fec_args ? fec_args : "", extraargs ? extraargs : "",
+		      data, imageoutfile(image));
+	if (ret)
+		goto out;
+
+	if (stat(imageoutfile(image), &sb)) {
+		ret = -errno;
+		goto out;
+	}
 
 	if (image->size && image->size < (unsigned long)sb.st_size) {
 		image_error(image,
 			    "Specified image size (%llu) is too small, generated %ld bytes\n",
 			    image->size, sb.st_size);
-		return -E2BIG;
+		ret = -E2BIG;
+		goto out;
 	}
+
+	if (ve->manifest)
+		verity_write_manifest_json(image, rh, extraargs, fec_offset, hash_offset);
 
 	image_debug(image, "generated %ld bytes\n", sb.st_size);
 	image->size = sb.st_size;
-	return 0;
+
+out:
+	if (hash_args)
+		free(hash_args);
+
+	if (fec_args)
+		free(fec_args);
+
+	free(rh);
+
+	return ret;
 }
 
 static int verity_parse(struct image *image, cfg_t *cfg)
 {
+	verity_img_t *ve = xzalloc(sizeof(verity_img_t));
 	struct partition *part;
 	const char *data;
+
+	image->handler_priv = ve;
+
+	if (verity_parse_mode(cfg_getstr(image->imagesec, "mode"), &ve->mode)) {
+		image_error(image, "Invalid mode '%s'. Supported modes: { verity-concat, image-concat, separated}\n",
+			    cfg_getstr(image->imagesec, "mode"));
+		return -EINVAL;
+	}
+
+	ve->hash_block_size = cfg_getint(image->imagesec, "hash-block-size");
+	if (ve->hash_block_size % 512) {
+		image_error(image, "Hash block size should be aligned to 512 bytes\n");
+		return -EINVAL;
+	}
+
+	ve->data_block_size = cfg_getint(image->imagesec, "data-block-size");
+	if (ve->data_block_size % 512) {
+		image_error(image, "Data block size should be aligned to 512 bytes\n");
+		return -EINVAL;
+	}
+
+	if (verity_parse_hash(cfg_getstr(image->imagesec, "hash"), &ve->hash)) {
+		image_error(image, "Unsupported hash algorithm '%s', Supported hashes: { sha256, sha512 }\n",
+			    cfg_getstr(image->imagesec, "hash"));
+		return -EINVAL;
+	}
+
+	ve->fec_roots = cfg_getint(image->imagesec, "fec-roots");
+	if (ve->fec_roots < 2 || ve->fec_roots > 24) {
+		image_error(image, "Invalid FEC roots '%u' specified. Supported range is [2,24]\n", ve->fec_roots);
+		return -EINVAL;
+	}
+
+	ve->manifest = cfg_getbool(image->imagesec, "manifest");
+
+	ve->fec = cfg_getbool(image->imagesec, "fec");
+	if (ve->fec && ve->data_block_size != ve->hash_block_size) {
+		image_error(image, "When FEC is enabled, data and hash block sizes must mach\n");
+		return -EINVAL;
+	}
 
 	data = cfg_getstr(image->imagesec, "image");
 	if (!data) {
@@ -362,13 +658,19 @@ static int verity_parse(struct image *image, cfg_t *cfg)
 	part = xzalloc(sizeof(*part));
 	part->image = data;
 	list_add_tail(&part->list, &image->partitions);
-
 	return 0;
 }
 
 static cfg_opt_t verity_opts[] = {
 	CFG_STR("image", NULL, CFGF_NONE),
 	CFG_STR("extraargs", NULL, CFGF_NONE),
+	CFG_BOOL("manifest", cfg_false, CFGF_NONE),
+	CFG_STR("mode", "separated", CFGF_NONE),
+	CFG_STR("hash", "sha256", CFGF_NONE),
+	CFG_INT("hash-block-size", 4096, CFGF_NONE),
+	CFG_INT("data-block-size", 4096, CFGF_NONE),
+	CFG_BOOL("fec", cfg_false, CFGF_NONE),
+	CFG_INT("fec-roots", 8, CFGF_NONE),
 	CFG_END()
 };
 
