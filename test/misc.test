@@ -143,7 +143,9 @@ test_expect_success mdadm "mdraid" "
 test_expect_success "custom" "
 	run_genimage custom.config test.custom &&
 	echo 'Hello genimage!' > images/test.custom.expect &&
-	test_cmp images/test.custom.expect images/test.custom
+	od -x images/test.custom.expect > images/test-dep.custom.expect &&
+	test_cmp images/test.custom.expect images/test.custom &&
+	test_cmp images/test-dep.custom.expect images/test-dep.custom
 "
 
 test_expect_success "pipefail" "
