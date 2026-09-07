@@ -309,6 +309,27 @@ variable $IMAGEOUTFILE. It can be used directly in the ``exec`` command.
 For more variables and pitfalls when using them, see the `Environment
 Variables`_ section below.
 
+If you need to run your command based on another image made by genimage,
+you can refer to $OUTPUTPATH and even add it as partition to ensure
+proper dependency ordering::
+
+  image test-dep.custom {
+	custom {
+		exec = 'od -x "${OUTPUTPATH}"/test.custom > "${IMAGEOUTFILE}"'
+	}
+	partition dependecy1 {
+		image = "test.custom"
+	}
+  }
+
+  image test.custom {
+	custom {
+		exec = 'echo "Hello genimage!" > "${IMAGEOUTFILE}"'
+	}
+  }
+
+This will ensure `test.custom` is built before `test-dep.custom`
+
 erofs
 ******
 Generates erofs images.
