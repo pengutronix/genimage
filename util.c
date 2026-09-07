@@ -817,13 +817,18 @@ void uuid_parse(const char *str, unsigned char *uuid)
 char *uuid_random(void)
 {
 	char *uuid;
+	uint32_t d[8];
+	int i;
 
-	xasprintf(&uuid, "%04ux%04ux-%04ux-%04ux-%04ux-%04ux%04ux%04ux",
-		  random32() & 0xffff, random32() & 0xffff,
-		  random32() & 0xffff,
-		  (random32() & 0x0fff) | 0x4000,
-		  (random32() & 0x3fff) | 0x8000,
-		  random32() & 0xffff, random32() & 0xffff, random32() & 0xffff);
+	for (i = 0; i < 8; ++i)
+		d[i] = random32();
+
+	xasprintf(&uuid, "%04x%04x-%04x-%04x-%04x-%04x%04x%04x",
+		  d[7] & 0xffff, d[6] & 0xffff,
+		  d[5] & 0xffff,
+		  (d[4] & 0x0fff) | 0x4000,
+		  (d[3] & 0x3fff) | 0x8000,
+		  d[2] & 0xffff, d[1] & 0xffff, d[0] & 0xffff);
 
 	return uuid;
 }
