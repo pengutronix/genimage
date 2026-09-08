@@ -21,6 +21,7 @@
 #include <errno.h>
 #include <getopt.h>
 #include <unistd.h>
+#include <limits.h>
 
 #include "genimage.h"
 
@@ -279,7 +280,18 @@ static char *abspath(const char *path)
 	if (*path == '/')
 		return strdup(path);
 
+#ifdef __GLIBC__
+	/* Use GNU extension on Linux */
 	xasprintf(&p, "%s/%s", get_current_dir_name(), path);
+#else
+	/* Use POSIX standard for macOS/BSD */
+	char cwd[PATH_MAX];
+	if (getcwd(cwd, sizeof(cwd)) == NULL) {
+		fprintf(stderr, "getcwd failed: %s\n", strerror(errno));
+		return NULL;
+	}
+	xasprintf(&p, "%s/%s", cwd, path);
+#endif
 
 	return p;
 }

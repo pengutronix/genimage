@@ -34,9 +34,14 @@
 #include <string.h>
 #include <time.h>
 #include <errno.h>
+
+#ifdef __linux__
 #include <linux/raid/md_p.h>
+#endif
 
 #include "genimage.h"
+
+#ifdef __linux__
 
 #define DATA_OFFSET_SECTORS (2048)
 #define DATA_OFFSET_BYTES   (DATA_OFFSET_SECTORS * 512)
@@ -486,3 +491,48 @@ struct image_handler mdraid_handler = {
 	.generate = mdraid_generate,
 	.opts = mdraid_opts,
 };
+
+#else /* !__linux__ */
+
+/* Stub implementation for non-Linux systems */
+static int mdraid_parse(struct image *image, cfg_t *cfg)
+{
+	image_error(image, "MDRAID is only supported on Linux\n");
+	return -1;
+}
+
+static int mdraid_generate(struct image *image)
+{
+	image_error(image, "MDRAID is only supported on Linux\n");
+	return -1;
+}
+
+static int mdraid_setup(struct image *image, cfg_t *cfg)
+{
+	image_error(image, "MDRAID is only supported on Linux\n");
+	return -1;
+}
+
+static cfg_opt_t mdraid_opts[] = {
+	CFG_STR("label", "any:42", CFGF_NONE),
+	CFG_INT("level", 1, CFGF_NONE),
+	CFG_INT("devices", 1, CFGF_NONE),
+	CFG_INT("role", -1, CFGF_NONE),
+	CFG_INT("timestamp", -1, CFGF_NONE),
+	CFG_STR("raid-uuid", NULL, CFGF_NONE),
+	CFG_STR("disk-uuid", NULL, CFGF_NONE),
+	CFG_STR("image", NULL, CFGF_NONE),
+	CFG_STR("parent", NULL, CFGF_NONE),
+	CFG_END()
+};
+
+struct image_handler mdraid_handler = {
+	.type = "mdraid",
+	.no_rootpath = cfg_true,
+	.parse = mdraid_parse,
+	.setup = mdraid_setup,
+	.generate = mdraid_generate,
+	.opts = mdraid_opts,
+};
+
+#endif /* __linux__ */
