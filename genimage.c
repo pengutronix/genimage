@@ -177,7 +177,10 @@ static int image_setup(struct image *image)
 	image->seen = -1;
 
 	if (image->size_is_percent) {
-		image->size = image_dir_size(image) * image->size / 100;
+		unsigned long long alignment = 1024ULL * 1024ULL;	// align to the next MiB
+		unsigned long long size = image_dir_size(image) + image_file_size(image);
+		size = size * image->size / 100ULL;
+		image->size = ((size + alignment) / alignment) * alignment;
 		image->size_is_percent = cfg_false;
 	}
 

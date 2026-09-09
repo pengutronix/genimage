@@ -219,6 +219,7 @@ void uuid_parse(const char *str, unsigned char *uuid);
 char *uuid_random(void);
 
 unsigned long long image_dir_size(struct image *image);
+unsigned long long image_file_size(struct image *image);
 
 uint32_t crc32(const void *data, size_t len);
 uint32_t crc32_next(const void *data, size_t len, uint32_t last_crc);
