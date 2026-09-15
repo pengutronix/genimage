@@ -208,15 +208,20 @@ void debug(const char *fmt, ...)
 
 static int fsync_close(struct image *image, int fd)
 {
-	int a, b;
+	int ret = 0;
 
-	a = fsync(fd);
-	if (a)
-		image_error(image, "fsync() failed: %s\n", strerror(errno));
-	b = close(fd);
-	if (b)
-		image_error(image, "close() failed: %s\n", strerror(errno));
-	return (a || b) ? -1 : 0;
+	if (fsync(fd) < 0) {
+		ret = -errno;
+		image_error(image, "fsync() failed: %s\n", strerror(-ret));
+	}
+	if (close(fd) < 0) {
+		int close_ret = -errno;
+
+		image_error(image, "close() failed: %s\n", strerror(-close_ret));
+		if (!ret)
+			ret = close_ret;
+	}
+	return ret;
 }
 
 /*
@@ -694,7 +699,7 @@ int insert_data(struct image *image, const void *_data, const char *outfile,
 {
 	const char *data = _data;
 	int outf = -1;
-	int now, r;
+	ssize_t written;
 	int ret = 0;
 
 	outf = open_file(image, outfile, 0);
@@ -707,19 +712,29 @@ int insert_data(struct image *image, const void *_data, const char *outfile,
 		goto err_out;
 	}
 	while (size) {
-		now = min(size, 4096);
+		size_t now = min(size, (size_t)4096);
 
-		r = write(outf, data, now);
-		if (r < now) {
+		do {
+			written = write(outf, data, now);
+		} while (written < 0 && errno == EINTR);
+
+		if (written < 0) {
 			ret = -errno;
-			image_error(image, "write %s: %s\n", outfile, strerror(errno));
+			image_error(image, "write %s: %s\n", outfile, strerror(-ret));
 			goto err_out;
 		}
-		size -= now;
-		data += now;
+		if (written == 0) {
+			ret = -EIO;
+			image_error(image, "short write to %s\n", outfile);
+			goto err_out;
+		}
+		size -= written;
+		data += written;
 	}
 err_out:
-	fsync_close(image, outf);
+	written = fsync_close(image, outf);
+	if (!ret && written < 0)
+		ret = written;
 
 	return ret;
 }
