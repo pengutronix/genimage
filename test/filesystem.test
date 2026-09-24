@@ -75,6 +75,15 @@ test_expect_success dd,mkdosfs,mcopy "vfat" "
 	check_filelist
 "
 
+test_expect_success dd,mkdosfs,mcopy "vfat hidden files" "
+	mkdir -p hidden.orig/.hidden-dir &&
+	touch hidden.orig/visible hidden.orig/.hidden-file hidden.orig/.hidden-dir/nested &&
+	root=hidden.orig run_genimage_impl vfat.config &&
+	MTOOLS_SKIP_CHECK=1 mdir -/ -f -b -i images/test.vfat / | sed -e 's;^::/;;' -e 's;/\$;;' | sort > actual &&
+	printf '.hidden-dir\n.hidden-dir/nested\n.hidden-file\nvisible\n' | sort > expected &&
+	test_cmp expected actual
+"
+
 prepare_erofs() {
 	erofs_version="$(mkfs.erofs --version | sed -n 's/^mkfs.erofs.* \(.*\)/\1/p')"
 	config=erofs.new.config
