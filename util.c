@@ -936,11 +936,38 @@ static unsigned long long dir_size(struct image *image, int dirfd,
 	return size + blocksize;
 }
 
-unsigned long long image_dir_size(struct image *image)
+unsigned long long image_dir_size(struct image *image, const char *subdir)
+{
+	return dir_size(image, AT_FDCWD, subdir, 4096);
+}
+
+unsigned long long image_mountpath_size(struct image *image)
 {
 	if (image->empty)
 		return 0;
-	return dir_size(image, AT_FDCWD, mountpath(image), 4096);
+	const char *mnt = mountpath(image);
+	if (! mnt[0])
+		return 0;
+	return image_dir_size(image, mnt);
+}
+
+unsigned long long image_file_size(struct image *image)
+{
+	unsigned long long size = 0;
+	unsigned blocksize = 4096;
+	struct partition *part;
+
+	list_for_each_entry(part, &image->partitions, list) {
+		struct image *child;
+		if (part->image) {
+			child = image_get(part->image);
+			if (child) {
+				size += ROUND_UP(child->size, blocksize);
+			}
+		}
+	}
+
+	return size;
 }
 
 int parse_holes(struct image *image, cfg_t *cfg)
