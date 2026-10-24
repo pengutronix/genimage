@@ -455,7 +455,7 @@ static struct config opts[] = {
 	},
 	{
 		.name = "mkfsbtrfs",
-		.opt = CFG_STR("mkfsfbtrfs", NULL, CFGF_NONE),
+		.opt = CFG_STR("mkfsbtrfs", NULL, CFGF_NONE),
 		.env = "GENIMAGE_MKFSBTRFS",
 		.def = "mkfs.btrfs",
 	},

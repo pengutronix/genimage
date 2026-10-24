@@ -355,6 +355,15 @@ Options:
 :label:			Specify the volume-label.
 :extraargs:		Extra arguments passed to mkfs.f2fs
 
+btrfs
+****
+Generates btrfs images.
+
+Options:
+
+:label:			Specify the volume-label.
+:extraargs:		Extra arguments passed to mkfs.btrfs
+
 file
 ****
 
@@ -827,6 +836,7 @@ variable.
 :mkdosfs:	path to the mkdosfs program (default mkdosfs)
 :mkfserofs:	path to the mkfs.erofs program (default mkfs.erofs)
 :mkfsf2fs:	path to the mkfs.f2fs program (default mkfs.f2fs)
+:mkfsbtrfs:	path to the mkfs.btrfs program (default mkfs.btrfs)
 :mkfsjffs2:	path to the mkfs.jffs2 program (default mkfs.jffs2)
 :mkfsubifs:	path to the mkfs.ubifs program (default mkfs.ubifs)
 :mksquashfs:	path to the mksquashfs program (default mksquashfs)
