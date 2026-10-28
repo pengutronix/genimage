@@ -130,9 +130,9 @@ static void lba_to_chs(unsigned int lba, unsigned char *chs)
 static void hdimage_setup_chs(struct mbr_partition_entry *entry,
 			      unsigned long long offset_sectors)
 {
-	lba_to_chs(entry->relative_sectors + offset_sectors,
+	lba_to_chs(le32toh(entry->relative_sectors) + offset_sectors,
 		   entry->first_chs);
-	lba_to_chs(entry->relative_sectors + entry->total_sectors - 1 + offset_sectors,
+	lba_to_chs(le32toh(entry->relative_sectors) + le32toh(entry->total_sectors) - 1 + offset_sectors,
 		   entry->last_chs);
 }
 
@@ -150,7 +150,8 @@ static int hdimage_insert_mbr(struct image *image, struct list_head *partitions)
 	}
 
 	memset(&mbr, 0, sizeof(mbr));
-	memcpy(&mbr.disk_signature, &hd->disksig, sizeof(hd->disksig));
+    uint32_t tmp_disksig = htole32(hd->disksig);
+	memcpy(&mbr.disk_signature, &tmp_disksig, sizeof(tmp_disksig));
 
 	list_for_each_entry(part, partitions, list) {
 		struct mbr_partition_entry *entry;
@@ -165,8 +166,8 @@ static int hdimage_insert_mbr(struct image *image, struct list_head *partitions)
 
 		entry->boot = part->bootable ? 0x80 : 0x00;
 		entry->partition_type = part->partition_type;
-		entry->relative_sectors = part->offset / 512;
-		entry->total_sectors = part->size / 512;
+		entry->relative_sectors = htole32(part->offset / 512);
+		entry->total_sectors = htole32(part->size / 512);
 		hdimage_setup_chs(entry, 0);
 
 		image_debug(image, "[MBR entry %d]: type=%x start=%d size=%d\n",
@@ -184,8 +185,8 @@ static int hdimage_insert_mbr(struct image *image, struct list_head *partitions)
 		entry->boot = 0x00;
 
 		entry->partition_type = 0xee;
-		entry->relative_sectors = 1;
-		entry->total_sectors = hd->gpt_location / 512 + GPT_SECTORS - 2;
+		entry->relative_sectors = htole32(1);
+		entry->total_sectors = htole32(hd->gpt_location / 512 + GPT_SECTORS - 2);
 
 		hdimage_setup_chs(entry, 0);
 	}
@@ -221,8 +222,8 @@ static int hdimage_insert_ebr(struct image *image, struct partition *part)
 
 	entry->boot = 0x00;
 	entry->partition_type = part->partition_type;
-	entry->relative_sectors = hd->align / 512;
-	entry->total_sectors = part->size / 512;
+	entry->relative_sectors = htole32(hd->align / 512);
+	entry->total_sectors = htole32(part->size / 512);
 	// absolute CHS address of the logical partition
 	// equals to absolute partition offset
 	hdimage_setup_chs(entry, (part->offset - hd->align) / 512);
@@ -233,8 +234,8 @@ static int hdimage_insert_ebr(struct image *image, struct partition *part)
 		++entry;
 		entry->boot = 0x00;
 		entry->partition_type = PARTITION_TYPE_EXTENDED;
-		entry->relative_sectors = (p->offset - hd->align - hd->extended_partition->offset) / 512;
-		entry->total_sectors = (p->size + hd->align) / 512;
+		entry->relative_sectors = htole32((p->offset - hd->align - hd->extended_partition->offset) / 512);
+		entry->total_sectors = htole32((p->size + hd->align) / 512);
 		// absolute CHS address of the next EBR
 		// equals to relative address within extended partition + partition start
 		hdimage_setup_chs(entry, hd->extended_partition->offset / 512);
