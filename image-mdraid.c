@@ -120,6 +120,7 @@ typedef struct mdraid_img_s {
 	struct image *img_parent;
 	/* Actual mdraid superblock that is gonna be stored on disk */
 	struct mdp_superblock_1 *sb;
+	size_t superblock_size;
 	/* Actual bitmap superblock that is gonna be stored on disk */
 	bitmap_super_t bsb;
 	/* This is counter used by slave devices to take roles */
@@ -228,12 +229,6 @@ static int mdraid_setup(struct image *image, cfg_t *cfg)
 		return 4;
 	}
 
-	return 0;
-}
-
-static int mdraid_generate(struct image *image)
-{
-	mdraid_img_t *md = image->handler_priv;
 	/* Inheriting from this parent if not NULL */
 	mdraid_img_t *mdp = NULL;
 	__le16 max_devices;
@@ -272,13 +267,13 @@ static int mdraid_generate(struct image *image)
 	}
 
 	/* MD Superblock and Bitmap Superblock */
-	size_t superblock_size = sizeof(struct mdp_superblock_1) + max_devices * 2;
-	struct mdp_superblock_1 *sb = md->sb = xzalloc(superblock_size);
+	md->superblock_size = sizeof(struct mdp_superblock_1) + max_devices * 2;
+	struct mdp_superblock_1 *sb = md->sb = xzalloc(md->superblock_size);
 	bitmap_super_t *bsb = &md->bsb;
 
 	if (mdp) {
 		/* We are inheriting the superblock in this case */
-		memcpy(md->sb, mdp->sb, superblock_size);
+		memcpy(md->sb, mdp->sb, md->superblock_size);
 		//memcpy(&md->bsb, &mdp->bsb, sizeof(bitmap_super_t));
 	} else {
 		/* We are not inheriting superblock, therefore we need to fully initialize the array */
@@ -437,13 +432,22 @@ static int mdraid_generate(struct image *image)
 		bsb->sectors_reserved = roundup(bsb->sync_size / bsb->chunksize, 8);
 	}
 
+	return 0;
+}
+
+static int mdraid_generate(struct image *image)
+{
+	mdraid_img_t *md = image->handler_priv;
+	struct mdp_superblock_1 *sb = md->sb;
+	bitmap_super_t *bsb = &md->bsb;
+
 	/* Construct image file */
 	int ret;
 	ret = prepare_image(image, image->size);
 	if (ret)
 		return ret;
 	/* Write superblock */
-	ret = insert_data(image, sb, imageoutfile(image), superblock_size, sb->super_offset * 512);
+	ret = insert_data(image, sb, imageoutfile(image), md->superblock_size, sb->super_offset * 512);
 	if (ret)
 		return ret;
 	/* Write bitmap */
