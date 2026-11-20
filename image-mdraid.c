@@ -399,12 +399,27 @@ static int mdraid_parse(struct image *image, cfg_t *cfg)
 		return 1;
 	}
 
-	/* Inherit config from parent */
+	/* Register dependencies only; config/inheritance happens in setup() */
 	md->img_parent_part.image = cfg_getstr(image->imagesec, "parent");
 	if (md->img_parent_part.image) {
 		/* Add parent partition as dependency (so it's built first) */
 		list_add_tail(&md->img_parent_part.list, &image->partitions);
+	} else {
+		/* Add data partition as dependency (so it's built first) */
+		md->img_data_part.image = cfg_getstr(image->imagesec, "image");
+		if (md->img_data_part.image)
+			list_add_tail(&md->img_data_part.list, &image->partitions);
+	}
 
+	return 0;
+}
+
+static int mdraid_setup(struct image *image, cfg_t *cfg)
+{
+	mdraid_img_t *md = image->handler_priv;
+
+	/* Resolve parent and inherit array-wide configuration */
+	if (md->img_parent_part.image) {
 		/* Find parent image */
 		md->img_parent = image_get(md->img_parent_part.image);
 		if (!md->img_parent) {
@@ -417,26 +432,9 @@ static int mdraid_parse(struct image *image, cfg_t *cfg)
 		image_info(image, "MDRAID will inherit array metadata config from parent: %s\n",
 			   md->img_parent->file);
 		image->size = md->img_parent->size;
-	}
-
-	/* Find data partition to be put inside the array */
-	if (md->img_parent) {
+		/* Data image is set up via the parent dependency chain */
 		md->img_data_part.image = cfg_getstr(md->img_parent->imagesec, "image");
-	} else {
-		md->img_data_part.image = cfg_getstr(image->imagesec, "image");
 	}
-
-	/* Add data partition as dependency (so it's built first) */
-	if (md->img_data_part.image) {
-		list_add_tail(&md->img_data_part.list, &image->partitions);
-	}
-
-	return 0;
-}
-
-static int mdraid_setup(struct image *image, cfg_t *cfg)
-{
-	mdraid_img_t *md = image->handler_priv;
 
 	/* Find data image and its metadata if data partition exists */
 	if (md->img_data_part.image) {
