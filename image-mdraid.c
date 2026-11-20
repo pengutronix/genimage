@@ -151,6 +151,86 @@ static unsigned int calc_sb_1_csum(struct mdp_superblock_1 *sb)
 	return __cpu_to_le32(csum);
 }
 
+static int mdraid_parse(struct image *image, cfg_t *cfg)
+{
+	mdraid_img_t *md = xzalloc(sizeof(mdraid_img_t));
+	image->handler_priv = md;
+
+	/* Common MDRAID subsystem init */
+	if (!mdraid_time)
+		mdraid_time = time(NULL);
+
+	/* Sanity checks */
+	int raid_level = cfg_getint(image->imagesec, "level");
+	if (raid_level != 1) {
+		image_error(image, "MDRAID Currently only supporting raid level 1 (mirror)!\n");
+		return 1;
+	}
+
+	/* Register dependencies only; config/inheritance happens in setup() */
+	md->img_parent_part.image = cfg_getstr(image->imagesec, "parent");
+	if (md->img_parent_part.image) {
+		/* Add parent partition as dependency (so it's built first) */
+		list_add_tail(&md->img_parent_part.list, &image->partitions);
+	} else {
+		/* Add data partition as dependency (so it's built first) */
+		md->img_data_part.image = cfg_getstr(image->imagesec, "image");
+		if (md->img_data_part.image)
+			list_add_tail(&md->img_data_part.list, &image->partitions);
+	}
+
+	return 0;
+}
+
+static int mdraid_setup(struct image *image, cfg_t *cfg)
+{
+	mdraid_img_t *md = image->handler_priv;
+
+	/* Resolve parent and inherit array-wide configuration */
+	if (md->img_parent_part.image) {
+		/* Find parent image */
+		md->img_parent = image_get(md->img_parent_part.image);
+		if (!md->img_parent) {
+			image_error(image, "MDRAID cannot find parent image to inherit metadata config from: %s\n",
+				    md->img_parent_part.image);
+			return 9;
+		}
+
+		/* Inherit image size from parent */
+		image_info(image, "MDRAID will inherit array metadata config from parent: %s\n",
+			   md->img_parent->file);
+		image->size = md->img_parent->size;
+		/* Data image is set up via the parent dependency chain */
+		md->img_data_part.image = cfg_getstr(md->img_parent->imagesec, "image");
+	}
+
+	/* Find data image and its metadata if data partition exists */
+	if (md->img_data_part.image) {
+		image_info(image, "MDRAID using data from: %s\n", md->img_data_part.image);
+		md->img_data = image_get(md->img_data_part.image);
+		if (!md->img_data) {
+			image_error(image, "MDRAID cannot get image definition: %s\n", md->img_data_part.image);
+			return 8;
+		}
+		if (image->size == 0)
+			image->size = roundup(md->img_data->size + DATA_OFFSET_BYTES, MDRAID_ALIGN_BYTES);
+		if (image->size < (md->img_data->size + DATA_OFFSET_BYTES)) {
+			image_error(image, "MDRAID image too small to fit %s\n", md->img_data->file);
+			return 3;
+		}
+	} else {
+		image_info(image, "MDRAID is created without data.\n");
+	}
+
+	/* Make sure size is aligned */
+	if (image->size != roundup(image->size, MDRAID_ALIGN_BYTES)) {
+		image_error(image, "MDRAID image size has to be aligned to %d bytes!\n", MDRAID_ALIGN_BYTES);
+		return 4;
+	}
+
+	return 0;
+}
+
 static int mdraid_generate(struct image *image)
 {
 	mdraid_img_t *md = image->handler_priv;
@@ -378,86 +458,6 @@ static int mdraid_generate(struct image *image)
 		ret = insert_image(image, md->img_data, md->img_data->size, DATA_OFFSET_BYTES, 0, 0, cfg_true);
 		if (ret)
 			return ret;
-	}
-
-	return 0;
-}
-
-static int mdraid_parse(struct image *image, cfg_t *cfg)
-{
-	mdraid_img_t *md = xzalloc(sizeof(mdraid_img_t));
-	image->handler_priv = md;
-
-	/* Common MDRAID subsystem init */
-	if (!mdraid_time)
-		mdraid_time = time(NULL);
-
-	/* Sanity checks */
-	int raid_level = cfg_getint(image->imagesec, "level");
-	if (raid_level != 1) {
-		image_error(image, "MDRAID Currently only supporting raid level 1 (mirror)!\n");
-		return 1;
-	}
-
-	/* Register dependencies only; config/inheritance happens in setup() */
-	md->img_parent_part.image = cfg_getstr(image->imagesec, "parent");
-	if (md->img_parent_part.image) {
-		/* Add parent partition as dependency (so it's built first) */
-		list_add_tail(&md->img_parent_part.list, &image->partitions);
-	} else {
-		/* Add data partition as dependency (so it's built first) */
-		md->img_data_part.image = cfg_getstr(image->imagesec, "image");
-		if (md->img_data_part.image)
-			list_add_tail(&md->img_data_part.list, &image->partitions);
-	}
-
-	return 0;
-}
-
-static int mdraid_setup(struct image *image, cfg_t *cfg)
-{
-	mdraid_img_t *md = image->handler_priv;
-
-	/* Resolve parent and inherit array-wide configuration */
-	if (md->img_parent_part.image) {
-		/* Find parent image */
-		md->img_parent = image_get(md->img_parent_part.image);
-		if (!md->img_parent) {
-			image_error(image, "MDRAID cannot find parent image to inherit metadata config from: %s\n",
-				    md->img_parent_part.image);
-			return 9;
-		}
-
-		/* Inherit image size from parent */
-		image_info(image, "MDRAID will inherit array metadata config from parent: %s\n",
-			   md->img_parent->file);
-		image->size = md->img_parent->size;
-		/* Data image is set up via the parent dependency chain */
-		md->img_data_part.image = cfg_getstr(md->img_parent->imagesec, "image");
-	}
-
-	/* Find data image and its metadata if data partition exists */
-	if (md->img_data_part.image) {
-		image_info(image, "MDRAID using data from: %s\n", md->img_data_part.image);
-		md->img_data = image_get(md->img_data_part.image);
-		if (!md->img_data) {
-			image_error(image, "MDRAID cannot get image definition: %s\n", md->img_data_part.image);
-			return 8;
-		}
-		if (image->size == 0)
-			image->size = roundup(md->img_data->size + DATA_OFFSET_BYTES, MDRAID_ALIGN_BYTES);
-		if (image->size < (md->img_data->size + DATA_OFFSET_BYTES)) {
-			image_error(image, "MDRAID image too small to fit %s\n", md->img_data->file);
-			return 3;
-		}
-	} else {
-		image_info(image, "MDRAID is created without data.\n");
-	}
-
-	/* Make sure size is aligned */
-	if (image->size != roundup(image->size, MDRAID_ALIGN_BYTES)) {
-		image_error(image, "MDRAID image size has to be aligned to %d bytes!\n", MDRAID_ALIGN_BYTES);
-		return 4;
 	}
 
 	return 0;
