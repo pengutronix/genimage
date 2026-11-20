@@ -200,10 +200,8 @@ static int mdraid_parse(struct image *image, cfg_t *cfg)
 	/* Register dependencies only; config/inheritance happens in setup() */
 	md->img_parent_part.image = cfg_getstr(image->imagesec, "parent");
 	if (md->img_parent_part.image) {
-		/* Add parent partition as dependency (so it's built first) */
 		list_add_tail(&md->img_parent_part.list, &image->partitions);
 	} else {
-		/* Add data partition as dependency (so it's built first) */
 		md->img_data_part.image = cfg_getstr(image->imagesec, "image");
 		if (md->img_data_part.image)
 			list_add_tail(&md->img_data_part.list, &image->partitions);
@@ -215,10 +213,17 @@ static int mdraid_parse(struct image *image, cfg_t *cfg)
 static int mdraid_setup(struct image *image, cfg_t *cfg)
 {
 	mdraid_img_t *md = image->handler_priv;
+	mdraid_img_t *mdp = NULL;
+	__le16 max_devices;
+	__le16 role;
+	struct mdp_superblock_1 *sb;
+	bitmap_super_t *bsb = &md->bsb;
+	__le16 *dev_roles;
+	char *disk_uuid;
+	int i;
 
 	/* Resolve parent and inherit array-wide configuration */
 	if (md->img_parent_part.image) {
-		/* Find parent image */
 		md->img_parent = image_get(md->img_parent_part.image);
 		if (!md->img_parent) {
 			image_error(image, "MDRAID cannot find parent image to inherit metadata config from: %s\n",
@@ -226,19 +231,22 @@ static int mdraid_setup(struct image *image, cfg_t *cfg)
 			return 9;
 		}
 
-		/* Inherit image size from parent */
+		mdp = md->img_parent->handler_priv;
 		image_info(image, "MDRAID will inherit array metadata config from parent: %s\n",
 			   md->img_parent->file);
 		image->size = md->img_parent->size;
+		max_devices = mdp->sb->raid_disks;
 		/* Data image is set up via the parent dependency chain */
 		md->img_data_part.image = cfg_getstr(md->img_parent->imagesec, "image");
+	} else {
+		max_devices = cfg_getint(image->imagesec, "devices");
 	}
 
 	/* Sets reserve_sectors (and full layout if size is already known) */
 	if (mdraid_calc_layout(image))
 		return 1;
 
-	/* Find data image and its metadata if data partition exists */
+	/* Prepare data */
 	if (md->img_data_part.image) {
 		image_info(image, "MDRAID using data from: %s\n", md->img_data_part.image);
 		md->img_data = image_get(md->img_data_part.image);
@@ -256,7 +264,7 @@ static int mdraid_setup(struct image *image, cfg_t *cfg)
 		image_info(image, "MDRAID is created without data.\n");
 	}
 
-	/* Make sure size is aligned */
+	/* Check alignment */
 	if (image->size != roundup(image->size, MDRAID_ALIGN_BYTES)) {
 		image_error(image, "MDRAID image size has to be aligned to %d bytes!\n", MDRAID_ALIGN_BYTES);
 		return 4;
@@ -266,29 +274,13 @@ static int mdraid_setup(struct image *image, cfg_t *cfg)
 	if (mdraid_calc_layout(image))
 		return 1;
 
-	/* Inheriting from this parent if not NULL */
-	mdraid_img_t *mdp = NULL;
-	__le16 max_devices;
-
-	/* Determine max_devices while considering possibility of inheritance from other image */
-	if (md->img_parent) {
-		mdp = md->img_parent->handler_priv;
-		max_devices = mdp->sb->raid_disks;
-	} else {
-		max_devices = cfg_getint(image->imagesec, "devices");
-	}
-
 	/* Determine role of this device in array */
-	__le16 role = cfg_getint(image->imagesec, "role");
+	role = cfg_getint(image->imagesec, "role");
 	if (cfg_getint(image->imagesec, "role") == -1) {
-		/* If role is -1 it should be autoassigned to parenting devices */
-		if (mdp) {
-			/* Take role from master and increment its counter */
+		if (mdp)
 			role = ++mdp->last_role;
-		} else {
-			/* Master has role of 0 */
+		else
 			role = 0;
-		}
 		image_info(image, "MDRAID automaticaly assigned role %d.\n", role);
 	}
 
@@ -303,167 +295,82 @@ static int mdraid_setup(struct image *image, cfg_t *cfg)
 		return 5;
 	}
 
-	/* MD Superblock and Bitmap Superblock */
+	/* Build MD superblock and bitmap superblock */
 	md->superblock_size = sizeof(struct mdp_superblock_1) + max_devices * 2;
-	struct mdp_superblock_1 *sb = md->sb = xzalloc(md->superblock_size);
-	bitmap_super_t *bsb = &md->bsb;
+	sb = md->sb = xzalloc(md->superblock_size);
 
 	if (mdp) {
-		/* We are inheriting the superblock in this case */
 		memcpy(md->sb, mdp->sb, md->superblock_size);
-		//memcpy(&md->bsb, &mdp->bsb, sizeof(bitmap_super_t));
 	} else {
-		/* We are not inheriting superblock, therefore we need to fully initialize the array */
-
 		char *name = cfg_getstr(image->imagesec, "label");
+		char *raid_uuid = cfg_getstr(image->imagesec, "raid-uuid");
+		long int timestamp = cfg_getint(image->imagesec, "timestamp");
 
 		/* constant array information - 128 bytes */
-		/* MD_SB_MAGIC: 0xa92b4efc - little endian. */
 		sb->magic = MD_SB_MAGIC;
-		/* Always 1 for 1.xx metadata version :-) */
 		sb->major_version = 1;
-		/* bit 0 set if 'bitmap_offset' is meaningful */
 		sb->feature_map = MD_FEATURE_BITMAP_OFFSET;
-		/* always set to 0 when writing */
 		sb->pad0 = 0;
 
-		char *raid_uuid = cfg_getstr(image->imagesec, "raid-uuid");
 		if (!raid_uuid)
 			raid_uuid = uuid_random();
-		/* user-space generated. U8[16] */
 		uuid_parse(raid_uuid, sb->set_uuid);
 
 		strncpy(sb->set_name, name, 32);
-		/* set and interpreted by user-space. CHAR[32] */
 		sb->set_name[31] = 0;
 
-		long int timestamp = cfg_getint(image->imagesec, "timestamp");
-		if (timestamp >= 0) {
+		if (timestamp >= 0)
 			sb->ctime = timestamp & 0xffffffffff;
-		} else {
-			/* lo 40 bits are seconds, top 24 are microseconds or 0 */
+		else
 			sb->ctime = mdraid_time & 0xffffffffff;
-		}
 
-		/* -4 (multipath), -1 (linear), 0,1,4,5 */
 		sb->level = 1;
-		/* only for raid5 and raid10 currently */
-		// sb->layout;
-		/* used size of component devices, in 512byte sectors */
-		sb->size = md->data_size;
-
-		/* in 512byte sectors - not used in raid 1 */
 		sb->chunksize = 0;
 		sb->raid_disks = max_devices;
+		sb->size = md->data_size;
 	}
 
-	/*
-	 * sectors after start of superblock that bitmap starts
-	 * NOTE: signed, so bitmap can be before superblock
-	 * only meaningful of feature_map[0] is set.
-	 */
 	sb->bitmap_offset = __cpu_to_le32((unsigned)md->bitmap_offset);
-
-	/* constant this-device information - 64 bytes */
-	/* sector start of data, often 0 */
 	sb->data_offset = md->data_offset;
-	/* sectors in this device that can be used for data */
 	sb->data_size = md->data_size;
-	/* sector start of this superblock */
 	sb->super_offset = md->super_offset;
-
-	/* permanent identifier of this  device - not role in raid (They can be equal tho). */
 	sb->dev_number = role;
-	/* number of read errors that were corrected by re-writing */
 	sb->cnt_corrected_read = 0;
 
-	char *disk_uuid = cfg_getstr(image->imagesec, "disk-uuid");
+	disk_uuid = cfg_getstr(image->imagesec, "disk-uuid");
 	if (!disk_uuid)
 		disk_uuid = uuid_random();
-	/* user-space setable, ignored by kernel U8[16] */
 	uuid_parse(disk_uuid, sb->device_uuid);
 
-	/* per-device flags.  Only two defined... */
 	sb->devflags = 0;
-	/* mask for writemostly flag in above */
-	//#define WriteMostly1	1
-	/* Should avoid retries and fixups and just fail */
-	//#define FailFast1	2
-
-	/*
-	 * Bad block log.  If there are any bad blocks the feature flag is set.
-	 * If offset and size are non-zero, that space is reserved and available
-	 */
-	/* shift from sectors to badblock size, typicaly 9-12 (shift by 9 is equal to 512 sectors per badblock) */
 	sb->bblog_shift = 9;
-	/* number of sectors reserved for list */
 	sb->bblog_size = 8;
-	/* sector offset from superblock to bblog, signed - not unsigned */
 	sb->bblog_offset = __cpu_to_le32((unsigned)md->bblog_offset);
 
-	/* array state information - 64 bytes */
-	/* 40 bits second, 24 bits microseconds */
 	sb->utime = sb->ctime;
-	/* incremented when superblock updated */
 	sb->events = 0;
-	/* data before this offset (from data_offset) known to be in sync */
 	sb->resync_offset = 0;
-	/* size of devs[] array to consider */
 	sb->max_dev = max_devices;
-	/* set to 0 when writing */
-	// pad3[64-32];
 
-	/*
-	 * device state information. Indexed by dev_number.
-	 * 2 bytes per device
-	 * Note there are no per-device state flags. State information is rolled
-	 * into the 'roles' value.  If a device is spare or faulty, then it doesn't
-	 * have a meaningful role.
-	 */
-	/* role in array, or 0xffff for a spare, or 0xfffe for faulty */
-	__le16 *dev_roles = (__le16 *)((char *)sb + sizeof(struct mdp_superblock_1));
-	/* All devices in array are set as inactive initialy */
-	//memset(dev_roles, 0xFF, max_devices*2);
-	/* All devices are assigned roles equal to their dev_number initialy */
-	for (int i = 0; i < max_devices; i++) {
-		/* Assign active role to all devices */
+	dev_roles = (__le16 *)((char *)sb + sizeof(struct mdp_superblock_1));
+	for (i = 0; i < max_devices; i++)
 		dev_roles[i] = i;
-	}
 
-	/* Calculate superblock checksum */
 	sb->sb_csum = calc_sb_1_csum(sb);
 
-	/* Prepare bitmap superblock (bitmaps don't have checksums for performance reasons) */
-	/* 0  BITMAP_MAGIC - This is actualy just char string saying "bitm" :-) */
 	bsb->magic = BITMAP_MAGIC;
-	/* 4  the bitmap major for now, could change... */
 	bsb->version = 4; /* v4 is compatible with mdraid v1.2 */
-	/* 8  128 bit uuid - must match md device uuid */
 	memcpy(bsb->uuid, sb->set_uuid, sizeof(bsb->uuid));
-	/* 24  event counter for the bitmap (1) */
 	bsb->events = 0;
-	/* 32  event counter when last bit cleared (2) */
 	bsb->events_cleared = 0;
-	/* 40  the size of the md device's sync range(3) */
 	bsb->sync_size = sb->data_size;
-	/* 48  bitmap state information */
 	bsb->state = 0;
-	/* 52  the bitmap chunk size in bytes, 64MB is default on linux */
 	bsb->chunksize = 64 * 1024 * 1024;
-	/* 5 is considered safe default. 56  seconds between disk flushes */
 	bsb->daemon_sleep = 5;
-	/* 60  number of outstanding write-behind writes */
 	bsb->write_behind = 0;
-	/* 64 number of 512-byte sectors that are reserved for the bitmap. */
 	bsb->sectors_reserved = roundup(bsb->sync_size / bsb->chunksize, 8);
-	/* 68 the maximum number of nodes in cluster. */
 	bsb->nodes = 0;
-	/* 72 cluster name to which this md belongs */
-	//bsb->cluster_name[64];
-	/* set to zero */
-	// pad[256 - 136];
 
-	/* Increase bitmap chunk size till we fit in sectors max */
 	while (bsb->sectors_reserved > BITMAP_SECTORS_MAX) {
 		bsb->chunksize *= 2;
 		bsb->sectors_reserved = roundup(bsb->sync_size / bsb->chunksize, 8);
@@ -477,19 +384,20 @@ static int mdraid_generate(struct image *image)
 	mdraid_img_t *md = image->handler_priv;
 	struct mdp_superblock_1 *sb = md->sb;
 	bitmap_super_t *bsb = &md->bsb;
-
-	/* Construct image file */
 	int ret;
+
+	/* create empty image */
 	ret = prepare_image(image, image->size);
 	if (ret)
 		return ret;
-	/* Write superblock */
+
+	/* insert superblock */
 	ret = insert_data(image, sb, imageoutfile(image), md->superblock_size, sb->super_offset * 512);
 	if (ret)
 		return ret;
-	/* Write bitmap */
+
+	/* insert bitmap */
 	if (sb->feature_map & MD_FEATURE_BITMAP_OFFSET) {
-		/* bitmap_offset is signed, the bitmap can be located before the superblock */
 		__s64 bitmap_sector = (__s64)sb->super_offset +
 				      (__s32)__le32_to_cpu(sb->bitmap_offset);
 
@@ -498,7 +406,8 @@ static int mdraid_generate(struct image *image)
 		if (ret)
 			return ret;
 	}
-	/* Write data */
+
+	/* insert data */
 	if (md->img_data) {
 		ret = insert_image(image, md->img_data, md->img_data->size,
 				   md->data_offset * 512, 0, 0, cfg_true);
