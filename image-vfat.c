@@ -19,6 +19,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <dirent.h>
 
 #include "genimage.h"
 
@@ -70,10 +71,33 @@ static int vfat_generate(struct image *image)
 	if (!list_empty(&image->partitions))
 		return 0;
 
-	if (!image->empty)
-		ret = systemp(image, "MTOOLS_SKIP_CHECK=1 %s -sp -i '%s' '%s'/* ::",
-			      get_opt("mcopy"), imageoutfile(image), mountpath(image));
-	return ret;
+	if (!image->empty) {
+		const char *path = mountpath(image);
+		DIR *dir;
+		struct dirent *d;
+
+		dir = opendir(path);
+		if (!dir) {
+			image_error(image, "opendir '%s': %s\n", path,
+				    strerror(errno));
+			return -errno;
+		}
+
+		while ((d = readdir(dir)) != NULL) {
+			if (!strcmp(d->d_name, ".") || !strcmp(d->d_name, ".."))
+				continue;
+
+			ret = systemp(image, "MTOOLS_SKIP_CHECK=1 %s -sp -i '%s' '%s/%s' ::",
+				      get_opt("mcopy"), imageoutfile(image), path,
+				      d->d_name);
+			if (ret) {
+				closedir(dir);
+				return ret;
+			}
+		}
+		closedir(dir);
+	}
+	return 0;
 }
 
 static int vfat_setup(struct image *image, cfg_t *cfg)
