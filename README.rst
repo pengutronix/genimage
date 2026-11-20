@@ -545,6 +545,9 @@ Options:
 :timestamp:		Unix timestamp of array creation (current time by default, has to match across array devices)
 :raid-uuid:		UUID of whole array (has to be identical across all disks in array, random by default)
 :disk-uuid:		UUID of disk (has to be unique for each array member disk, random by default)
+:metadata:		MD superblock sub-version: ``1.2`` (default) or ``1.0``.
+			``1.2`` places metadata near the start of the device (data after a 1MiB offset).
+			``1.0`` places metadata at the end so data starts at offset 0 (useful for EFI or bootable members).
 :image:			Image of data to be preloaded into array (optional)
 :parent:		Image to inherit array identity/config from (when creating extra members of existing array).
 			Effectively overrides all array-wide options mentioned here and replaces them with values from parent.

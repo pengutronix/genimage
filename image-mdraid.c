@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Tomas Mudrunka <harviecz@gmail.com>
+ * Copyright (c) 2025-2026 Tomas Mudrunka <harviecz@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2
@@ -124,6 +124,8 @@ typedef struct mdraid_img_s {
 	bitmap_super_t bsb;
 	/* This is counter used by slave devices to take roles */
 	__le16 last_role;
+	/* Metadata sub-version string, e.g. "1.0" or "1.2" */
+	const char *metadata;
 	/* On-disk layout in 512-byte sectors */
 	__u64 reserve_sectors;
 	__u64 data_offset;
@@ -133,24 +135,45 @@ typedef struct mdraid_img_s {
 	__s32 bblog_offset;
 } mdraid_img_t;
 
-/* Calculate on disk layout/offsets */
+/* Calculate on disk layout/offsets based on metadata version */
 static int mdraid_calc_layout(struct image *image)
 {
 	mdraid_img_t *md = image->handler_priv;
+	const char *metadata = md->metadata;
 	__u64 dev_sectors = image->size / 512;
 
-	/* metadata 1.2, superblock 4K from start of device */
-	md->data_offset = 2048;
-	md->reserve_sectors = md->data_offset;
-	md->super_offset = 8;
-	md->bitmap_offset = 8;
-	md->bblog_offset = md->bitmap_offset + BITMAP_SECTORS_MAX + 8;
-	if (image->size) {
-		if (dev_sectors < md->reserve_sectors) {
-			image_error(image, "MDRAID image too small for 1.2 metadata.\n");
-			return 1;
+	if (!metadata || !strcmp(metadata, "1") || !strcmp(metadata, "1.2")) {
+		/* metadata 1.2, superblock 4K from start of device - sane default */
+		md->metadata = "1.2"; /* ensure we log full metadata version when "1" is entered */
+		md->data_offset = 2048;
+		md->reserve_sectors = md->data_offset;
+		md->super_offset = 8;
+		md->bitmap_offset = 8;
+		md->bblog_offset = md->bitmap_offset + BITMAP_SECTORS_MAX + 8;
+		if (image->size) {
+			if (dev_sectors < md->reserve_sectors) {
+				image_error(image, "MDRAID image too small for 1.2 metadata.\n");
+				return 1;
+			}
+			md->data_size = dev_sectors - md->reserve_sectors;
 		}
-		md->data_size = dev_sectors - md->reserve_sectors;
+	} else if (!strcmp(metadata, "1.0")) {
+		/* metadata 1.0, superblock near end of device - needed for UEFI boot  */
+		md->reserve_sectors = BITMAP_SECTORS_MAX + 8 + 16;
+		md->data_offset = 0;
+		md->bitmap_offset = -(__s32)(BITMAP_SECTORS_MAX + 8);
+		md->bblog_offset = -8;
+		if (image->size) {
+			if (dev_sectors < md->reserve_sectors) {
+				image_error(image, "MDRAID image too small for 1.0 metadata at end of device.\n");
+				return 1;
+			}
+			md->super_offset = (dev_sectors - 16) & ~7ULL;
+			md->data_size = md->super_offset + md->bitmap_offset;
+		}
+	} else {
+		image_error(image, "MDRAID unsupported metadata '%s' (supported: 1.0, 1.2).\n", metadata);
+		return 1;
 	}
 
 	return 0;
@@ -235,16 +258,20 @@ static int mdraid_setup(struct image *image, cfg_t *cfg)
 		image_info(image, "MDRAID will inherit array metadata config from parent: %s\n",
 			   md->img_parent->file);
 		image->size = md->img_parent->size;
+		md->metadata = mdp->metadata;
 		max_devices = mdp->sb->raid_disks;
 		/* Data image is set up via the parent dependency chain */
 		md->img_data_part.image = cfg_getstr(md->img_parent->imagesec, "image");
 	} else {
+		md->metadata = cfg_getstr(image->imagesec, "metadata");
 		max_devices = cfg_getint(image->imagesec, "devices");
 	}
 
 	/* Sets reserve_sectors (and full layout if size is already known) */
 	if (mdraid_calc_layout(image))
 		return 1;
+
+	image_info(image, "MDRAID using metadata version %s.\n", md->metadata);
 
 	/* Prepare data */
 	if (md->img_data_part.image) {
@@ -359,7 +386,7 @@ static int mdraid_setup(struct image *image, cfg_t *cfg)
 	sb->sb_csum = calc_sb_1_csum(sb);
 
 	bsb->magic = BITMAP_MAGIC;
-	bsb->version = 4; /* v4 is compatible with mdraid v1.2 */
+	bsb->version = 4; /* v4 is compatible with mdraid v1.x */
 	memcpy(bsb->uuid, sb->set_uuid, sizeof(bsb->uuid));
 	bsb->events = 0;
 	bsb->events_cleared = 0;
@@ -428,6 +455,7 @@ static cfg_opt_t mdraid_opts[] = {
 	CFG_STR("disk-uuid", NULL, CFGF_NONE),
 	CFG_STR("image", NULL, CFGF_NONE),
 	CFG_STR("parent", NULL, CFGF_NONE),
+	CFG_STR("metadata", "1.2", CFGF_NONE),
 	CFG_END()
 };
 
