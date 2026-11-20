@@ -38,9 +38,8 @@
 
 #include "genimage.h"
 
-#define DATA_OFFSET_SECTORS (2048)
-#define DATA_OFFSET_BYTES   (DATA_OFFSET_SECTORS * 512)
-#define BITMAP_SECTORS_MAX  256
+/* Max sectors reserved for the write-intent bitmap area */
+#define BITMAP_SECTORS_MAX 256
 /* (should be divisible by 8 sectors to keep 4kB alignment) */
 #define MDRAID_ALIGN_BYTES 8 * 512
 
@@ -125,7 +124,37 @@ typedef struct mdraid_img_s {
 	bitmap_super_t bsb;
 	/* This is counter used by slave devices to take roles */
 	__le16 last_role;
+	/* On-disk layout in 512-byte sectors */
+	__u64 reserve_sectors;
+	__u64 data_offset;
+	__u64 data_size;
+	__u64 super_offset;
+	__s32 bitmap_offset;
+	__s32 bblog_offset;
 } mdraid_img_t;
+
+/* Calculate on disk layout/offsets */
+static int mdraid_calc_layout(struct image *image)
+{
+	mdraid_img_t *md = image->handler_priv;
+	__u64 dev_sectors = image->size / 512;
+
+	/* metadata 1.2, superblock 4K from start of device */
+	md->data_offset = 2048;
+	md->reserve_sectors = md->data_offset;
+	md->super_offset = 8;
+	md->bitmap_offset = 8;
+	md->bblog_offset = md->bitmap_offset + BITMAP_SECTORS_MAX + 8;
+	if (image->size) {
+		if (dev_sectors < md->reserve_sectors) {
+			image_error(image, "MDRAID image too small for 1.2 metadata.\n");
+			return 1;
+		}
+		md->data_size = dev_sectors - md->reserve_sectors;
+	}
+
+	return 0;
+}
 
 static unsigned int calc_sb_1_csum(struct mdp_superblock_1 *sb)
 {
@@ -205,6 +234,10 @@ static int mdraid_setup(struct image *image, cfg_t *cfg)
 		md->img_data_part.image = cfg_getstr(md->img_parent->imagesec, "image");
 	}
 
+	/* Sets reserve_sectors (and full layout if size is already known) */
+	if (mdraid_calc_layout(image))
+		return 1;
+
 	/* Find data image and its metadata if data partition exists */
 	if (md->img_data_part.image) {
 		image_info(image, "MDRAID using data from: %s\n", md->img_data_part.image);
@@ -214,8 +247,8 @@ static int mdraid_setup(struct image *image, cfg_t *cfg)
 			return 8;
 		}
 		if (image->size == 0)
-			image->size = roundup(md->img_data->size + DATA_OFFSET_BYTES, MDRAID_ALIGN_BYTES);
-		if (image->size < (md->img_data->size + DATA_OFFSET_BYTES)) {
+			image->size = roundup(md->img_data->size + md->reserve_sectors * 512, MDRAID_ALIGN_BYTES);
+		if (image->size < (md->img_data->size + md->reserve_sectors * 512)) {
 			image_error(image, "MDRAID image too small to fit %s\n", md->img_data->file);
 			return 3;
 		}
@@ -228,6 +261,10 @@ static int mdraid_setup(struct image *image, cfg_t *cfg)
 		image_error(image, "MDRAID image size has to be aligned to %d bytes!\n", MDRAID_ALIGN_BYTES);
 		return 4;
 	}
+
+	/* Recompute size-dependent layout fields now that image->size is final */
+	if (mdraid_calc_layout(image))
+		return 1;
 
 	/* Inheriting from this parent if not NULL */
 	mdraid_img_t *mdp = NULL;
@@ -313,7 +350,7 @@ static int mdraid_setup(struct image *image, cfg_t *cfg)
 		/* only for raid5 and raid10 currently */
 		// sb->layout;
 		/* used size of component devices, in 512byte sectors */
-		sb->size = (image->size - DATA_OFFSET_BYTES) / 512;
+		sb->size = md->data_size;
 
 		/* in 512byte sectors - not used in raid 1 */
 		sb->chunksize = 0;
@@ -325,15 +362,15 @@ static int mdraid_setup(struct image *image, cfg_t *cfg)
 	 * NOTE: signed, so bitmap can be before superblock
 	 * only meaningful of feature_map[0] is set.
 	 */
-	sb->bitmap_offset = 8;
+	sb->bitmap_offset = __cpu_to_le32((unsigned)md->bitmap_offset);
 
 	/* constant this-device information - 64 bytes */
 	/* sector start of data, often 0 */
-	sb->data_offset = DATA_OFFSET_SECTORS;
+	sb->data_offset = md->data_offset;
 	/* sectors in this device that can be used for data */
-	sb->data_size = sb->size;
+	sb->data_size = md->data_size;
 	/* sector start of this superblock */
-	sb->super_offset = 8;
+	sb->super_offset = md->super_offset;
 
 	/* permanent identifier of this  device - not role in raid (They can be equal tho). */
 	sb->dev_number = role;
@@ -362,7 +399,7 @@ static int mdraid_setup(struct image *image, cfg_t *cfg)
 	/* number of sectors reserved for list */
 	sb->bblog_size = 8;
 	/* sector offset from superblock to bblog, signed - not unsigned */
-	sb->bblog_offset = sb->bitmap_offset + BITMAP_SECTORS_MAX + 8;
+	sb->bblog_offset = __cpu_to_le32((unsigned)md->bblog_offset);
 
 	/* array state information - 64 bytes */
 	/* 40 bits second, 24 bits microseconds */
@@ -452,14 +489,19 @@ static int mdraid_generate(struct image *image)
 		return ret;
 	/* Write bitmap */
 	if (sb->feature_map & MD_FEATURE_BITMAP_OFFSET) {
+		/* bitmap_offset is signed, the bitmap can be located before the superblock */
+		__s64 bitmap_sector = (__s64)sb->super_offset +
+				      (__s32)__le32_to_cpu(sb->bitmap_offset);
+
 		ret = insert_data(image, bsb, imageoutfile(image), sizeof(*bsb),
-				  (sb->super_offset + sb->bitmap_offset) * 512);
+				  (unsigned long long)bitmap_sector * 512);
 		if (ret)
 			return ret;
 	}
 	/* Write data */
 	if (md->img_data) {
-		ret = insert_image(image, md->img_data, md->img_data->size, DATA_OFFSET_BYTES, 0, 0, cfg_true);
+		ret = insert_image(image, md->img_data, md->img_data->size,
+				   md->data_offset * 512, 0, 0, cfg_true);
 		if (ret)
 			return ret;
 	}
