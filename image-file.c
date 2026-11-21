@@ -50,6 +50,7 @@ static int file_setup(struct image *image, cfg_t *cfg)
 	struct file *f = xzalloc(sizeof(*f));
 	struct stat s;
 	int ret;
+	unsigned long long size;
 
 	if (cfg)
 		f->name = cfg_getstr(cfg, "name");
@@ -68,8 +69,11 @@ static int file_setup(struct image *image, cfg_t *cfg)
 			    strerror(errno));
 		return ret;
 	}
+	size = s.st_size;
+	if (S_ISDIR(s.st_mode))
+		size = image_dir_size(image, f->infile);
 	if (!image->size)
-		image->size = s.st_size;
+		image->size = size;
 
 	if (cfg)
 		f->copy = cfg_getbool(cfg, "copy");
