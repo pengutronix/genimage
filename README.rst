@@ -272,6 +272,15 @@ Options:
 			that your sparse tool can handle CRC sparse images.
 			Defaults to false.
 
+btrfs
+****
+Generates btrfs images.
+
+Options:
+
+:label:			Specify the volume-label.
+:extraargs:		Extra arguments passed to mkfs.btrfs
+
 cpio
 ****
 Generates cpio images.
@@ -846,6 +855,7 @@ variable.
 :mmd:		path to the mmd program (default mmd)
 :mkcramfs:	path to the mkcramfs program (default mkfs.cramfs)
 :mkdosfs:	path to the mkdosfs program (default mkdosfs)
+:mkfsbtrfs:	path to the mkfs.btrfs program (default mkfs.btrfs)
 :mkfserofs:	path to the mkfs.erofs program (default mkfs.erofs)
 :mkfsf2fs:	path to the mkfs.f2fs program (default mkfs.f2fs)
 :mkfsjffs2:	path to the mkfs.jffs2 program (default mkfs.jffs2)
