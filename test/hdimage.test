@@ -159,6 +159,20 @@ test_expect_success "bootloader-hole5" "
 	setup_gpt_files &&
 	OFFSET=128K run_genimage hole.config"
 
+# Test the mbr-skip-optionals
+test_expect_success "bootloader-hole6" "
+	rm -rf input &&
+	mkdir input &&
+	truncate -s 100K input/bootloader.img &&
+	MBR_SKIP_OPTIONALS=true run_genimage hole-skip-optionals.config"
+
+# Test the mbr-skip-optionals
+test_expect_success "bootloader-hole7" "
+	rm -rf input &&
+	mkdir input &&
+	truncate -s 100K input/bootloader.img &&
+	MBR_SKIP_OPTIONALS=false test_must_fail run_genimage hole-skip-optionals.config"
+
 test_expect_success hexdump "hdimage no-partition" "
 	dd if=/dev/zero bs=1 count=100 | tr '\000' '\377' > input/block1.img &&
 	dd if=/dev/zero bs=1 count=50  | tr '\000' '\252' > input/block2.img &&
