@@ -22,7 +22,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#ifdef __linux__
 #include <sys/sendfile.h>
+#endif
 #include <sys/stat.h>
 
 #include "genimage.h"
@@ -337,13 +339,23 @@ static int verity_generate(struct image *image)
 		return -errno;
 
 	if (image->size && image->size < (unsigned long)sb.st_size) {
+#ifdef __APPLE__
+		image_error(image,
+			    "Specified image size (%llu) is too small, generated %lld bytes\n",
+			    image->size, sb.st_size);
+#else
 		image_error(image,
 			    "Specified image size (%llu) is too small, generated %ld bytes\n",
 			    image->size, sb.st_size);
+#endif
 		return -E2BIG;
 	}
 
+#ifdef __APPLE__
+	image_debug(image, "generated %lld bytes\n", sb.st_size);
+#else
 	image_debug(image, "generated %ld bytes\n", sb.st_size);
+#endif
 	image->size = sb.st_size;
 	return 0;
 }

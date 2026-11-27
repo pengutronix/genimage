@@ -5,6 +5,10 @@
 #include <confuse.h>
 #include "list.h"
 
+#ifndef __GLIBC__
+#define strdupa(s) strdup(s)
+#endif
+
 struct image_handler;
 
 struct image *image_get(const char *filename);
